@@ -22,7 +22,7 @@ A web-based platform for managing college placement activities, built with Flask
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/luckycelestial/Placely.git
+git clone https://github.com/sanjana-2608/Placely.git
 cd Placely
 ```
 
@@ -121,4 +121,4 @@ MIT License - feel free to use this project for educational purposes.
 
 ## Author
 
-Pavithran (luckycelestial)
+Pavithran (sanjana-2608)
