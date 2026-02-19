@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from datetime import datetime
 import json
 import os
+import time
+import requests as http_requests
 import config
 
 # Try to import Google OAuth libraries, but don't fail if they're missing
@@ -51,11 +53,11 @@ else:
 
 # Data
 students = [
-    {"id": 1, "name": "Aarav Kumar", "email": "aarav@college.edu", "codingProblems": 120, "internships": 2, "certifications": 3, "gradePoints": 8.7, "year": 3, "interest": "Placed", "dept": "CSE"},
-    {"id": 2, "name": "Sneha Reddy", "email": "sneha@college.edu", "codingProblems": 80, "internships": 1, "certifications": 2, "gradePoints": 9.1, "year": 2, "interest": "Higher Studies", "dept": "IT"},
-    {"id": 3, "name": "Rahul Singh", "email": "rahul@college.edu", "codingProblems": 200, "internships": 0, "certifications": 1, "gradePoints": 7.9, "year": 4, "interest": "Placed", "dept": "ECE"},
-    {"id": 4, "name": "Priya Sharma", "email": "priya@college.edu", "codingProblems": 150, "internships": 1, "certifications": 4, "gradePoints": 8.3, "year": 3, "interest": "Uninterested", "dept": "CSE"},
-    {"id": 5, "name": "Vikram Patel", "email": "vikram@college.edu", "codingProblems": 60, "internships": 2, "certifications": 2, "gradePoints": 8.9, "year": 2, "interest": "Interested", "dept": "ME"}
+    {"id": 1, "name": "Aarav Kumar", "email": "aarav@college.edu", "leetcodeUsername": "ais1ee", "codingProblems": 120, "internships": 2, "certifications": 3, "gradePoints": 8.7, "year": 3, "interest": "Placed", "dept": "CSE"},
+    {"id": 2, "name": "Sneha Reddy", "email": "sneha@college.edu", "leetcodeUsername": "student123", "codingProblems": 80, "internships": 1, "certifications": 2, "gradePoints": 9.1, "year": 2, "interest": "Higher Studies", "dept": "IT"},
+    {"id": 3, "name": "Rahul Singh", "email": "rahul@college.edu", "leetcodeUsername": "rahulcodes", "codingProblems": 200, "internships": 0, "certifications": 1, "gradePoints": 7.9, "year": 4, "interest": "Placed", "dept": "ECE"},
+    {"id": 4, "name": "Priya Sharma", "email": "priya@college.edu", "leetcodeUsername": "priya_dev", "codingProblems": 150, "internships": 1, "certifications": 4, "gradePoints": 8.3, "year": 3, "interest": "Uninterested", "dept": "CSE"},
+    {"id": 5, "name": "Vikram Patel", "email": "vikram@college.edu", "leetcodeUsername": "vikrampatel", "codingProblems": 60, "internships": 2, "certifications": 2, "gradePoints": 8.9, "year": 2, "interest": "Interested", "dept": "ME"}
 ]
 
 recently_placed = [
@@ -86,6 +88,111 @@ placed_students = [
 ]
 
 staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
+
+LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql/"
+LEETCODE_TIMEOUT_SECONDS = 12
+LEETCODE_BATCH_DELAY_SECONDS = 0.7
+
+LEETCODE_PROFILE_QUERY = """
+query getUserProfile($username: String!) {
+  matchedUser(username: $username) {
+    username
+    profile {
+      ranking
+    }
+    submitStats: submitStatsGlobal {
+      acSubmissionNum {
+        difficulty
+        count
+      }
+      totalSubmissionNum {
+        difficulty
+        count
+      }
+    }
+  }
+}
+"""
+
+
+def _difficulty_map(rows):
+    values = {}
+    for row in rows or []:
+        difficulty = row.get('difficulty')
+        values[difficulty] = int(row.get('count', 0))
+    return values
+
+
+def _acceptance_rate(accepted, total):
+    if not total:
+        return 0.0
+    return round((accepted / total) * 100, 2)
+
+
+def fetch_leetcode_profile(username):
+    payload = {
+        'query': LEETCODE_PROFILE_QUERY,
+        'variables': {'username': username}
+    }
+    headers = {'Content-Type': 'application/json'}
+
+    try:
+        response = http_requests.post(
+            LEETCODE_GRAPHQL_URL,
+            json=payload,
+            headers=headers,
+            timeout=LEETCODE_TIMEOUT_SECONDS
+        )
+        response.raise_for_status()
+        response_json = response.json()
+    except http_requests.RequestException as exc:
+        return {
+            'success': False,
+            'username': username,
+            'message': f'LeetCode request failed: {str(exc)}'
+        }
+
+    matched_user = (response_json.get('data') or {}).get('matchedUser')
+    if not matched_user:
+        return {
+            'success': False,
+            'username': username,
+            'message': 'LeetCode user not found or profile is private'
+        }
+
+    stats = matched_user.get('submitStats') or {}
+    accepted_by_difficulty = _difficulty_map(stats.get('acSubmissionNum'))
+    total_by_difficulty = _difficulty_map(stats.get('totalSubmissionNum'))
+
+    solved = {
+        'all': accepted_by_difficulty.get('All', 0),
+        'easy': accepted_by_difficulty.get('Easy', 0),
+        'medium': accepted_by_difficulty.get('Medium', 0),
+        'hard': accepted_by_difficulty.get('Hard', 0)
+    }
+
+    total_submissions = {
+        'all': total_by_difficulty.get('All', 0),
+        'easy': total_by_difficulty.get('Easy', 0),
+        'medium': total_by_difficulty.get('Medium', 0),
+        'hard': total_by_difficulty.get('Hard', 0)
+    }
+
+    acceptance_rates = {
+        'all': _acceptance_rate(solved['all'], total_submissions['all']),
+        'easy': _acceptance_rate(solved['easy'], total_submissions['easy']),
+        'medium': _acceptance_rate(solved['medium'], total_submissions['medium']),
+        'hard': _acceptance_rate(solved['hard'], total_submissions['hard'])
+    }
+
+    return {
+        'success': True,
+        'username': matched_user.get('username', username),
+        'ranking': (matched_user.get('profile') or {}).get('ranking'),
+        'solved': solved,
+        'totalSubmissions': total_submissions,
+        'acceptanceRates': acceptance_rates
+    }
 
 @app.route('/')
 def index():
@@ -206,6 +313,45 @@ def check_session():
 @app.route('/api/students')
 def get_students():
     return jsonify(students)
+
+
+@app.route('/api/leetcode/<string:username>')
+def get_leetcode_profile(username):
+    data = fetch_leetcode_profile(username)
+    status_code = 200 if data.get('success') else 404
+    return jsonify(data), status_code
+
+
+@app.route('/api/leetcode/students')
+def get_leetcode_profiles_for_students():
+    usernames = []
+    for student in students:
+        username = student.get('leetcodeUsername')
+        if username:
+            usernames.append({
+                'studentId': student['id'],
+                'studentName': student['name'],
+                'username': username
+            })
+
+    results = []
+    for index, entry in enumerate(usernames):
+        if index > 0:
+            time.sleep(LEETCODE_BATCH_DELAY_SECONDS)
+
+        profile = fetch_leetcode_profile(entry['username'])
+        results.append({
+            'studentId': entry['studentId'],
+            'studentName': entry['studentName'],
+            'leetcodeUsername': entry['username'],
+            'profile': profile
+        })
+
+    return jsonify({
+        'success': True,
+        'count': len(results),
+        'results': results
+    })
 
 @app.route('/api/students/<int:student_id>', methods=['PUT'])
 def update_student(student_id):

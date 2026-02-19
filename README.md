@@ -9,6 +9,7 @@ A web-based platform for managing college placement activities, built with Flask
 - **Analytics**: Visual charts showing placement statistics by year and interest
 - **Reports**: Comprehensive placement reports with detailed student information
 - **Company Management**: Track upcoming companies and placement opportunities
+- **LeetCode Integration**: Fetch solved counts, acceptance rates, and ranking via LeetCode GraphQL
 - **Dark/Light Mode**: Toggle between dark and light themes
 
 ## Tech Stack
@@ -105,6 +106,10 @@ Placely/
 - Placement status breakdown (Placed, Interested, Uninterested, Higher Studies)
 - Interactive pie charts
 - Sorting options by multiple criteria
+
+### LeetCode Stats API
+- `GET /api/leetcode/<username>`: Fetches profile stats for a specific LeetCode username
+- `GET /api/leetcode/students`: Batch-fetches stats for demo students with a safe delay between requests
 
 ## Color Themes
 

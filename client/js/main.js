@@ -1,10 +1,10 @@
 // Placely Toy Data
 const students = [
-  { id: 1, name: "Aarav Kumar", email: "aarav@college.edu", codingProblems: 120, internships: 2, certifications: 3, gradePoints: 8.7, year: 3, interest: "Placed", dept: "CSE" },
-  { id: 2, name: "Sneha Reddy", email: "sneha@college.edu", codingProblems: 80, internships: 1, certifications: 2, gradePoints: 9.1, year: 2, interest: "Higher Studies", dept: "IT" },
-  { id: 3, name: "Rahul Singh", email: "rahul@college.edu", codingProblems: 200, internships: 0, certifications: 1, gradePoints: 7.9, year: 4, interest: "Placed", dept: "ECE" },
-  { id: 4, name: "Priya Sharma", email: "priya@college.edu", codingProblems: 150, internships: 1, certifications: 4, gradePoints: 8.3, year: 3, interest: "Uninterested", dept: "CSE" },
-  { id: 5, name: "Vikram Patel", email: "vikram@college.edu", codingProblems: 60, internships: 2, certifications: 2, gradePoints: 8.9, year: 2, interest: "Interested", dept: "ME" }
+  { id: 1, name: "Aarav Kumar", email: "aarav@college.edu", leetcodeUsername: "ais1ee", codingProblems: 120, internships: 2, certifications: 3, gradePoints: 8.7, year: 3, interest: "Placed", dept: "CSE" },
+  { id: 2, name: "Sneha Reddy", email: "sneha@college.edu", leetcodeUsername: "student123", codingProblems: 80, internships: 1, certifications: 2, gradePoints: 9.1, year: 2, interest: "Higher Studies", dept: "IT" },
+  { id: 3, name: "Rahul Singh", email: "rahul@college.edu", leetcodeUsername: "rahulcodes", codingProblems: 200, internships: 0, certifications: 1, gradePoints: 7.9, year: 4, interest: "Placed", dept: "ECE" },
+  { id: 4, name: "Priya Sharma", email: "priya@college.edu", leetcodeUsername: "priya_dev", codingProblems: 150, internships: 1, certifications: 4, gradePoints: 8.3, year: 3, interest: "Uninterested", dept: "CSE" },
+  { id: 5, name: "Vikram Patel", email: "vikram@college.edu", leetcodeUsername: "vikrampatel", codingProblems: 60, internships: 2, certifications: 2, gradePoints: 8.9, year: 2, interest: "Interested", dept: "ME" }
 ];
 
 const recentlyPlaced = [
@@ -695,7 +695,119 @@ function renderReports() {
 }
 
 function renderProfile() {
-  // Placeholder for profile rendering
+  const profileContent = document.getElementById('profile-content');
+  const defaultUsername = currentUser?.leetcodeUsername || '';
+
+  profileContent.innerHTML = `
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+      <h3 style="margin-top: 0;">LeetCode Stats</h3>
+      <p style="margin: 0.5rem 0 1rem 0; color: #999;">Fetch solved counts, acceptance rates, and ranking by username.</p>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <input type="text" id="leetcode-username" placeholder="LeetCode username" value="${defaultUsername}" style="min-width: 260px;">
+        <button class="btn" id="leetcode-fetch-btn" type="button">Fetch Profile Stats</button>
+        ${isStaff ? '<button class="btn" id="leetcode-batch-btn" type="button">Fetch All Students</button>' : ''}
+      </div>
+    </div>
+    <div id="leetcode-result"></div>
+  `;
+
+  const fetchBtn = document.getElementById('leetcode-fetch-btn');
+  if (fetchBtn) {
+    fetchBtn.addEventListener('click', fetchLeetCodeProfileStats);
+  }
+
+  if (isStaff) {
+    const batchBtn = document.getElementById('leetcode-batch-btn');
+    if (batchBtn) {
+      batchBtn.addEventListener('click', fetchAllStudentsLeetCodeStats);
+    }
+  }
+}
+
+async function fetchLeetCodeProfileStats() {
+  const usernameInput = document.getElementById('leetcode-username');
+  const result = document.getElementById('leetcode-result');
+  const username = usernameInput.value.trim();
+
+  if (!username) {
+    alert('Enter a LeetCode username first.');
+    return;
+  }
+
+  result.innerHTML = '<p>Loading LeetCode profile...</p>';
+
+  try {
+    const response = await fetch(`/api/leetcode/${encodeURIComponent(username)}`);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      result.innerHTML = `<div class="card" style="padding: 1rem;"><p style="margin: 0; color: #ff6b6b;">${data.message || 'Failed to fetch LeetCode stats.'}</p></div>`;
+      return;
+    }
+
+    result.innerHTML = renderLeetCodeStatsCard(data);
+  } catch (error) {
+    console.error('LeetCode fetch error:', error);
+    result.innerHTML = '<div class="card" style="padding: 1rem;"><p style="margin: 0; color: #ff6b6b;">Network error while fetching LeetCode stats.</p></div>';
+  }
+}
+
+async function fetchAllStudentsLeetCodeStats() {
+  const result = document.getElementById('leetcode-result');
+  result.innerHTML = '<p>Loading LeetCode stats for all students (rate-limited)...</p>';
+
+  try {
+    const response = await fetch('/api/leetcode/students');
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      result.innerHTML = `<div class="card" style="padding: 1rem;"><p style="margin: 0; color: #ff6b6b;">${data.message || 'Failed to fetch batch LeetCode stats.'}</p></div>`;
+      return;
+    }
+
+    const cards = data.results.map(item => {
+      if (!item.profile || !item.profile.success) {
+        return `
+          <div class="card" style="padding: 1rem; margin-bottom: 0.75rem;">
+            <h4 style="margin: 0 0 0.5rem 0;">${item.studentName} (${item.leetcodeUsername})</h4>
+            <p style="margin: 0; color: #ff6b6b;">${item.profile?.message || 'Unable to fetch profile.'}</p>
+          </div>
+        `;
+      }
+
+      const statsCard = renderLeetCodeStatsCard(item.profile);
+      return `
+        <div style="margin-bottom: 0.75rem;">
+          <h4 style="margin: 0 0 0.5rem 0;">${item.studentName}</h4>
+          ${statsCard}
+        </div>
+      `;
+    }).join('');
+
+    result.innerHTML = cards;
+  } catch (error) {
+    console.error('LeetCode batch fetch error:', error);
+    result.innerHTML = '<div class="card" style="padding: 1rem;"><p style="margin: 0; color: #ff6b6b;">Network error while fetching batch LeetCode stats.</p></div>';
+  }
+}
+
+function renderLeetCodeStatsCard(data) {
+  return `
+    <div class="card" style="padding: 1rem;">
+      <h4 style="margin: 0 0 0.75rem 0;">@${data.username}</h4>
+      <p style="margin: 0 0 0.75rem 0;"><strong>Ranking:</strong> ${data.ranking ?? 'N/A'}</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
+        <div class="stat-card"><h4 style="margin: 0;">${data.solved.all}</h4><p style="margin: 0.25rem 0 0 0;">Solved (All)</p></div>
+        <div class="stat-card"><h4 style="margin: 0;">${data.solved.easy}</h4><p style="margin: 0.25rem 0 0 0;">Easy</p></div>
+        <div class="stat-card"><h4 style="margin: 0;">${data.solved.medium}</h4><p style="margin: 0.25rem 0 0 0;">Medium</p></div>
+        <div class="stat-card"><h4 style="margin: 0;">${data.solved.hard}</h4><p style="margin: 0.25rem 0 0 0;">Hard</p></div>
+      </div>
+      <div style="margin-top: 0.9rem;">
+        <p style="margin: 0.2rem 0;"><strong>Acceptance Rate:</strong> ${data.acceptanceRates.all}%</p>
+        <p style="margin: 0.2rem 0; color: #999;">Easy: ${data.acceptanceRates.easy}% | Medium: ${data.acceptanceRates.medium}% | Hard: ${data.acceptanceRates.hard}%</p>
+      </div>
+    </div>
+  `;
 }
 
 function renderLeaderboard() {
