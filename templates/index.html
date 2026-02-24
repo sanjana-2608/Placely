@@ -26,6 +26,9 @@
         </ul>
     </nav>
     <div class="container">
+        <!--
+        Login section temporarily disabled.
+        Re-enable this block when login page updates are ready.
         <section id="login-section" class="active">
             <div class="login-box">
                 <div class="login-logo">
@@ -35,12 +38,12 @@
                 <p>College Placement Cell</p>
                 <form id="login-form">
                     <div class="login-tabs">
-                        <button type="button" class="tab-btn active" onclick="switchLoginTab('student')">Student Login</button>
-                        <button type="button" class="tab-btn" onclick="switchLoginTab('staff')">Staff Login</button>
+                        <button type="button" class="tab-btn active" onclick="switchLoginTab('student', this)">Student Login</button>
+                        <button type="button" class="tab-btn" onclick="switchLoginTab('staff', this)">Staff Login</button>
                     </div>
                     <div id="student-login" class="login-tab active">
-                        <input type="email" id="student-email" placeholder="College Email (e.g., name@college.edu)" required><br>
-                        <input type="password" id="student-password" placeholder="Password" required><br>
+                        <input type="email" id="student-email" placeholder="College Email (e.g., name@college.edu)"><br>
+                        <input type="password" id="student-password" placeholder="Password"><br>
                         <button class="btn" type="submit">Login as Student</button>
                         <div class="divider">
                             <span>OR</span>
@@ -57,13 +60,14 @@
                         <p class="note">Google Sign-In allows automatic authentication with your college email.</p>
                     </div>
                     <div id="staff-login" class="login-tab">
-                        <input type="email" id="staff-email" placeholder="Staff Email" required><br>
-                        <input type="password" id="staff-password" placeholder="Password (use: staff123)" required><br>
+                        <input type="email" id="staff-email" placeholder="Staff Email"><br>
+                        <input type="password" id="staff-password" placeholder="Password (use: staff123)"><br>
                         <button class="btn" type="submit">Login as Staff</button>
                     </div>
                 </form>
             </div>
         </section>
+        -->
         
         <section id="home-section">
             <h2 id="home-title">Home</h2>

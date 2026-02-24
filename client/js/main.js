@@ -115,11 +115,13 @@ function showSection(sectionId) {
   if (sectionId === 'leaderboard-section') renderLeaderboard();
 }
 
-function switchLoginTab(tab) {
+function switchLoginTab(tab, triggerElement) {
   currentLoginTab = tab;
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
+  if (triggerElement) {
+    triggerElement.classList.add('active');
+  }
   document.getElementById(tab + '-login').classList.add('active');
 }
 
