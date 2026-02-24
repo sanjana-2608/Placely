@@ -388,12 +388,16 @@ function renderDashboard() {
 function renderStudentAnalytics(container) {
   container.innerHTML = `
     <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Placement Interest Distribution</h3>
+      <h3 style="text-align: center; margin-top: 0;">Interest Distribution</h3>
       <canvas id="chart-interest" class="chart-canvas"></canvas>
     </div>
     <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Year-wise Student Distribution</h3>
-      <canvas id="chart-year" class="chart-canvas"></canvas>
+      <h3 style="text-align: center; margin-top: 0;">Placement Distribution</h3>
+      <canvas id="chart-placement" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 style="text-align: center; margin-top: 0;">Student Distribution</h3>
+      <canvas id="chart-student" class="chart-canvas"></canvas>
     </div>
   `;
   
@@ -425,6 +429,39 @@ function renderStudentAnalytics(container) {
         }
       }
     });
+
+    const placementCounts = { Placed: 0, 'Not Placed': 0 };
+    students.forEach(s => {
+      const status = String(s.interest || '').trim().toLowerCase();
+      if (status === 'placed') {
+        placementCounts.Placed += 1;
+      } else {
+        placementCounts['Not Placed'] += 1;
+      }
+    });
+
+    new Chart(document.getElementById('chart-placement'), {
+      type: 'pie',
+      data: {
+        labels: Object.keys(placementCounts),
+        datasets: [{
+          data: Object.values(placementCounts),
+          backgroundColor: ['#21C1B6', '#FF6B6B'],
+          borderColor: '#000',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#f5f5f5', font: { size: 12 } },
+            position: 'bottom'
+          }
+        }
+      }
+    });
     
     const yearCounts = {};
     students.forEach(s => {
@@ -432,7 +469,7 @@ function renderStudentAnalytics(container) {
       yearCounts[yr] = (yearCounts[yr] || 0) + 1;
     });
     
-    new Chart(document.getElementById('chart-year'), {
+    new Chart(document.getElementById('chart-student'), {
       type: 'pie',
       data: {
         labels: Object.keys(yearCounts),

@@ -5,6 +5,7 @@ import os
 import time
 import requests as http_requests
 from apscheduler.schedulers.background import BackgroundScheduler
+from typing import Any
 
 try:
     from dotenv import load_dotenv
@@ -14,6 +15,7 @@ except ImportError:
 
 import config
 
+create_client: Any = None
 try:
     from supabase import create_client
     SUPABASE_AVAILABLE = True
@@ -21,6 +23,9 @@ except ImportError:
     SUPABASE_AVAILABLE = False
 
 # Try to import Google OAuth libraries, but don't fail if they're missing
+id_token: Any = None
+google_requests: Any = None
+Flow: Any = None
 try:
     from google.oauth2 import id_token
     from google.auth.transport import requests as google_requests
@@ -51,7 +56,7 @@ SUPABASE_FALLBACK_KEY = (
 )
 
 SUPABASE_DB_KEY = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_FALLBACK_KEY
-SUPABASE_ENABLED = bool(SUPABASE_AVAILABLE and SUPABASE_URL and SUPABASE_DB_KEY)
+SUPABASE_ENABLED = bool(SUPABASE_AVAILABLE and create_client and SUPABASE_URL and SUPABASE_DB_KEY)
 
 supabase = None
 if SUPABASE_ENABLED:
@@ -336,7 +341,7 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
+    data: dict[str, Any] = request.get_json(silent=True) or {}
     login_type = data.get('type')
     email = data.get('email')
     password = data.get('password')
@@ -362,7 +367,7 @@ def logout():
 @app.route('/auth/google')
 def google_login():
     """Initiate Google OAuth flow"""
-    if not GOOGLE_OAUTH_ENABLED:
+    if not GOOGLE_OAUTH_ENABLED or not Flow:
         return jsonify({'success': False, 'message': 'Google OAuth not configured'}), 400
     
     try:
@@ -384,7 +389,7 @@ def google_login():
 @app.route('/callback')
 def callback():
     """Handle Google OAuth callback"""
-    if not GOOGLE_OAUTH_ENABLED:
+    if not GOOGLE_OAUTH_ENABLED or not Flow or not id_token or not google_requests:
         return redirect('/?login=error&msg=Google OAuth not configured')
     
     try:
@@ -402,8 +407,12 @@ def callback():
         
         # Get user info from Google
         credentials = flow.credentials
+        token_value = getattr(credentials, 'id_token', None)
+        if not token_value:
+            return redirect('/?login=error&msg=Missing ID token from Google response')
+
         id_info = id_token.verify_oauth2_token(
-            credentials.id_token,
+            token_value,
             google_requests.Request(),
             GOOGLE_CLIENT_ID
         )
