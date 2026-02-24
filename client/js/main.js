@@ -1295,10 +1295,6 @@ function renderLeetCodeStatsCard(data) {
 
   return `
     <div class="leetcode-pie-card">
-      <div class="leetcode-pie-meta">
-        <h5>@${data.username || 'leetcode'}</h5>
-        <p>Rank ${data.ranking ?? 'N/A'}</p>
-      </div>
       <div class="leetcode-pie-layout">
         <div class="leetcode-pie-wrap">
           <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #fbbf24 ${easyEnd}% ${mediumEnd}%, #ef4444 ${mediumEnd}% ${Math.min(mediumEnd + hardPct, 100)}%, rgba(255,255,255,0.08) ${Math.min(mediumEnd + hardPct, 100)}% 100%);">
