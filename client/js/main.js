@@ -95,6 +95,21 @@ async function loginWithGoogle() {
   }
 }
 
+async function connectLinkedIn() {
+  try {
+    const response = await fetch('/api/connect-linkedin');
+    const data = await response.json();
+    if (data.auth_url) {
+      window.location.href = data.auth_url;
+    } else {
+      alert(data.message || 'Failed to initiate LinkedIn connection. Please try again.');
+    }
+  } catch (error) {
+    console.error('LinkedIn connect error:', error);
+    alert('Failed to connect LinkedIn. Please try again.');
+  }
+}
+
 // Check for existing session on page load
 async function checkSession() {
   try {
@@ -1106,6 +1121,28 @@ function renderProfile() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">LinkedIn Profile</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              ${currentUser.linkedinName ? `
+                <div>
+                  <strong>✓ Connected</strong>
+                  <p style="color: #999; margin: 0.5rem 0 0 0;">Name: ${currentUser.linkedinName}</p>
+                  ${currentUser.linkedinUrl ? `<p style="color: #999; margin: 0;"><a href="${currentUser.linkedinUrl}" target="_blank" style="color: #FEC524;">View Profile →</a></p>` : ''}
+                  ${currentUser.linkedinPhotoUrl ? `<img src="${currentUser.linkedinPhotoUrl}" alt="LinkedIn" style="width: 60px; height: 60px; border-radius: 50%; margin-top: 0.5rem;">` : ''}
+                </div>
+                <button class="btn" onclick="connectLinkedIn()" style="margin-top: 0.5rem; background: #0A66C2; width: 100%;">Update LinkedIn</button>
+              ` : `
+                <p style="color: #999; margin: 0 0 1rem 0;">Not connected. Connect your LinkedIn to display your profile in the college directory.</p>
+                <button class="btn" onclick="connectLinkedIn()" style="width: 100%;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.006 1.419-.103.25-.129.599-.129.949v5.437h-3.554s.043-8.811 0-9.726h3.554v1.375c.427-.659 1.191-1.595 2.897-1.595 2.117 0 3.704 1.382 3.704 4.356v5.59zM5.337 8.855c-1.144 0-1.915-.759-1.915-1.71 0-.951.77-1.71 1.952-1.71 1.182 0 1.915.759 1.915 1.71 0 .951-.733 1.71-1.952 1.71zm1.581 11.597H3.715V9.581h3.203v10.871zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.226.792 24 1.771 24h20.451C23.2 24 24 23.226 24 22.271V1.729C24 .774 23.2 0 22.225 0z" fill="white"/>
+                  </svg>
+                  Connect LinkedIn
+                </button>
+              `}
             </div>
           </div>
         </div>

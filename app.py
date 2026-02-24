@@ -74,11 +74,21 @@ if os.environ.get('RAILWAY_ENVIRONMENT') != 'production':
 GOOGLE_CLIENT_ID = getattr(config, 'GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID_HERE')
 GOOGLE_CLIENT_SECRET = getattr(config, 'GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET_HERE')
 
+# LinkedIn OAuth Setup
+LINKEDIN_CLIENT_ID = getattr(config, 'LINKEDIN_CLIENT_ID', 'YOUR_LINKEDIN_CLIENT_ID_HERE')
+LINKEDIN_CLIENT_SECRET = getattr(config, 'LINKEDIN_CLIENT_SECRET', 'YOUR_LINKEDIN_CLIENT_SECRET_HERE')
+
 # Check if Google OAuth is properly configured
 GOOGLE_OAUTH_ENABLED = (
     GOOGLE_OAUTH_AVAILABLE and
     GOOGLE_CLIENT_ID != 'YOUR_GOOGLE_CLIENT_ID_HERE' and 
     GOOGLE_CLIENT_SECRET != 'YOUR_GOOGLE_CLIENT_SECRET_HERE'
+)
+
+# Check if LinkedIn OAuth is properly configured
+LINKEDIN_OAUTH_ENABLED = (
+    LINKEDIN_CLIENT_ID != 'YOUR_LINKEDIN_CLIENT_ID_HERE' and 
+    LINKEDIN_CLIENT_SECRET != 'YOUR_LINKEDIN_CLIENT_SECRET_HERE'
 )
 
 # Determine base URL for OAuth redirect
@@ -149,7 +159,10 @@ def _db_to_student(row):
         'gradePoints': row.get('grade_points', 0),
         'year': row.get('year', 0),
         'interest': row.get('interest') or '',
-        'dept': row.get('dept') or ''
+        'dept': row.get('dept') or '',
+        'linkedinName': row.get('linkedin_name') or '',
+        'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
+        'linkedinUrl': row.get('linkedin_url') or '',
     }
 
 
@@ -386,6 +399,117 @@ def google_login():
     except Exception as e:
         return jsonify({'success': False, 'message': f'OAuth error: {str(e)}'}), 400
 
+@app.route('/auth/linkedin')
+def linkedin_login():
+    """Initiate LinkedIn OAuth flow"""
+    if not LINKEDIN_OAUTH_ENABLED:
+        return jsonify({'success': False, 'message': 'LinkedIn OAuth not configured'}), 400
+    
+    try:
+        import secrets
+        state = secrets.token_urlsafe(32)
+        session['oauth_state'] = state
+        session['oauth_provider'] = 'linkedin'
+        
+        # LinkedIn OAuth 2.0 authorization endpoint
+        auth_url = 'https://www.linkedin.com/oauth/v2/authorization'
+        params = {
+            'response_type': 'code',
+            'client_id': LINKEDIN_CLIENT_ID,
+            'redirect_uri': url_for('callback', _external=True),
+            'state': state,
+            'scope': 'openid profile email'
+        }
+        
+        from urllib.parse import urlencode
+        authorization_url = f"{auth_url}?{urlencode(params)}"
+        
+        return jsonify({'auth_url': authorization_url})
+    except Exception as e:
+        print(f"LinkedIn OAuth error: {str(e)}")
+        return jsonify({'success': False, 'message': f'OAuth error: {str(e)}'}), 400
+
+def get_linkedin_profile(access_token):
+    """Fetch user profile data from LinkedIn API"""
+    try:
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Accept': 'application/json'
+        }
+        
+        # Fetch user profile using OpenID Connect
+        response = http_requests.get(
+            'https://api.linkedin.com/v2/me',
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code != 200:
+            print(f"LinkedIn API error: {response.status_code} - {response.text}")
+            return None
+        
+        profile_data = response.json()
+        
+        # Extract name from localized strings
+        name = ''
+        if 'localizedFirstName' in profile_data and 'localizedLastName' in profile_data:
+            name = f"{profile_data['localizedFirstName']} {profile_data['localizedLastName']}"
+        
+        # Fetch email separately
+        email_response = http_requests.get(
+            'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
+            headers=headers,
+            timeout=10
+        )
+        
+        email = ''
+        if email_response.status_code == 200:
+            email_data = email_response.json()
+            elements = email_data.get('elements', [])
+            if elements and 'handle~' in elements[0]:
+                email = elements[0]['handle~'].get('emailAddress', '')
+        
+        # Fetch profile picture
+        picture_url = ''
+        profile_picture_response = http_requests.get(
+            'https://api.linkedin.com/v2/me?projection=(profilePicture(displayImage))',
+            headers=headers,
+            timeout=10
+        )
+        
+        if profile_picture_response.status_code == 200:
+            picture_data = profile_picture_response.json()
+            if 'profilePicture' in picture_data and 'displayImage' in picture_data['profilePicture']:
+                picture_url = picture_data['profilePicture']['displayImage']
+        
+        return {
+            'name': name,
+            'email': email,
+            'picture': picture_url,
+            'profile_id': profile_data.get('id', '')
+        }
+    except Exception as e:
+        print(f"Error fetching LinkedIn profile: {str(e)}")
+        return None
+
+def save_linkedin_data(student_id, linkedin_data):
+    """Save LinkedIn profile data to database"""
+    if not supabase or not linkedin_data:
+        return False
+    
+    try:
+        update_data = {
+            'linkedin_name': linkedin_data.get('name', ''),
+            'linkedin_photo_url': linkedin_data.get('picture', ''),
+            'linkedin_url': f"https://www.linkedin.com/in/{linkedin_data.get('profile_id', '')}" if linkedin_data.get('profile_id') else ''
+        }
+        
+        response = supabase.table('students').update(update_data).eq('id', student_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error saving LinkedIn data: {str(e)}")
+        return False
+
 @app.route('/callback')
 def callback():
     """Handle Google OAuth callback"""
@@ -506,6 +630,118 @@ def update_student(student_id):
     if student:
         return jsonify({'success': True, 'student': student})
     return jsonify({'success': False, 'message': 'Student not found'})
+
+@app.route('/api/connect-linkedin')
+def connect_linkedin():
+    """Initiate LinkedIn connection for authenticated student"""
+    if not LINKEDIN_OAUTH_ENABLED:
+        return jsonify({'success': False, 'message': 'LinkedIn OAuth not configured'}), 400
+    
+    if 'user' not in session:
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+    
+    try:
+        import secrets
+        state = secrets.token_urlsafe(32)
+        session['linkedin_state'] = state
+        
+        # LinkedIn OAuth 2.0 authorization endpoint
+        auth_url = 'https://www.linkedin.com/oauth/v2/authorization'
+        params = {
+            'response_type': 'code',
+            'client_id': LINKEDIN_CLIENT_ID,
+            'redirect_uri': url_for('linkedin_callback', _external=True),
+            'state': state,
+            'scope': 'openid profile email'
+        }
+        
+        from urllib.parse import urlencode
+        authorization_url = f"{auth_url}?{urlencode(params)}"
+        
+        return jsonify({'auth_url': authorization_url})
+    except Exception as e:
+        print(f"LinkedIn connect error: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 400
+
+@app.route('/linkedin-callback')
+def linkedin_callback():
+    """Handle LinkedIn OAuth callback and save profile data"""
+    if not LINKEDIN_OAUTH_ENABLED:
+        return redirect('/?error=LinkedIn OAuth not configured')
+    
+    # Check if user is logged in
+    if 'user' not in session:
+        return redirect('/?login=error&msg=Session expired. Please log in again.')
+    
+    try:
+        # Verify state parameter
+        state = request.args.get('state')
+        stored_state = session.get('linkedin_state')
+        
+        if not state or state != stored_state:
+            return redirect('/?error=Invalid state parameter')
+        
+        # Get authorization code
+        code = request.args.get('code')
+        error = request.args.get('error')
+        error_desc = request.args.get('error_description', '')
+        
+        if error:
+            return redirect(f'/?error=LinkedIn error: {error} {error_desc}')
+        
+        if not code:
+            return redirect('/?error=No authorization code from LinkedIn')
+        
+        # Exchange code for access token
+        token_url = 'https://www.linkedin.com/oauth/v2/accessToken'
+        token_data = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'client_id': LINKEDIN_CLIENT_ID,
+            'client_secret': LINKEDIN_CLIENT_SECRET,
+            'redirect_uri': url_for('linkedin_callback', _external=True)
+        }
+        
+        token_response = http_requests.post(token_url, data=token_data, timeout=10)
+        
+        if token_response.status_code != 200:
+            print(f"LinkedIn token exchange failed: {token_response.status_code} - {token_response.text}")
+            return redirect('/?error=Failed to get access token')
+        
+        token_info = token_response.json()
+        access_token = token_info.get('access_token')
+        
+        if not access_token:
+            return redirect('/?error=No access token from LinkedIn')
+        
+        # Fetch LinkedIn profile data
+        linkedin_profile = get_linkedin_profile(access_token)
+        
+        if not linkedin_profile:
+            return redirect('/?error=Failed to fetch LinkedIn profile')
+        
+        # Get current user ID from session
+        user_id = session['user'].get('id')
+        
+        # Save LinkedIn data to database
+        if save_linkedin_data(user_id, {
+            'name': linkedin_profile.get('name', ''),
+            'picture': linkedin_profile.get('picture', ''),
+            'profile_id': linkedin_profile.get('profile_id', '')
+        }):
+            # Refresh student data in session
+            updated_student = get_student_by_email(session['user']['email'])
+            if updated_student:
+                session['user'] = updated_student
+            
+            # Redirect back to profile with success parameter
+            return redirect('/?section=profile&linkedin=connected')
+        else:
+            return redirect('/?section=profile&error=Failed to save LinkedIn data')
+        
+    except Exception as e:
+        print(f"LinkedIn callback error: {str(e)}")
+        return redirect(f'/?error=Authentication failed: {str(e)}')
 
 @app.route('/api/recently-placed')
 def get_recently_placed():

@@ -12,16 +12,15 @@ import os
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID_HERE')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET_HERE')
 
-# Supabase Configuration (for database integration)
-# Create a project at https://supabase.com and copy values from Project Settings > API
-SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://nwtluvxaurtpvuityoyl.supabase.co')
-SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
-SUPABASE_KEY = (
-	os.environ.get('SUPABASE_KEY', '').strip()
-	or os.environ.get('SUPABASE_SECRET_KEY', '').strip()
-	or os.environ.get('SUPABASE_ANON_KEY', '').strip()
-	or os.environ.get('SUPABASE_PUBLISHABLE_KEY', '').strip()
-)
+# LinkedIn OAuth Configuration
+# To get these credentials:
+# 1. Go to https://www.linkedin.com/developers/apps
+# 2. Create a new app (require LinkedIn Page)
+# 3. Go to Auth tab, copy Client ID and Client Secret
+# 4. Add Authorized redirect URIs: http://localhost:5000/callback
+# 5. Request access to "Sign In with LinkedIn" product
+# 6. Copy Client ID and Client Secret below
 
-# OAuth 2.0 scope for getting user profile information
-GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+LINKEDIN_CLIENT_ID = os.environ.get('LINKEDIN_CLIENT_ID', 'YOUR_LINKEDIN_CLIENT_ID_HERE')
+LINKEDIN_CLIENT_SECRET = os.environ.get('LINKEDIN_CLIENT_SECRET', 'YOUR_LINKEDIN_CLIENT_SECRET_HERE')
+
