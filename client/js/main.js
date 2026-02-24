@@ -368,13 +368,20 @@ function getCompanyInitials(companyName) {
   return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
 }
 
-function getPlacementPriority(interest) {
+function getInterestCategory(interest) {
   const normalized = String(interest || '').trim().toLowerCase();
-  if (normalized === 'placed' || normalized === 'placement') return 0;
-  if (normalized === 'interested') return 1;
-  if (normalized.includes('higher')) return 2;
-  if (normalized.includes('uninterested') || normalized.includes('not interested')) return 3;
-  return 4;
+  if (normalized.includes('higher')) return 'Higher Studies';
+  if (normalized.includes('entrepreneur')) return 'Entrepreneurship';
+  if (normalized.includes('placed') || normalized.includes('placement') || normalized.includes('interested')) return 'Placements';
+  return 'Placements';
+}
+
+function getPlacementPriority(interest) {
+  const category = getInterestCategory(interest);
+  if (category === 'Placements') return 0;
+  if (category === 'Higher Studies') return 1;
+  if (category === 'Entrepreneurship') return 2;
+  return 3;
 }
 
 function getStudentPackage(student) {
@@ -405,19 +412,21 @@ function getDefaultAnalyticsSortedStudents() {
 
 function renderAnalyticsInsights(container) {
   const totalStudents = students.length;
-  const placedStudentsCount = students.filter(s => String(s.interest || '').trim().toLowerCase() === 'placed').length;
-  const interestedCount = students.filter(s => String(s.interest || '').trim().toLowerCase() === 'interested').length;
+  const placementsCount = students.filter(s => getInterestCategory(s.interest) === 'Placements').length;
+  const higherStudiesCount = students.filter(s => getInterestCategory(s.interest) === 'Higher Studies').length;
+  const entrepreneurshipCount = students.filter(s => getInterestCategory(s.interest) === 'Entrepreneurship').length;
   const avgCgpa = totalStudents ? (students.reduce((sum, s) => sum + Number(s.gradePoints || 0), 0) / totalStudents).toFixed(2) : '0.00';
   const avgCoding = totalStudents ? Math.round(students.reduce((sum, s) => sum + Number(s.codingProblems || 0), 0) / totalStudents) : 0;
   const maxPackage = recentlyPlaced.length ? Math.max(...recentlyPlaced.map(s => Number(s.package || 0))).toFixed(1) : '0.0';
-  const placementRate = totalStudents ? ((placedStudentsCount / totalStudents) * 100).toFixed(1) : '0.0';
+  const placementRate = totalStudents ? ((placementsCount / totalStudents) * 100).toFixed(1) : '0.0';
 
   container.innerHTML = `
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.9rem; margin-bottom: 1.25rem;">
       <div class="stat-card"><h4 style="margin:0; color:#4F7FFF; font-size:1.8rem;">${totalStudents}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Total Students</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#21C1B6; font-size:1.8rem;">${placedStudentsCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placed Students</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#21C1B6; font-size:1.8rem;">${placementsCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placements Track</p></div>
       <div class="stat-card"><h4 style="margin:0; color:#9B6DFF; font-size:1.8rem;">${placementRate}%</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placement Rate</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#FEC524; font-size:1.8rem;">${interestedCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Actively Interested</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#FEC524; font-size:1.8rem;">${higherStudiesCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Higher Studies Track</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#C77DFF; font-size:1.8rem;">${entrepreneurshipCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Entrepreneurship Track</p></div>
       <div class="stat-card"><h4 style="margin:0; color:#FF6B6B; font-size:1.8rem;">${avgCoding}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Avg Coding Problems</p></div>
       <div class="stat-card"><h4 style="margin:0; color:#FFD54F; font-size:1.8rem;">₹${maxPackage} LPA</h4><p style="margin:0.4rem 0 0 0; color:#999;">Top Package</p></div>
       <div class="stat-card"><h4 style="margin:0; color:#6BCBFF; font-size:1.8rem;">${avgCgpa}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Average CGPA</p></div>
@@ -487,7 +496,8 @@ function renderStudentAnalytics(container) {
   setTimeout(() => {
     const interestCounts = {};
     students.forEach(s => {
-      interestCounts[s.interest] = (interestCounts[s.interest] || 0) + 1;
+      const category = getInterestCategory(s.interest);
+      interestCounts[category] = (interestCounts[category] || 0) + 1;
     });
     
     new Chart(document.getElementById('chart-interest'), {
@@ -513,13 +523,13 @@ function renderStudentAnalytics(container) {
       }
     });
 
-    const placementCounts = { Placed: 0, 'Not Placed': 0 };
+    const placementCounts = { Placements: 0, 'Non-Placement Tracks': 0 };
     students.forEach(s => {
-      const status = String(s.interest || '').trim().toLowerCase();
-      if (status === 'placed') {
-        placementCounts.Placed += 1;
+      const category = getInterestCategory(s.interest);
+      if (category === 'Placements') {
+        placementCounts.Placements += 1;
       } else {
-        placementCounts['Not Placed'] += 1;
+        placementCounts['Non-Placement Tracks'] += 1;
       }
     });
 
@@ -1063,18 +1073,20 @@ function renderProfile() {
           <div>
             <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Placement Status</h4>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div><strong>Current Interest:</strong> <span id="profile-interest-value" style="color: #999;">${currentUser.interest || 'N/A'}</span></div>
+              <div><strong>Current Interest:</strong> <span id="profile-interest-value" style="color: #999;">${getInterestCategory(currentUser.interest)}</span></div>
               <div>
-                <label for="profile-interest-select" style="display:block; margin-bottom:0.35rem;"><strong>Update Interest:</strong></label>
-                <select id="profile-interest-select" style="width: 100%; max-width: 320px;">
-                  ${[
-                    'Placed',
-                    'Interested',
-                    'Not interested',
-                    'Going for Higher studies',
-                    'Interested in becoming an entrepreneur'
-                  ].map(option => `<option value="${option}" ${currentUser.interest === option ? 'selected' : ''}>${option}</option>`).join('')}
-                </select>
+                <label style="display:block; margin-bottom:0.35rem;"><strong>Update Interest:</strong></label>
+                <div id="profile-interest-toggle" style="display:flex; gap:0.45rem; flex-wrap:wrap;">
+                  ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
+                    <button
+                      type="button"
+                      class="tab-btn profile-interest-toggle-btn ${getInterestCategory(currentUser.interest) === option ? 'active' : ''}"
+                      data-interest-option="${option}"
+                      style="flex:1; min-width: 140px; margin:0;"
+                    >${option}</button>
+                  `).join('')}
+                </div>
+                <input type="hidden" id="profile-interest-selected" value="${getInterestCategory(currentUser.interest)}">
                 <button class="btn" id="profile-interest-save-btn" type="button" style="max-width: 220px; margin-top: 0.5rem;">Save Placement Interest</button>
               </div>
             </div>
@@ -1093,6 +1105,21 @@ function renderProfile() {
     if (saveInterestBtn) {
       saveInterestBtn.addEventListener('click', updateProfilePlacementInterest);
     }
+
+    document.querySelectorAll('.profile-interest-toggle-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        const selectedValue = button.getAttribute('data-interest-option') || 'Placements';
+        const hiddenInput = document.getElementById('profile-interest-selected');
+        if (hiddenInput) {
+          hiddenInput.value = selectedValue;
+        }
+
+        document.querySelectorAll('.profile-interest-toggle-btn').forEach((toggleBtn) => {
+          toggleBtn.classList.remove('active');
+        });
+        button.classList.add('active');
+      });
+    });
   } else if (isStaff) {
     // Staff view - LeetCode batch functionality
     profileContent.innerHTML = `
@@ -1122,10 +1149,10 @@ async function updateProfilePlacementInterest() {
     return;
   }
 
-  const select = document.getElementById('profile-interest-select');
+  const selectedInput = document.getElementById('profile-interest-selected');
   const interestLabel = document.getElementById('profile-interest-value');
   const saveBtn = document.getElementById('profile-interest-save-btn');
-  const newInterest = select ? select.value : '';
+  const newInterest = selectedInput ? selectedInput.value : '';
 
   if (!newInterest) {
     alert('Please select a placement interest value.');
