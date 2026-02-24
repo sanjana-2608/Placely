@@ -156,6 +156,7 @@ STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
     'certifications', 'gradePoints', 'year', 'interest', 'dept',
     'tenthPercentage', 'twelfthPercentage',
+    'linkedinHeadline',
     'leetcodeRanking', 'leetcodeSolvedAll', 'leetcodeSolvedEasy', 'leetcodeSolvedMedium',
     'leetcodeSolvedHard', 'leetcodeAcceptanceAll', 'leetcodeAcceptanceEasy',
     'leetcodeAcceptanceMedium', 'leetcodeAcceptanceHard', 'leetcodeLastSyncedAt'
@@ -180,7 +181,7 @@ def _db_to_student(row):
         'linkedinName': row.get('linkedin_name') or '',
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
         'linkedinUrl': row.get('linkedin_url') or '',
-        'linkedinHeadline': row.get('linkedin_headline') or '',
+        'linkedinHeadline': row.get('linkedin_bio') or row.get('linkedin_headline') or '',
         'leetcodeRanking': row.get('leetcode_ranking'),
         'leetcodeSolvedAll': row.get('leetcode_solved_all'),
         'leetcodeSolvedEasy': row.get('leetcode_solved_easy'),
@@ -209,6 +210,7 @@ def _student_to_db(payload):
         'dept': 'dept',
         'tenthPercentage': 'tenth_percentage',
         'twelfthPercentage': 'twelfth_percentage',
+        'linkedinHeadline': 'linkedin_bio',
         'leetcodeRanking': 'leetcode_ranking',
         'leetcodeSolvedAll': 'leetcode_solved_all',
         'leetcodeSolvedEasy': 'leetcode_solved_easy',
@@ -601,7 +603,7 @@ def save_linkedin_data(student_id, linkedin_data):
             'linkedin_name': linkedin_data.get('name', ''),
             'linkedin_photo_url': linkedin_data.get('picture', ''),
             'linkedin_url': linkedin_data.get('profile_url', ''),  # Use actual profile URL if provided
-            'linkedin_headline': linkedin_data.get('headline', '')
+            'linkedin_bio': linkedin_data.get('headline', '')
         }
         
         print(f"Saving LinkedIn data: {update_data}")
@@ -982,7 +984,7 @@ def init_scheduler():
         replace_existing=True
     )
     scheduler.start()
-    app._leetcode_scheduler = scheduler
+    setattr(app, '_leetcode_scheduler', scheduler)
     print("[OK] Scheduler initialized: LeetCode stats will be fetched daily at 10 PM")
 
 
