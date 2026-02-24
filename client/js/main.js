@@ -1077,89 +1077,72 @@ function renderProfile() {
   const profileContent = document.getElementById('profile-content');
 
   if (!isStaff && currentUser) {
-    // Student profile view - show complete data (auto-updated daily at 10 PM)
+    const interestCategory = getInterestCategory(currentUser.interest);
+    const displayName = currentUser.linkedinName || currentUser.name || 'N/A';
+    const displayPhoto = currentUser.linkedinPhotoUrl || '';
+    const displayHeadline = currentUser.linkedinHeadline || `${currentUser.dept || 'Student'} • Year ${currentUser.year || 'N/A'}`;
+
+    // Student profile view - LinkedIn-style top card with academics and LeetCode below
     profileContent.innerHTML = `
-      <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
-        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Student Profile</h3>
-        <p style="color: #FEC524; font-size: 0.9rem; margin-bottom: 1rem;">📊 LeetCode stats are automatically updated daily at 10 PM</p>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-          <div>
-            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Personal Information</h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div><strong>Name:</strong> <span style="color: #999;">${currentUser.name || 'N/A'}</span></div>
-              <div><strong>Email:</strong> <span style="color: #999;">${currentUser.email || 'N/A'}</span></div>
-              <div><strong>Department:</strong> <span style="color: #999;">${currentUser.dept || 'N/A'}</span></div>
-              <div><strong>Year:</strong> <span style="color: #999;">${currentUser.year || 'N/A'}</span></div>
-              <div><strong>Student ID:</strong> <span style="color: #999;">${currentUser.id || 'N/A'}</span></div>
+      <div class="profile-top-card" style="margin-bottom: 1.5rem;">
+        <div class="profile-top-card__cover"></div>
+        <div class="profile-top-card__content">
+          <div class="profile-top-card__left">
+            ${displayPhoto
+              ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-large">`
+              : `<div class="profile-avatar-fallback">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
+            <div class="profile-identity">
+              <h3>${displayName}</h3>
+              <p class="profile-headline">${displayHeadline}</p>
+              <p class="profile-meta">${currentUser.email || 'N/A'} • ${currentUser.dept || 'N/A'} • Year ${currentUser.year || 'N/A'}</p>
             </div>
           </div>
-          <div>
-            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Academic & Skills</h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div><strong>CGPA:</strong> <span style="color: #999;">${currentUser.gradePoints || 'N/A'}</span></div>
-              <div><strong>Coding Problems Solved:</strong> <span style="color: #999;">${currentUser.codingProblems || 0}</span></div>
-              <div><strong>Internships:</strong> <span style="color: #999;">${currentUser.internships || 0}</span></div>
-              <div><strong>Certifications:</strong> <span style="color: #999;">${currentUser.certifications || 0}</span></div>
-              <div><strong>LeetCode Username:</strong> <span style="color: #999;">${currentUser.leetcodeUsername || 'Not set'}</span></div>
-            </div>
-          </div>
-          <div>
-            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Placement Status</h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div><strong>Current Interest:</strong> <span id="profile-interest-value" style="color: #999;">${getInterestCategory(currentUser.interest)}</span></div>
-              <div>
-                <label style="display:block; margin-bottom:0.35rem;"><strong>Interest Track:</strong></label>
-                <div
-                  id="profile-interest-switch"
-                  class="profile-interest-switch"
-                  data-state="${getInterestStateKey(getInterestCategory(currentUser.interest))}"
-                >
-                  <div class="profile-interest-labels">
-                    ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
-                      <label class="profile-interest-option ${getInterestCategory(currentUser.interest) === option ? 'active' : ''}">
-                        <input
-                          type="radio"
-                          name="profile-interest-radio"
-                          value="${option}"
-                          disabled
-                          ${getInterestCategory(currentUser.interest) === option ? 'checked' : ''}
-                        >
-                        <span>${option}</span>
-                      </label>
-                    `).join('')}
-                  </div>
-                  <div class="profile-interest-track">
-                    <div class="profile-interest-thumb"></div>
-                  </div>
-                </div>
+
+          <div class="profile-top-card__right">
+            <div
+              id="profile-interest-switch"
+              class="profile-interest-switch profile-interest-compact"
+              data-state="${getInterestStateKey(interestCategory)}"
+            >
+              <div class="profile-interest-labels">
+                ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
+                  <label class="profile-interest-option ${interestCategory === option ? 'active' : ''}">
+                    <input
+                      type="radio"
+                      name="profile-interest-radio"
+                      value="${option}"
+                      disabled
+                      ${interestCategory === option ? 'checked' : ''}
+                    >
+                    <span>${option}</span>
+                  </label>
+                `).join('')}
+              </div>
+              <div class="profile-interest-track">
+                <div class="profile-interest-thumb"></div>
               </div>
             </div>
-          </div>
-          <div>
-            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">LinkedIn Profile</h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              ${currentUser.linkedinName ? `
-                <div>
-                  <strong>✓ Connected</strong>
-                  <p style="color: #999; margin: 0.5rem 0 0 0;"><strong>Name:</strong> ${currentUser.linkedinName}</p>
-                  ${currentUser.linkedinHeadline ? `<p style="color: #999; margin: 0.5rem 0 0 0;"><strong>Headline:</strong> ${currentUser.linkedinHeadline}</p>` : ''}
-                  ${currentUser.linkedinPhotoUrl ? `<img src="${currentUser.linkedinPhotoUrl}" alt="LinkedIn" style="width: 60px; height: 60px; border-radius: 50%; margin-top: 0.5rem;">` : ''}
-                  <p style="color: #666; font-size: 0.85rem; margin: 0.5rem 0 0 0; font-style: italic;">Your LinkedIn info is visible in the college directory</p>
-                </div>
-                <button class="btn" onclick="connectLinkedIn()" style="margin-top: 0.5rem; background: #0A66C2; width: 100%;">Update LinkedIn</button>
-              ` : `
-                <p style="color: #999; margin: 0 0 1rem 0;">Not connected. Connect your LinkedIn to display your profile in the college directory.</p>
-                <button class="btn" onclick="connectLinkedIn()" style="width: 100%;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: inline; margin-right: 0.5rem; vertical-align: middle;">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.475-2.236-1.986-2.236-1.081 0-1.722.722-2.006 1.419-.103.25-.129.599-.129.949v5.437h-3.554s.043-8.811 0-9.726h3.554v1.375c.427-.659 1.191-1.595 2.897-1.595 2.117 0 3.704 1.382 3.704 4.356v5.59zM5.337 8.855c-1.144 0-1.915-.759-1.915-1.71 0-.951.77-1.71 1.952-1.71 1.182 0 1.915.759 1.915 1.71 0 .951-.733 1.71-1.952 1.71zm1.581 11.597H3.715V9.581h3.203v10.871zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.226.792 24 1.771 24h20.451C23.2 24 24 23.226 24 22.271V1.729C24 .774 23.2 0 22.225 0z" fill="white"/>
-                  </svg>
-                  Connect LinkedIn
-                </button>
-              `}
-            </div>
+
+            <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
+              ${currentUser.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
+            </button>
           </div>
         </div>
       </div>
+
+      <div class="card profile-academics-card" style="padding: 1.25rem; margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Academics</h4>
+        <div class="profile-academics-grid">
+          <div><strong>Student ID:</strong> <span style="color: #999;">${currentUser.id || 'N/A'}</span></div>
+          <div><strong>CGPA:</strong> <span style="color: #999;">${currentUser.gradePoints || 'N/A'}</span></div>
+          <div><strong>Coding Problems Solved:</strong> <span style="color: #999;">${currentUser.codingProblems || 0}</span></div>
+          <div><strong>Internships:</strong> <span style="color: #999;">${currentUser.internships || 0}</span></div>
+          <div><strong>Certifications:</strong> <span style="color: #999;">${currentUser.certifications || 0}</span></div>
+          <div><strong>LeetCode Username:</strong> <span style="color: #999;">${currentUser.leetcodeUsername || 'Not set'}</span></div>
+        </div>
+      </div>
+
+      <p style="color: #FEC524; font-size: 0.9rem; margin: 0 0 1rem 0;">📊 LeetCode stats are automatically updated daily at 10 PM</p>
       <div id="leetcode-stats-container"></div>
     `;
     
