@@ -442,12 +442,14 @@ def linkedin_login():
 def get_linkedin_profile(access_token):
     """Fetch user profile data from LinkedIn API"""
     try:
+        print("\n--- FETCHING LINKEDIN PROFILE ---")
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Accept': 'application/json'
         }
         
         # Fetch user profile using OpenID Connect with headline
+        print("Step 1: Fetching name and headline...")
         response = http_requests.get(
             'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,headline)',
             headers=headers,
@@ -455,20 +457,24 @@ def get_linkedin_profile(access_token):
         )
         
         if response.status_code != 200:
-            print(f"LinkedIn API error: {response.status_code} - {response.text}")
+            print(f"ERROR fetching profile: {response.status_code} - {response.text}")
             return None
         
         profile_data = response.json()
+        print(f"Profile data: {profile_data}")
         
         # Extract name from localized strings
         name = ''
         if 'localizedFirstName' in profile_data and 'localizedLastName' in profile_data:
             name = f"{profile_data['localizedFirstName']} {profile_data['localizedLastName']}"
+        print(f"Extracted name: {name}")
         
         # Extract headline (description/job title)
         headline = profile_data.get('headline', {}).get('localized', {}).get('en_US', '') if isinstance(profile_data.get('headline'), dict) else profile_data.get('headline', '')
+        print(f"Extracted headline: {headline}")
         
         # Fetch email separately
+        print("Step 2: Fetching email...")
         email_response = http_requests.get(
             'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
             headers=headers,
@@ -481,8 +487,12 @@ def get_linkedin_profile(access_token):
             elements = email_data.get('elements', [])
             if elements and 'handle~' in elements[0]:
                 email = elements[0]['handle~'].get('emailAddress', '')
+            print(f"Extracted email: {email}")
+        else:
+            print(f"ERROR fetching email: {email_response.status_code} - {email_response.text}")
         
         # Fetch profile picture
+        print("Step 3: Fetching profile picture...")
         picture_url = ''
         profile_picture_response = http_requests.get(
             'https://api.linkedin.com/v2/me?projection=(profilePicture(displayImage))',
@@ -494,16 +504,24 @@ def get_linkedin_profile(access_token):
             picture_data = profile_picture_response.json()
             if 'profilePicture' in picture_data and 'displayImage' in picture_data['profilePicture']:
                 picture_url = picture_data['profilePicture']['displayImage']
+            print(f"Extracted picture: {picture_url[:50] if picture_url else 'NONE'}...")
+        else:
+            print(f"ERROR fetching picture: {profile_picture_response.status_code} - {profile_picture_response.text}")
         
-        return {
+        result = {
             'name': name,
             'email': email,
             'picture': picture_url,
             'profile_id': profile_data.get('id', ''),
             'headline': headline
         }
+        print(f"Final profile result: {result}")
+        print("--- PROFILE FETCH COMPLETE ---\n")
+        return result
     except Exception as e:
-        print(f"Error fetching LinkedIn profile: {str(e)}")
+        print(f"ERROR fetching LinkedIn profile: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def save_linkedin_data(student_id, linkedin_data):
@@ -686,30 +704,43 @@ def connect_linkedin():
 @app.route('/linkedin-callback')
 def linkedin_callback():
     """Handle LinkedIn OAuth callback and save profile data"""
+    print("=" * 60)
+    print("LINKEDIN CALLBACK STARTED")
+    print("=" * 60)
+    
     if not LINKEDIN_OAUTH_ENABLED:
+        print("ERROR: LinkedIn OAuth not enabled")
         return redirect('/?error=LinkedIn OAuth not configured')
     
     # Check if user is logged in
     if 'user' not in session:
+        print("ERROR: User not in session")
         return redirect('/?login=error&msg=Session expired. Please log in again.')
+    
+    print(f"User in session: {session['user'].get('email')}")
     
     try:
         # Verify state parameter
         state = request.args.get('state')
         stored_state = session.get('linkedin_state')
+        print(f"State verification: received={state}, stored={stored_state}")
         
         if not state or state != stored_state:
+            print("ERROR: Invalid state parameter")
             return redirect('/?error=Invalid state parameter')
         
         # Get authorization code
         code = request.args.get('code')
         error = request.args.get('error')
         error_desc = request.args.get('error_description', '')
+        print(f"Auth code received: {code[:20] if code else 'NONE'}...")
         
         if error:
+            print(f"ERROR from LinkedIn: {error} - {error_desc}")
             return redirect(f'/?error=LinkedIn error: {error} {error_desc}')
         
         if not code:
+            print("ERROR: No authorization code from LinkedIn")
             return redirect('/?error=No authorization code from LinkedIn')
         
         # Exchange code for access token
@@ -722,26 +753,35 @@ def linkedin_callback():
             'redirect_uri': url_for('linkedin_callback', _external=True)
         }
         
+        print(f"Exchanging code at {token_url}")
         token_response = http_requests.post(token_url, data=token_data, timeout=10)
+        print(f"Token response status: {token_response.status_code}")
         
         if token_response.status_code != 200:
-            print(f"LinkedIn token exchange failed: {token_response.status_code} - {token_response.text}")
+            print(f"ERROR: Token exchange failed: {token_response.text}")
             return redirect('/?error=Failed to get access token')
         
         token_info = token_response.json()
         access_token = token_info.get('access_token')
+        print(f"Access token obtained: {access_token[:20] if access_token else 'NONE'}...")
         
         if not access_token:
+            print("ERROR: No access token from LinkedIn")
             return redirect('/?error=No access token from LinkedIn')
         
         # Fetch LinkedIn profile data
+        print("Fetching LinkedIn profile...")
         linkedin_profile = get_linkedin_profile(access_token)
         
         if not linkedin_profile:
+            print("ERROR: Failed to fetch LinkedIn profile")
             return redirect('/?error=Failed to fetch LinkedIn profile')
+        
+        print(f"LinkedIn profile fetched: {linkedin_profile}")
         
         # Get current user ID from session
         user_id = session['user'].get('id')
+        print(f"Saving data for user ID: {user_id}")
         
         # Save LinkedIn data to database
         if save_linkedin_data(user_id, {
@@ -750,18 +790,31 @@ def linkedin_callback():
             'profile_id': linkedin_profile.get('profile_id', ''),
             'headline': linkedin_profile.get('headline', '')
         }):
+            print("LinkedIn data saved successfully")
+            
             # Refresh student data in session
             updated_student = get_student_by_email(session['user']['email'])
             if updated_student:
+                print(f"Session refreshed with updated student data")
+                print(f"Updated linkedinName: {updated_student.get('linkedinName')}")
                 session['user'] = updated_student
+            else:
+                print("ERROR: Could not refresh student data")
+            
+            print("=" * 60)
+            print("LINKEDIN CALLBACK COMPLETED SUCCESSFULLY")
+            print("=" * 60)
             
             # Redirect back to profile with success parameter
             return redirect('/?section=profile&linkedin=connected')
         else:
+            print("ERROR: Failed to save LinkedIn data")
             return redirect('/?section=profile&error=Failed to save LinkedIn data')
         
     except Exception as e:
-        print(f"LinkedIn callback error: {str(e)}")
+        print(f"ERROR in LinkedIn callback: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return redirect(f'/?error=Authentication failed: {str(e)}')
 
 @app.route('/api/recently-placed')
