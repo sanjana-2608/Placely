@@ -154,7 +154,8 @@ staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
 
 STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
-    'certifications', 'gradePoints', 'year', 'interest', 'dept'
+    'certifications', 'gradePoints', 'year', 'interest', 'dept',
+    'tenthPercentage', 'twelfthPercentage'
 }
 
 
@@ -171,6 +172,8 @@ def _db_to_student(row):
         'year': row.get('year', 0),
         'interest': row.get('interest') or '',
         'dept': row.get('dept') or '',
+        'tenthPercentage': row.get('tenth_percentage'),
+        'twelfthPercentage': row.get('twelfth_percentage'),
         'linkedinName': row.get('linkedin_name') or '',
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
         'linkedinUrl': row.get('linkedin_url') or '',
@@ -190,7 +193,9 @@ def _student_to_db(payload):
         'gradePoints': 'grade_points',
         'year': 'year',
         'interest': 'interest',
-        'dept': 'dept'
+        'dept': 'dept',
+        'tenthPercentage': 'tenth_percentage',
+        'twelfthPercentage': 'twelfth_percentage'
     }
     for key, value in payload.items():
         db_key = field_map.get(key)

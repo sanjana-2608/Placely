@@ -1078,27 +1078,34 @@ function renderProfile() {
 
   if (!isStaff && currentUser) {
     const interestCategory = getInterestCategory(currentUser.interest);
-    const displayName = currentUser.linkedinName || currentUser.name || 'N/A';
+    const displayName = currentUser.name || 'N/A';
     const displayPhoto = currentUser.linkedinPhotoUrl || '';
     const displayHeadline = currentUser.linkedinHeadline || `${currentUser.dept || 'Student'} • Year ${currentUser.year || 'N/A'}`;
+    const twelfthPercentage = currentUser.twelfthPercentage ?? 'N/A';
+    const tenthPercentage = currentUser.tenthPercentage ?? 'N/A';
 
-    // Student profile view - LinkedIn-style top card with academics and LeetCode below
+    // Student profile view - 3 box top row with LeetCode section below
     profileContent.innerHTML = `
-      <div class="profile-top-card" style="margin-bottom: 1.5rem;">
-        <div class="profile-top-card__cover"></div>
-        <div class="profile-top-card__content">
-          <div class="profile-top-card__left">
+      <div class="profile-summary-grid" style="margin-bottom: 1rem;">
+        <div class="card profile-summary-card profile-summary-card--identity">
+          <div class="profile-summary-header">
             ${displayPhoto
-              ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-large">`
-              : `<div class="profile-avatar-fallback">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
-            <div class="profile-identity">
+              ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium">`
+              : `<div class="profile-avatar-fallback profile-avatar-medium">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
+            <div class="profile-identity-block">
               <h3>${displayName}</h3>
-              <p class="profile-headline">${displayHeadline}</p>
-              <p class="profile-meta">${currentUser.email || 'N/A'} • ${currentUser.dept || 'N/A'} • Year ${currentUser.year || 'N/A'}</p>
+              <p class="profile-headline">${displayHeadline || 'No LinkedIn headline available'}</p>
             </div>
           </div>
+          <p class="profile-meta">${currentUser.email || 'N/A'}</p>
+          <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
+            ${currentUser.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
+          </button>
+        </div>
 
-          <div class="profile-top-card__right">
+        <div class="card profile-summary-card profile-summary-card--interest">
+          <h4 class="profile-box-title">Interest Track</h4>
+          <div class="profile-interest-top-right">
             <div
               id="profile-interest-switch"
               class="profile-interest-switch profile-interest-compact"
@@ -1122,23 +1129,16 @@ function renderProfile() {
                 <div class="profile-interest-thumb"></div>
               </div>
             </div>
-
-            <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
-              ${currentUser.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
-            </button>
           </div>
         </div>
-      </div>
 
-      <div class="card profile-academics-card" style="padding: 1.25rem; margin-bottom: 1rem;">
-        <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Academics</h4>
-        <div class="profile-academics-grid">
-          <div><strong>Student ID:</strong> <span style="color: #999;">${currentUser.id || 'N/A'}</span></div>
-          <div><strong>CGPA:</strong> <span style="color: #999;">${currentUser.gradePoints || 'N/A'}</span></div>
-          <div><strong>Coding Problems Solved:</strong> <span style="color: #999;">${currentUser.codingProblems || 0}</span></div>
-          <div><strong>Internships:</strong> <span style="color: #999;">${currentUser.internships || 0}</span></div>
-          <div><strong>Certifications:</strong> <span style="color: #999;">${currentUser.certifications || 0}</span></div>
-          <div><strong>LeetCode Username:</strong> <span style="color: #999;">${currentUser.leetcodeUsername || 'Not set'}</span></div>
+        <div class="card profile-summary-card profile-summary-card--academics">
+          <h4 class="profile-box-title">Academics</h4>
+          <div class="profile-academics-list">
+            <div><strong>CGPA:</strong> <span>${currentUser.gradePoints || 'N/A'}</span></div>
+            <div><strong>12th %:</strong> <span>${twelfthPercentage}</span></div>
+            <div><strong>10th %:</strong> <span>${tenthPercentage}</span></div>
+          </div>
         </div>
       </div>
 
