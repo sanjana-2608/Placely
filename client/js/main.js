@@ -344,7 +344,7 @@ function renderCompaniesGrid(container) {
 
 function getCompanyLogoUrl(companyName) {
   const domain = companyLogoDomains[companyName];
-  return domain ? `https://logo.clearbit.com/${domain}?size=128` : '';
+  return domain ? `https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(domain)}` : '';
 }
 
 function getCompanyInitials(companyName) {
