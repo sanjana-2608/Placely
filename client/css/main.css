@@ -483,6 +483,25 @@ body.light-mode .company-date {
     box-shadow: 0 6px 20px rgba(254, 197, 36, 0.2);
 }
 
+.company-logo-wrap {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.company-logo-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    background: #fff;
+    padding: 6px;
+    object-fit: contain;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
 .company-logo-placeholder {
     width: 60px;
     height: 60px;

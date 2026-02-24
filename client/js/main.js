@@ -46,6 +46,39 @@ const upcomingCompanies = [
   { name: "LINARC", visitDate: "Apr 4, 2026", position: "Developer", salary: "12-15 LPA", ctc: "13.5 LPA" }
 ];
 
+const companyLogoDomains = {
+  "Microsoft": "microsoft.com",
+  "ServiceNow": "servicenow.com",
+  "Autodesk": "autodesk.com",
+  "Amazon": "amazon.com",
+  "Commvault Cloud": "commvault.com",
+  "JustPay": "justpay.to",
+  "Wells Fargo": "wellsfargo.com",
+  "Global Knowledge": "globalknowledge.com",
+  "ThoughtWorks": "thoughtworks.com",
+  "Akaike": "akaike.ai",
+  "Informatica": "informatica.com",
+  "ShopUp": "shopup.com",
+  "Cyware": "cyware.com",
+  "Dell Technologies": "dell.com",
+  "Quinbay": "quinbay.com",
+  "Sahaj": "sahaj.ai",
+  "Casa Retail AI": "casa.ai",
+  "Cooper": "cooper.com",
+  "nference": "nference.ai",
+  "GUVI": "guvi.in",
+  "Digital Back Office": "digitalbackoffice.com",
+  "Light & Wonder": "lightandwonder.com",
+  "Presidio": "presidio.com",
+  "1CloudHub": "1cloudhub.com",
+  "FundsIndia": "fundsindia.com",
+  "Persistent": "persistent.com",
+  "Mahindra Rise": "mahindra.com",
+  "Eunimart": "eunimart.com",
+  "TeleSoft": "telesoft.com",
+  "LINARC": "linarc.com"
+};
+
 const staffCredentials = { email: "staff@college.edu", password: "staff123" };
 const notifications = [ { msg: 'Welcome to Placely!', date: '2026-01-27' } ];
 
@@ -289,17 +322,34 @@ function renderCompaniesGrid(container) {
     <div class="companies-grid-section">
       <h4 style="text-align: center; margin-bottom: 1.5rem; color: #FEC524;">IT Product Companies (AI, DS, ML, Cloud, Gaming, Cyber-security, Fintech)</h4>
       <div class="companies-grid">
-        ${upcomingCompanies.map(company => `
+        ${upcomingCompanies.map(company => {
+          const logoUrl = getCompanyLogoUrl(company.name);
+          const initials = getCompanyInitials(company.name);
+          return `
           <div class="company-grid-card">
-            <div class="company-logo-placeholder">${company.name.charAt(0)}</div>
+            <div class="company-logo-wrap">
+              <img class="company-logo-img" src="${logoUrl}" alt="${company.name} logo" ${logoUrl ? '' : 'style="display:none;"'} onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="company-logo-placeholder" ${logoUrl ? 'style="display:none;"' : ''}>${initials}</div>
+            </div>
             <p style="margin: 0.5rem 0 0.3rem 0; font-weight: bold; text-align: center;">${company.name}</p>
             <p style="margin: 0; font-size: 0.85rem; text-align: center; color: #999;">${company.position}</p>
           </div>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
     </div>
   `;
   container.innerHTML = companiesGridHtml;
+}
+
+function getCompanyLogoUrl(companyName) {
+  const domain = companyLogoDomains[companyName];
+  return domain ? `https://logo.clearbit.com/${domain}?size=128` : '';
+}
+
+function getCompanyInitials(companyName) {
+  const parts = companyName.split(/[\s&-]+/).filter(Boolean);
+  return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
 }
 
 function renderDashboard() {
