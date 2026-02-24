@@ -509,6 +509,7 @@ def get_linkedin_profile(access_token):
 def save_linkedin_data(student_id, linkedin_data):
     """Save LinkedIn profile data to database"""
     if not supabase or not linkedin_data:
+        print("Supabase unavailable or no LinkedIn data")
         return False
     
     try:
@@ -519,10 +520,14 @@ def save_linkedin_data(student_id, linkedin_data):
             'linkedin_headline': linkedin_data.get('headline', '')
         }
         
+        print(f"Saving LinkedIn data: {update_data}")
         response = supabase.table('students').update(update_data).eq('id', student_id).execute()
+        print(f"LinkedIn data saved successfully for student {student_id}")
         return True
     except Exception as e:
-        print(f"Error saving LinkedIn data: {str(e)}")
+        print(f"ERROR saving LinkedIn data: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 @app.route('/callback')
