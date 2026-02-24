@@ -376,6 +376,12 @@ function getInterestCategory(interest) {
   return 'Placements';
 }
 
+function getInterestStateKey(category) {
+  if (category === 'Higher Studies') return 'higher-studies';
+  if (category === 'Entrepreneurship') return 'entrepreneurship';
+  return 'placements';
+}
+
 function getPlacementPriority(interest) {
   const category = getInterestCategory(interest);
   if (category === 'Placements') return 0;
@@ -1076,15 +1082,27 @@ function renderProfile() {
               <div><strong>Current Interest:</strong> <span id="profile-interest-value" style="color: #999;">${getInterestCategory(currentUser.interest)}</span></div>
               <div>
                 <label style="display:block; margin-bottom:0.35rem;"><strong>Update Interest:</strong></label>
-                <div id="profile-interest-toggle" style="display:flex; gap:0.45rem; flex-wrap:wrap;">
-                  ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
-                    <button
-                      type="button"
-                      class="tab-btn profile-interest-toggle-btn ${getInterestCategory(currentUser.interest) === option ? 'active' : ''}"
-                      data-interest-option="${option}"
-                      style="flex:1; min-width: 140px; margin:0;"
-                    >${option}</button>
-                  `).join('')}
+                <div
+                  id="profile-interest-switch"
+                  class="profile-interest-switch"
+                  data-state="${getInterestStateKey(getInterestCategory(currentUser.interest))}"
+                >
+                  <div class="profile-interest-labels">
+                    ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
+                      <label class="profile-interest-option ${getInterestCategory(currentUser.interest) === option ? 'active' : ''}">
+                        <input
+                          type="radio"
+                          name="profile-interest-radio"
+                          value="${option}"
+                          ${getInterestCategory(currentUser.interest) === option ? 'checked' : ''}
+                        >
+                        <span>${option}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                  <div class="profile-interest-track">
+                    <div class="profile-interest-thumb"></div>
+                  </div>
                 </div>
                 <input type="hidden" id="profile-interest-selected" value="${getInterestCategory(currentUser.interest)}">
                 <button class="btn" id="profile-interest-save-btn" type="button" style="max-width: 220px; margin-top: 0.5rem;">Save Placement Interest</button>
@@ -1106,18 +1124,27 @@ function renderProfile() {
       saveInterestBtn.addEventListener('click', updateProfilePlacementInterest);
     }
 
-    document.querySelectorAll('.profile-interest-toggle-btn').forEach((button) => {
-      button.addEventListener('click', () => {
-        const selectedValue = button.getAttribute('data-interest-option') || 'Placements';
+    document.querySelectorAll('input[name="profile-interest-radio"]').forEach((input) => {
+      input.addEventListener('change', () => {
+        if (!input.checked) {
+          return;
+        }
+
+        const selectedValue = input.value || 'Placements';
         const hiddenInput = document.getElementById('profile-interest-selected');
+        const switchContainer = document.getElementById('profile-interest-switch');
         if (hiddenInput) {
           hiddenInput.value = selectedValue;
         }
 
-        document.querySelectorAll('.profile-interest-toggle-btn').forEach((toggleBtn) => {
-          toggleBtn.classList.remove('active');
+        if (switchContainer) {
+          switchContainer.setAttribute('data-state', getInterestStateKey(selectedValue));
+        }
+
+        document.querySelectorAll('.profile-interest-option').forEach((optionNode) => {
+          optionNode.classList.remove('active');
         });
-        button.classList.add('active');
+        input.closest('.profile-interest-option')?.classList.add('active');
       });
     });
   } else if (isStaff) {

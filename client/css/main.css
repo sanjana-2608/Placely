@@ -124,6 +124,79 @@ nav ul li a:hover {
     border-color: #FEC524;
     background: rgba(254, 197, 36, 0.12);
 }
+
+.profile-interest-switch {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    margin-top: 0.2rem;
+}
+
+.profile-interest-labels {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.profile-interest-option {
+    position: relative;
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    color: #c9c9c9;
+    opacity: 0.55;
+    transition: opacity 0.25s ease, color 0.25s ease;
+    user-select: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.profile-interest-option.active {
+    opacity: 1;
+    color: #FEC524;
+}
+
+.profile-interest-option input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.profile-interest-track {
+    width: 180px;
+    height: 10px;
+    background: rgba(254, 197, 36, 0.35);
+    border-radius: 999px;
+    margin: 0.55rem auto 0;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.profile-interest-thumb {
+    position: absolute;
+    top: -5px;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #111;
+    transition: left 0.25s ease-in-out;
+}
+
+.profile-interest-switch[data-state="placements"] .profile-interest-thumb {
+    left: 0;
+}
+
+.profile-interest-switch[data-state="higher-studies"] .profile-interest-thumb {
+    left: 80px;
+}
+
+.profile-interest-switch[data-state="entrepreneurship"] .profile-interest-thumb {
+    left: 160px;
+}
 .login-tab {
     display: none;
 }
