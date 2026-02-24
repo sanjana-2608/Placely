@@ -97,9 +97,21 @@ async function loginWithGoogle() {
 
 async function connectLinkedIn() {
   try {
+    console.log("Calling /api/connect-linkedin...");
     const response = await fetch('/api/connect-linkedin');
+    console.log("Response status:", response.status);
+    console.log("Response ok:", response.ok);
+    
     const data = await response.json();
+    console.log("Response data:", data);
+    
+    if (!response.ok) {
+      alert(`Error: ${data.message || 'Failed to authenticate. Please log in and try again.'}`);
+      return;
+    }
+    
     if (data.auth_url) {
+      console.log("Redirecting to LinkedIn...");
       window.location.href = data.auth_url;
     } else {
       alert(data.message || 'Failed to initiate LinkedIn connection. Please try again.');
