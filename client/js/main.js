@@ -794,13 +794,13 @@ function renderReports() {
 
 function renderProfile() {
   const profileContent = document.getElementById('profile-content');
-  const defaultUsername = currentUser?.leetcodeUsername || '';
 
   if (!isStaff && currentUser) {
-    // Student profile view - show complete data
+    // Student profile view - show complete data (auto-updated daily at 10 PM)
     profileContent.innerHTML = `
       <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
         <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Student Profile</h3>
+        <p style="color: #FEC524; font-size: 0.9rem; margin-bottom: 1rem;">📊 LeetCode stats are automatically updated daily at 10 PM</p>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
           <div>
             <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Personal Information</h4>
@@ -830,26 +830,15 @@ function renderProfile() {
           </div>
         </div>
       </div>
-      <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
-        <h3 style="margin-top: 0;">LeetCode Stats</h3>
-        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Fetch solved counts, acceptance rates, and ranking by username.</p>
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <input type="text" id="leetcode-username" placeholder="LeetCode username" value="${defaultUsername}" style="min-width: 260px;">
-          <button class="btn" id="leetcode-fetch-btn" type="button">Fetch Profile Stats</button>
-        </div>
-      </div>
-      <div id="leetcode-result"></div>
     `;
   } else if (isStaff) {
     // Staff view - LeetCode batch functionality
     profileContent.innerHTML = `
       <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
-        <h3 style="margin-top: 0;">LeetCode Stats</h3>
-        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Fetch solved counts, acceptance rates, and ranking by username.</p>
+        <h3 style="margin-top: 0;">Manual LeetCode Stats Update (Staff Only)</h3>
+        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Note: Stats are automatically updated daily at 10 PM. Use these tools to fetch manually.</p>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <input type="text" id="leetcode-username" placeholder="LeetCode username" value="${defaultUsername}" style="min-width: 260px;">
-          <button class="btn" id="leetcode-fetch-btn" type="button">Fetch Profile Stats</button>
-          <button class="btn" id="leetcode-batch-btn" type="button">Fetch All Students</button>
+          <button class="btn" id="leetcode-batch-btn" type="button">Fetch All Students Now</button>
         </div>
       </div>
       <div id="leetcode-result"></div>
@@ -857,11 +846,6 @@ function renderProfile() {
   } else {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
     return;
-  }
-
-  const fetchBtn = document.getElementById('leetcode-fetch-btn');
-  if (fetchBtn) {
-    fetchBtn.addEventListener('click', fetchLeetCodeProfileStats);
   }
 
   if (isStaff) {

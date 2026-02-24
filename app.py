@@ -4,6 +4,7 @@ import json
 import os
 import time
 import requests as http_requests
+from apscheduler.schedulers.background import BackgroundScheduler
 
 try:
     from dotenv import load_dotenv
@@ -517,8 +518,51 @@ def get_year_analytics(year):
     counts = {c: sum(1 for s in year_students if s['interest'] == c) for c in criteria}
     return jsonify({'year': year, 'data': counts})
 
+
+def scheduled_fetch_leetcode_stats():
+    """Fetch LeetCode stats for all students and update Supabase every day at 10 PM"""
+    try:
+        print(f"[{datetime.now()}] Starting scheduled LeetCode stats fetch...")
+        students_data = get_students_data()
+        
+        updated_count = 0
+        for student in students_data:
+            username = student.get('leetcodeUsername')
+            if not username:
+                continue
+            
+            try:
+                profile = fetch_leetcode_profile(username)
+                if profile.get('success') and profile.get('solved'):
+                    # Update student with coding problems solved
+                    update_student_data(student['id'], {
+                        'codingProblems': profile['solved']['all']
+                    })
+                    updated_count += 1
+                    print(f"  ✓ Updated {student['name']}: {profile['solved']['all']} problems")
+                    # Rate limiting delay
+                    time.sleep(LEETCODE_BATCH_DELAY_SECONDS)
+            except Exception as e:
+                print(f"  ✗ Failed to update {student.get('name', 'Unknown')}: {str(e)}")
+        
+        print(f"[{datetime.now()}] Scheduled LeetCode fetch completed. Updated {updated_count} students.")
+    except Exception as e:
+        print(f"[{datetime.now()}] Scheduled LeetCode fetch failed: {str(e)}")
+
+
+def init_scheduler():
+    """Initialize the background scheduler"""
+    scheduler = BackgroundScheduler()
+    # Schedule the job to run every day at 10 PM (22:00)
+    scheduler.add_job(func=scheduled_fetch_leetcode_stats, trigger="cron", hour=22, minute=0)
+    scheduler.start()
+    print("✓ Scheduler initialized: LeetCode stats will be fetched daily at 10 PM")
+
+
 if __name__ == '__main__':
     # Use Railway's PORT environment variable, default to 5000 for local dev
     port = int(os.environ.get('PORT', 5000))
+    # Initialize scheduler for daily LeetCode stats fetch
+    init_scheduler()
     # Bind to 0.0.0.0 to allow external connections (required for Railway)
     app.run(host='0.0.0.0', port=port, debug=False)
