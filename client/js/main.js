@@ -368,20 +368,57 @@ function getCompanyInitials(companyName) {
   return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
 }
 
+function getPlacementPriority(interest) {
+  const normalized = String(interest || '').trim().toLowerCase();
+  if (normalized === 'placed' || normalized === 'placement') return 0;
+  if (normalized === 'interested') return 1;
+  if (normalized.includes('higher')) return 2;
+  if (normalized.includes('uninterested') || normalized.includes('not interested')) return 3;
+  return 4;
+}
+
+function getStudentPackage(student) {
+  const placedRecord = recentlyPlaced.find((entry) => entry.name === student.name);
+  return placedRecord ? Number(placedRecord.package || 0) : 0;
+}
+
+function getDefaultAnalyticsSortedStudents() {
+  return [...students].sort((a, b) => {
+    const placementPriorityDiff = getPlacementPriority(a.interest) - getPlacementPriority(b.interest);
+    if (placementPriorityDiff !== 0) {
+      return placementPriorityDiff;
+    }
+
+    const packageDiff = getStudentPackage(b) - getStudentPackage(a);
+    if (packageDiff !== 0) {
+      return packageDiff;
+    }
+
+    const codingDiff = Number(b.codingProblems || 0) - Number(a.codingProblems || 0);
+    if (codingDiff !== 0) {
+      return codingDiff;
+    }
+
+    return Number(b.gradePoints || 0) - Number(a.gradePoints || 0);
+  });
+}
+
 function renderDashboard() {
   const dash = document.getElementById('dashboard-content');
   const title = document.getElementById('dashboard-title');
   const chartsContainer = document.getElementById('charts-container');
+  const defaultSortedStudents = getDefaultAnalyticsSortedStudents();
   
   if (isStaff) {
     title.textContent = 'Analytics - Staff Dashboard';
     renderStaffAnalytics(chartsContainer);
     dash.innerHTML = `<h3>Student Directory</h3><div id="staff-table"></div>`;
-    renderTable(students, true);
+    renderTable(defaultSortedStudents, true);
   } else {
     title.textContent = `Welcome, ${currentUser.name}`;
     renderStudentAnalytics(chartsContainer);
     dash.innerHTML = `<h3>Your Ranking</h3><div id="student-table"></div>`;
+    renderTable(defaultSortedStudents, false, currentUser && currentUser.id);
   }
 }
 
