@@ -403,6 +403,28 @@ function getDefaultAnalyticsSortedStudents() {
   });
 }
 
+function renderAnalyticsInsights(container) {
+  const totalStudents = students.length;
+  const placedStudentsCount = students.filter(s => String(s.interest || '').trim().toLowerCase() === 'placed').length;
+  const interestedCount = students.filter(s => String(s.interest || '').trim().toLowerCase() === 'interested').length;
+  const avgCgpa = totalStudents ? (students.reduce((sum, s) => sum + Number(s.gradePoints || 0), 0) / totalStudents).toFixed(2) : '0.00';
+  const avgCoding = totalStudents ? Math.round(students.reduce((sum, s) => sum + Number(s.codingProblems || 0), 0) / totalStudents) : 0;
+  const maxPackage = recentlyPlaced.length ? Math.max(...recentlyPlaced.map(s => Number(s.package || 0))).toFixed(1) : '0.0';
+  const placementRate = totalStudents ? ((placedStudentsCount / totalStudents) * 100).toFixed(1) : '0.0';
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.9rem; margin-bottom: 1.25rem;">
+      <div class="stat-card"><h4 style="margin:0; color:#4F7FFF; font-size:1.8rem;">${totalStudents}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Total Students</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#21C1B6; font-size:1.8rem;">${placedStudentsCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placed Students</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#9B6DFF; font-size:1.8rem;">${placementRate}%</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placement Rate</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#FEC524; font-size:1.8rem;">${interestedCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Actively Interested</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#FF6B6B; font-size:1.8rem;">${avgCoding}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Avg Coding Problems</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#FFD54F; font-size:1.8rem;">₹${maxPackage} LPA</h4><p style="margin:0.4rem 0 0 0; color:#999;">Top Package</p></div>
+      <div class="stat-card"><h4 style="margin:0; color:#6BCBFF; font-size:1.8rem;">${avgCgpa}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Average CGPA</p></div>
+    </div>
+  `;
+}
+
 function renderDashboard() {
   const dash = document.getElementById('dashboard-content');
   const title = document.getElementById('dashboard-title');
@@ -412,12 +434,14 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = 'Analytics - Staff Dashboard';
     renderStaffAnalytics(chartsContainer);
-    dash.innerHTML = `<h3>Student Directory</h3><div id="staff-table"></div>`;
+    dash.innerHTML = `<div id="analytics-insights"></div><h3>Student Directory</h3><div id="staff-table"></div>`;
+    renderAnalyticsInsights(document.getElementById('analytics-insights'));
     renderTable(defaultSortedStudents, true);
   } else {
     title.textContent = `Welcome, ${currentUser.name}`;
     renderStudentAnalytics(chartsContainer);
-    dash.innerHTML = `<h3>Your Ranking</h3><div id="student-table"></div>`;
+    dash.innerHTML = `<div id="analytics-insights"></div><h3>Your Ranking</h3><div id="student-table"></div>`;
+    renderAnalyticsInsights(document.getElementById('analytics-insights'));
     renderTable(defaultSortedStudents, false, currentUser && currentUser.id);
   }
 }
@@ -440,6 +464,18 @@ function renderStudentAnalytics(container) {
     <div class="chart-card">
       <h3 style="text-align: center; margin-top: 0;">Student Distribution</h3>
       <canvas id="chart-student" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 style="text-align: center; margin-top: 0;">Department Distribution</h3>
+      <canvas id="chart-dept" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 style="text-align: center; margin-top: 0;">Readiness Index</h3>
+      <canvas id="chart-readiness" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 style="text-align: center; margin-top: 0;">Top Performers (Coding)</h3>
+      <canvas id="chart-top-coders" class="chart-canvas"></canvas>
     </div>
   `;
 
@@ -535,6 +571,114 @@ function renderStudentAnalytics(container) {
             labels: { color: '#f5f5f5', font: { size: 12 } },
             position: 'bottom'
           }
+        }
+      }
+    });
+
+    const deptCounts = {};
+    students.forEach(s => {
+      const dept = s.dept || 'Unknown';
+      deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+    });
+
+    new Chart(document.getElementById('chart-dept'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(deptCounts),
+        datasets: [{
+          label: 'Students',
+          data: Object.values(deptCounts),
+          backgroundColor: '#4F7FFF',
+          borderColor: '#1F4FD1',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+          y: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
+        }
+      }
+    });
+
+    const totalStudents = Math.max(students.length, 1);
+    const avgCoding = students.reduce((sum, s) => sum + Number(s.codingProblems || 0), 0) / totalStudents;
+    const avgInternships = students.reduce((sum, s) => sum + Number(s.internships || 0), 0) / totalStudents;
+    const avgCerts = students.reduce((sum, s) => sum + Number(s.certifications || 0), 0) / totalStudents;
+    const avgCgpa = students.reduce((sum, s) => sum + Number(s.gradePoints || 0), 0) / totalStudents;
+    const intentRate = (students.filter(s => {
+      const val = String(s.interest || '').trim().toLowerCase();
+      return val === 'interested' || val === 'placed';
+    }).length / totalStudents) * 100;
+
+    new Chart(document.getElementById('chart-readiness'), {
+      type: 'radar',
+      data: {
+        labels: ['Coding', 'Internships', 'Certifications', 'CGPA', 'Placement Intent'],
+        datasets: [{
+          label: 'Readiness Score',
+          data: [
+            Math.min((avgCoding / 300) * 100, 100),
+            Math.min((avgInternships / 3) * 100, 100),
+            Math.min((avgCerts / 5) * 100, 100),
+            Math.min((avgCgpa / 10) * 100, 100),
+            intentRate
+          ],
+          backgroundColor: 'rgba(33, 193, 182, 0.2)',
+          borderColor: '#21C1B6',
+          pointBackgroundColor: '#21C1B6',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#f5f5f5' } }
+        },
+        scales: {
+          r: {
+            angleLines: { color: 'rgba(255,255,255,0.15)' },
+            grid: { color: 'rgba(255,255,255,0.15)' },
+            pointLabels: { color: '#f5f5f5' },
+            ticks: { color: '#f5f5f5', backdropColor: 'transparent' },
+            min: 0,
+            max: 100
+          }
+        }
+      }
+    });
+
+    const topCoders = [...students]
+      .sort((a, b) => Number(b.codingProblems || 0) - Number(a.codingProblems || 0))
+      .slice(0, 5);
+
+    new Chart(document.getElementById('chart-top-coders'), {
+      type: 'bar',
+      data: {
+        labels: topCoders.map(s => s.name),
+        datasets: [{
+          label: 'Problems Solved',
+          data: topCoders.map(s => Number(s.codingProblems || 0)),
+          backgroundColor: '#FEC524',
+          borderColor: '#E6A800',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+          y: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
         }
       }
     });
@@ -919,7 +1063,20 @@ function renderProfile() {
           <div>
             <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Placement Status</h4>
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div><strong>Interest:</strong> <span style="color: #999;">${currentUser.interest || 'N/A'}</span></div>
+              <div><strong>Current Interest:</strong> <span id="profile-interest-value" style="color: #999;">${currentUser.interest || 'N/A'}</span></div>
+              <div>
+                <label for="profile-interest-select" style="display:block; margin-bottom:0.35rem;"><strong>Update Interest:</strong></label>
+                <select id="profile-interest-select" style="width: 100%; max-width: 320px;">
+                  ${[
+                    'Placed',
+                    'Interested',
+                    'Not interested',
+                    'Going for Higher studies',
+                    'Interested in becoming an entrepreneur'
+                  ].map(option => `<option value="${option}" ${currentUser.interest === option ? 'selected' : ''}>${option}</option>`).join('')}
+                </select>
+                <button class="btn" id="profile-interest-save-btn" type="button" style="max-width: 220px; margin-top: 0.5rem;">Save Placement Interest</button>
+              </div>
             </div>
           </div>
         </div>
@@ -930,6 +1087,11 @@ function renderProfile() {
     // Auto-fetch LeetCode stats if username is set
     if (currentUser.leetcodeUsername) {
       fetchAndDisplayLeetCodeStats(currentUser.leetcodeUsername);
+    }
+
+    const saveInterestBtn = document.getElementById('profile-interest-save-btn');
+    if (saveInterestBtn) {
+      saveInterestBtn.addEventListener('click', updateProfilePlacementInterest);
     }
   } else if (isStaff) {
     // Staff view - LeetCode batch functionality
@@ -951,6 +1113,60 @@ function renderProfile() {
   } else {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
     return;
+  }
+}
+
+async function updateProfilePlacementInterest() {
+  if (!currentUser || !currentUser.id) {
+    alert('Unable to update interest. Please login again.');
+    return;
+  }
+
+  const select = document.getElementById('profile-interest-select');
+  const interestLabel = document.getElementById('profile-interest-value');
+  const saveBtn = document.getElementById('profile-interest-save-btn');
+  const newInterest = select ? select.value : '';
+
+  if (!newInterest) {
+    alert('Please select a placement interest value.');
+    return;
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+  }
+
+  try {
+    const response = await fetch(`/api/students/${currentUser.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interest: newInterest })
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      alert(data.message || 'Failed to update placement interest.');
+      return;
+    }
+
+    currentUser.interest = newInterest;
+    const studentIndex = students.findIndex(s => s.id === currentUser.id);
+    if (studentIndex >= 0) {
+      students[studentIndex].interest = newInterest;
+    }
+    if (interestLabel) {
+      interestLabel.textContent = newInterest;
+    }
+    alert('Placement interest updated successfully!');
+  } catch (error) {
+    console.error('Placement interest update error:', error);
+    alert('Network error while updating placement interest.');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Placement Interest';
+    }
   }
 }
 
