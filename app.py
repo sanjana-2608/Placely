@@ -37,6 +37,15 @@ except ImportError:
 app = Flask(__name__, static_folder='client', template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'placely-secret-key-2026')
 
+# Configure Flask for HTTPS on Railway (behind reverse proxy)
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+# Trust X-Forwarded-* headers from Railway's reverse proxy
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
 SUPABASE_URL = (
     os.environ.get('SUPABASE_URL', '').strip()
     or getattr(config, 'SUPABASE_URL', '').strip()
