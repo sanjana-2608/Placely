@@ -1131,10 +1131,13 @@ function renderProfile() {
         </div>
 
         <div class="card profile-summary-card profile-summary-card--leetcode">
-          <div class="profile-leetcode-header">
+          <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
             <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
-            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #999;">
-              ${currentUser.leetcodeUsername || 'Not set'}
+            <div style="text-align: right; font-size: 0.85rem;">
+              <div style="color: #999;">@${currentUser.leetcodeUsername || 'Not set'}</div>
+              <div style="color: #666; font-size: 0.8rem;">
+                Rank ${currentUser.leetcodeRanking ? '#' + currentUser.leetcodeRanking.toLocaleString() : 'N/A'}
+              </div>
             </div>
           </div>
           <div id="leetcode-stats-container"></div>
