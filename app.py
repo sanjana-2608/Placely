@@ -6,6 +6,12 @@ import time
 import requests as http_requests
 import config
 
+try:
+    from supabase import create_client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+
 # Try to import Google OAuth libraries, but don't fail if they're missing
 try:
     from google.oauth2 import id_token
@@ -17,6 +23,18 @@ except ImportError:
 
 app = Flask(__name__, static_folder='client', template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'placely-secret-key-2026')
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '').strip()
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '').strip()
+SUPABASE_ENABLED = bool(SUPABASE_AVAILABLE and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+
+supabase = None
+if SUPABASE_ENABLED:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    except Exception as exc:
+        print(f"Supabase initialization failed: {exc}")
+        supabase = None
 
 # Disable HTTPS requirement for local development only
 if os.environ.get('RAILWAY_ENVIRONMENT') != 'production':
@@ -88,6 +106,102 @@ placed_students = [
 ]
 
 staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
+
+STUDENT_ALLOWED_FIELDS = {
+    'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
+    'certifications', 'gradePoints', 'year', 'interest', 'dept'
+}
+
+
+def _db_to_student(row):
+    return {
+        'id': row.get('id'),
+        'name': row.get('name'),
+        'email': row.get('email'),
+        'leetcodeUsername': row.get('leetcode_username') or '',
+        'codingProblems': row.get('coding_problems', 0),
+        'internships': row.get('internships', 0),
+        'certifications': row.get('certifications', 0),
+        'gradePoints': row.get('grade_points', 0),
+        'year': row.get('year', 0),
+        'interest': row.get('interest') or '',
+        'dept': row.get('dept') or ''
+    }
+
+
+def _student_to_db(payload):
+    mapped = {}
+    field_map = {
+        'name': 'name',
+        'email': 'email',
+        'leetcodeUsername': 'leetcode_username',
+        'codingProblems': 'coding_problems',
+        'internships': 'internships',
+        'certifications': 'certifications',
+        'gradePoints': 'grade_points',
+        'year': 'year',
+        'interest': 'interest',
+        'dept': 'dept'
+    }
+    for key, value in payload.items():
+        db_key = field_map.get(key)
+        if db_key:
+            mapped[db_key] = value
+    return mapped
+
+
+def get_students_data():
+    if not supabase:
+        return students
+    try:
+        response = supabase.table('students').select('*').order('id').execute()
+        rows = response.data or []
+        return [_db_to_student(row) for row in rows]
+    except Exception as exc:
+        print(f"Supabase get_students_data failed: {exc}")
+        return students
+
+
+def get_student_by_email(email):
+    normalized_email = (email or '').lower()
+    if not supabase:
+        return next((s for s in students if s['email'].lower() == normalized_email), None)
+    try:
+        response = supabase.table('students').select('*').ilike('email', normalized_email).limit(1).execute()
+        rows = response.data or []
+        if not rows:
+            return None
+        return _db_to_student(rows[0])
+    except Exception as exc:
+        print(f"Supabase get_student_by_email failed: {exc}")
+        return next((s for s in students if s['email'].lower() == normalized_email), None)
+
+
+def update_student_data(student_id, payload):
+    allowed_payload = {key: value for key, value in payload.items() if key in STUDENT_ALLOWED_FIELDS}
+    if not allowed_payload:
+        return None
+
+    if not supabase:
+        student = next((s for s in students if s['id'] == student_id), None)
+        if not student:
+            return None
+        student.update(allowed_payload)
+        return student
+
+    db_payload = _student_to_db(allowed_payload)
+    if not db_payload:
+        return None
+
+    try:
+        response = supabase.table('students').update(db_payload).eq('id', student_id).execute()
+        rows = response.data or []
+        if not rows:
+            return None
+        return _db_to_student(rows[0])
+    except Exception as exc:
+        print(f"Supabase update_student_data failed: {exc}")
+        return None
 
 LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql/"
 LEETCODE_TIMEOUT_SECONDS = 12
@@ -209,7 +323,7 @@ def login():
     password = data.get('password')
     
     if login_type == 'student':
-        student = next((s for s in students if s['email'].lower() == email.lower()), None)
+        student = get_student_by_email(email)
         if student:
             session['user'] = student
             session['is_staff'] = False
@@ -280,7 +394,7 @@ def callback():
         picture = id_info.get('picture')
         
         # Check if student exists with this email
-        student = next((s for s in students if s['email'].lower() == email.lower()), None)
+        student = get_student_by_email(email)
         
         if student:
             # Update student with Google profile info
@@ -315,7 +429,7 @@ def check_session():
 
 @app.route('/api/students')
 def get_students():
-    return jsonify(students)
+    return jsonify(get_students_data())
 
 
 @app.route('/api/leetcode/<string:username>')
@@ -327,8 +441,9 @@ def get_leetcode_profile(username):
 
 @app.route('/api/leetcode/students')
 def get_leetcode_profiles_for_students():
+    students_data = get_students_data()
     usernames = []
-    for student in students:
+    for student in students_data:
         username = student.get('leetcodeUsername')
         if username:
             usernames.append({
@@ -359,9 +474,8 @@ def get_leetcode_profiles_for_students():
 @app.route('/api/students/<int:student_id>', methods=['PUT'])
 def update_student(student_id):
     data = request.json
-    student = next((s for s in students if s['id'] == student_id), None)
+    student = update_student_data(student_id, data)
     if student:
-        student.update(data)
         return jsonify({'success': True, 'student': student})
     return jsonify({'success': False, 'message': 'Student not found'})
 
@@ -379,7 +493,8 @@ def get_placed_students():
 
 @app.route('/api/analytics/year/<int:year>')
 def get_year_analytics(year):
-    year_students = [s for s in students if s['year'] == year]
+    students_data = get_students_data()
+    year_students = [s for s in students_data if s['year'] == year]
     criteria = ['Placed', 'Interested', 'Uninterested', 'Higher Studies']
     counts = {c: sum(1 for s in year_students if s['interest'] == c) for c in criteria}
     return jsonify({'year': year, 'data': counts})

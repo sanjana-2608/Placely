@@ -12,5 +12,10 @@ import os
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID_HERE')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET_HERE')
 
+# Supabase Configuration (for database integration)
+# Create a project at https://supabase.com and copy values from Project Settings > API
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
+
 # OAuth 2.0 scope for getting user profile information
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"

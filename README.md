@@ -10,6 +10,7 @@ A web-based platform for managing college placement activities, built with Flask
 - **Reports**: Comprehensive placement reports with detailed student information
 - **Company Management**: Track upcoming companies and placement opportunities
 - **LeetCode Integration**: Fetch solved counts, acceptance rates, and ranking via LeetCode GraphQL
+- **Supabase Database (Phase 1)**: Students data can now be loaded/updated from Supabase
 - **Dark/Light Mode**: Toggle between dark and light themes
 
 ## Tech Stack
@@ -52,6 +53,12 @@ python app.py
 ```
 http://localhost:5000
 ```
+
+## Supabase Setup
+
+For database integration setup, see:
+
+- [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
 
 ## Login Credentials
 
