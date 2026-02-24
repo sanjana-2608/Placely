@@ -796,18 +796,68 @@ function renderProfile() {
   const profileContent = document.getElementById('profile-content');
   const defaultUsername = currentUser?.leetcodeUsername || '';
 
-  profileContent.innerHTML = `
-    <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
-      <h3 style="margin-top: 0;">LeetCode Stats</h3>
-      <p style="margin: 0.5rem 0 1rem 0; color: #999;">Fetch solved counts, acceptance rates, and ranking by username.</p>
-      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-        <input type="text" id="leetcode-username" placeholder="LeetCode username" value="${defaultUsername}" style="min-width: 260px;">
-        <button class="btn" id="leetcode-fetch-btn" type="button">Fetch Profile Stats</button>
-        ${isStaff ? '<button class="btn" id="leetcode-batch-btn" type="button">Fetch All Students</button>' : ''}
+  if (!isStaff && currentUser) {
+    // Student profile view - show complete data
+    profileContent.innerHTML = `
+      <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h3 style="margin-top: 0; margin-bottom: 1.5rem;">Student Profile</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+          <div>
+            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Personal Information</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div><strong>Name:</strong> <span style="color: #999;">${currentUser.name || 'N/A'}</span></div>
+              <div><strong>Email:</strong> <span style="color: #999;">${currentUser.email || 'N/A'}</span></div>
+              <div><strong>Department:</strong> <span style="color: #999;">${currentUser.dept || 'N/A'}</span></div>
+              <div><strong>Year:</strong> <span style="color: #999;">${currentUser.year || 'N/A'}</span></div>
+              <div><strong>Student ID:</strong> <span style="color: #999;">${currentUser.id || 'N/A'}</span></div>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Academic & Skills</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div><strong>CGPA:</strong> <span style="color: #999;">${currentUser.gradePoints || 'N/A'}</span></div>
+              <div><strong>Coding Problems Solved:</strong> <span style="color: #999;">${currentUser.codingProblems || 0}</span></div>
+              <div><strong>Internships:</strong> <span style="color: #999;">${currentUser.internships || 0}</span></div>
+              <div><strong>Certifications:</strong> <span style="color: #999;">${currentUser.certifications || 0}</span></div>
+              <div><strong>LeetCode Username:</strong> <span style="color: #999;">${currentUser.leetcodeUsername || 'Not set'}</span></div>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin: 0 0 1rem 0; color: #FEC524;">Placement Status</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div><strong>Interest:</strong> <span style="color: #999;">${currentUser.interest || 'N/A'}</span></div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div id="leetcode-result"></div>
-  `;
+      <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+        <h3 style="margin-top: 0;">LeetCode Stats</h3>
+        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Fetch solved counts, acceptance rates, and ranking by username.</p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="leetcode-username" placeholder="LeetCode username" value="${defaultUsername}" style="min-width: 260px;">
+          <button class="btn" id="leetcode-fetch-btn" type="button">Fetch Profile Stats</button>
+        </div>
+      </div>
+      <div id="leetcode-result"></div>
+    `;
+  } else if (isStaff) {
+    // Staff view - LeetCode batch functionality
+    profileContent.innerHTML = `
+      <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+        <h3 style="margin-top: 0;">LeetCode Stats</h3>
+        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Fetch solved counts, acceptance rates, and ranking by username.</p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="leetcode-username" placeholder="LeetCode username" value="${defaultUsername}" style="min-width: 260px;">
+          <button class="btn" id="leetcode-fetch-btn" type="button">Fetch Profile Stats</button>
+          <button class="btn" id="leetcode-batch-btn" type="button">Fetch All Students</button>
+        </div>
+      </div>
+      <div id="leetcode-result"></div>
+    `;
+  } else {
+    profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
+    return;
+  }
 
   const fetchBtn = document.getElementById('leetcode-fetch-btn');
   if (fetchBtn) {
