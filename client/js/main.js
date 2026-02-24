@@ -1081,7 +1081,7 @@ function renderProfile() {
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
               <div><strong>Current Interest:</strong> <span id="profile-interest-value" style="color: #999;">${getInterestCategory(currentUser.interest)}</span></div>
               <div>
-                <label style="display:block; margin-bottom:0.35rem;"><strong>Update Interest:</strong></label>
+                <label style="display:block; margin-bottom:0.35rem;"><strong>Interest Track:</strong></label>
                 <div
                   id="profile-interest-switch"
                   class="profile-interest-switch"
@@ -1094,6 +1094,7 @@ function renderProfile() {
                           type="radio"
                           name="profile-interest-radio"
                           value="${option}"
+                          disabled
                           ${getInterestCategory(currentUser.interest) === option ? 'checked' : ''}
                         >
                         <span>${option}</span>
@@ -1104,8 +1105,6 @@ function renderProfile() {
                     <div class="profile-interest-thumb"></div>
                   </div>
                 </div>
-                <input type="hidden" id="profile-interest-selected" value="${getInterestCategory(currentUser.interest)}">
-                <button class="btn" id="profile-interest-save-btn" type="button" style="max-width: 220px; margin-top: 0.5rem;">Save Placement Interest</button>
               </div>
             </div>
           </div>
@@ -1118,35 +1117,6 @@ function renderProfile() {
     if (currentUser.leetcodeUsername) {
       fetchAndDisplayLeetCodeStats(currentUser.leetcodeUsername);
     }
-
-    const saveInterestBtn = document.getElementById('profile-interest-save-btn');
-    if (saveInterestBtn) {
-      saveInterestBtn.addEventListener('click', updateProfilePlacementInterest);
-    }
-
-    document.querySelectorAll('input[name="profile-interest-radio"]').forEach((input) => {
-      input.addEventListener('change', () => {
-        if (!input.checked) {
-          return;
-        }
-
-        const selectedValue = input.value || 'Placements';
-        const hiddenInput = document.getElementById('profile-interest-selected');
-        const switchContainer = document.getElementById('profile-interest-switch');
-        if (hiddenInput) {
-          hiddenInput.value = selectedValue;
-        }
-
-        if (switchContainer) {
-          switchContainer.setAttribute('data-state', getInterestStateKey(selectedValue));
-        }
-
-        document.querySelectorAll('.profile-interest-option').forEach((optionNode) => {
-          optionNode.classList.remove('active');
-        });
-        input.closest('.profile-interest-option')?.classList.add('active');
-      });
-    });
   } else if (isStaff) {
     // Staff view - LeetCode batch functionality
     profileContent.innerHTML = `
@@ -1167,60 +1137,6 @@ function renderProfile() {
   } else {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
     return;
-  }
-}
-
-async function updateProfilePlacementInterest() {
-  if (!currentUser || !currentUser.id) {
-    alert('Unable to update interest. Please login again.');
-    return;
-  }
-
-  const selectedInput = document.getElementById('profile-interest-selected');
-  const interestLabel = document.getElementById('profile-interest-value');
-  const saveBtn = document.getElementById('profile-interest-save-btn');
-  const newInterest = selectedInput ? selectedInput.value : '';
-
-  if (!newInterest) {
-    alert('Please select a placement interest value.');
-    return;
-  }
-
-  if (saveBtn) {
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
-  }
-
-  try {
-    const response = await fetch(`/api/students/${currentUser.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ interest: newInterest })
-    });
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      alert(data.message || 'Failed to update placement interest.');
-      return;
-    }
-
-    currentUser.interest = newInterest;
-    const studentIndex = students.findIndex(s => s.id === currentUser.id);
-    if (studentIndex >= 0) {
-      students[studentIndex].interest = newInterest;
-    }
-    if (interestLabel) {
-      interestLabel.textContent = newInterest;
-    }
-    alert('Placement interest updated successfully!');
-  } catch (error) {
-    console.error('Placement interest update error:', error);
-    alert('Network error while updating placement interest.');
-  } finally {
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save Placement Interest';
-    }
   }
 }
 
