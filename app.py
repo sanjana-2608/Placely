@@ -39,8 +39,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'placely-secret-key-2026')
 
 # Configure Flask for HTTPS on Railway (behind reverse proxy)
 app.config['PREFERRED_URL_SCHEME'] = 'https'
-app.config['SESSION_COOKIE_SECURE'] = True
+# Only set secure cookies on production (Railway), allow HTTP on localhost
+app.config['SESSION_COOKIE_SECURE'] = 'RAILWAY_PUBLIC_DOMAIN' in os.environ
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cookies on OAuth redirects
 
 # Trust X-Forwarded-* headers from Railway's reverse proxy
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -445,76 +447,63 @@ def get_linkedin_profile(access_token):
         print("\n--- FETCHING LINKEDIN PROFILE ---")
         headers = {
             'Authorization': f'Bearer {access_token}',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0'
         }
         
-        # Fetch user profile using OpenID Connect with headline
-        print("Step 1: Fetching name and headline...")
-        response = http_requests.get(
-            'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,headline)',
+        # Fetch user profile using OpenID Connect userinfo endpoint (simpler and more reliable)
+        print("Fetching profile from OpenID Connect userinfo endpoint...")
+        userinfo_response = http_requests.get(
+            'https://api.linkedin.com/v2/userinfo',
             headers=headers,
             timeout=10
         )
         
-        if response.status_code != 200:
-            print(f"ERROR fetching profile: {response.status_code} - {response.text}")
+        if userinfo_response.status_code != 200:
+            print(f"ERROR fetching userinfo: {userinfo_response.status_code} - {userinfo_response.text}")
             return None
         
-        profile_data = response.json()
-        print(f"Profile data: {profile_data}")
+        userinfo = userinfo_response.json()
+        print(f"Userinfo data: {userinfo}")
         
-        # Extract name from localized strings
-        name = ''
-        if 'localizedFirstName' in profile_data and 'localizedLastName' in profile_data:
-            name = f"{profile_data['localizedFirstName']} {profile_data['localizedLastName']}"
-        print(f"Extracted name: {name}")
-        
-        # Extract headline (description/job title)
-        headline = profile_data.get('headline', {}).get('localized', {}).get('en_US', '') if isinstance(profile_data.get('headline'), dict) else profile_data.get('headline', '')
-        print(f"Extracted headline: {headline}")
-        
-        # Fetch email separately
-        print("Step 2: Fetching email...")
-        email_response = http_requests.get(
-            'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
-            headers=headers,
-            timeout=10
-        )
-        
-        email = ''
-        if email_response.status_code == 200:
-            email_data = email_response.json()
-            elements = email_data.get('elements', [])
-            if elements and 'handle~' in elements[0]:
-                email = elements[0]['handle~'].get('emailAddress', '')
-            print(f"Extracted email: {email}")
-        else:
-            print(f"ERROR fetching email: {email_response.status_code} - {email_response.text}")
-        
-        # Fetch profile picture
-        print("Step 3: Fetching profile picture...")
-        picture_url = ''
-        profile_picture_response = http_requests.get(
-            'https://api.linkedin.com/v2/me?projection=(profilePicture(displayImage))',
-            headers=headers,
-            timeout=10
-        )
-        
-        if profile_picture_response.status_code == 200:
-            picture_data = profile_picture_response.json()
-            if 'profilePicture' in picture_data and 'displayImage' in picture_data['profilePicture']:
-                picture_url = picture_data['profilePicture']['displayImage']
-            print(f"Extracted picture: {picture_url[:50] if picture_url else 'NONE'}...")
-        else:
-            print(f"ERROR fetching picture: {profile_picture_response.status_code} - {profile_picture_response.text}")
-        
+        # Extract profile data from OpenID Connect userinfo
+        # Standard OpenID Connect claims: sub, name, given_name, family_name, picture, email
         result = {
-            'name': name,
-            'email': email,
-            'picture': picture_url,
-            'profile_id': profile_data.get('id', ''),
-            'headline': headline
+            'name': userinfo.get('name', ''),
+            'email': userinfo.get('email', ''),
+            'picture': userinfo.get('picture', ''),
+            'profile_id': userinfo.get('sub', ''),  # sub is the user ID
+            'headline': userinfo.get('locale', {}).get('country', '') if isinstance(userinfo.get('locale'), dict) else ''  # LinkedIn doesn't provide headline in userinfo
         }
+        
+        # If name is empty, try to construct from given_name and family_name
+        if not result['name']:
+            given = userinfo.get('given_name', '')
+            family = userinfo.get('family_name', '')
+            result['name'] = f"{given} {family}".strip()
+        
+        # Try to fetch headline separately if available
+        print("Attempting to fetch headline from profile API...")
+        try:
+            profile_response = http_requests.get(
+                'https://api.linkedin.com/v2/me',
+                headers=headers,
+                timeout=10
+            )
+            if profile_response.status_code == 200:
+                profile_data = profile_response.json()
+                print(f"Profile data: {profile_data}")
+                # Extract headline if available
+                if 'headline' in profile_data:
+                    if isinstance(profile_data['headline'], dict):
+                        headline = profile_data['headline'].get('localized', {}).get('en_US', '')
+                    else:
+                        headline = profile_data['headline']
+                    result['headline'] = headline if headline else ''
+                    print(f"Extracted headline: {result['headline']}")
+        except Exception as e:
+            print(f"Headline fetch failed (non-critical): {e}")
+        
         print(f"Final profile result: {result}")
         print("--- PROFILE FETCH COMPLETE ---\n")
         return result
