@@ -386,6 +386,11 @@ function renderDashboard() {
 }
 
 function renderStudentAnalytics(container) {
+  container.style.display = 'grid';
+  container.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+  container.style.gap = '1rem';
+  container.style.marginBottom = '2rem';
+
   container.innerHTML = `
     <div class="chart-card">
       <h3 style="text-align: center; margin-top: 0;">Interest Distribution</h3>
@@ -400,6 +405,11 @@ function renderStudentAnalytics(container) {
       <canvas id="chart-student" class="chart-canvas"></canvas>
     </div>
   `;
+
+  container.querySelectorAll('.chart-card').forEach((card) => {
+    card.style.width = '100%';
+    card.style.minWidth = '0';
+  });
   
   setTimeout(() => {
     const interestCounts = {};
@@ -495,6 +505,11 @@ function renderStudentAnalytics(container) {
 }
 
 function renderStaffAnalytics(container) {
+  container.style.display = 'grid';
+  container.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+  container.style.gap = '1rem';
+  container.style.marginBottom = '2rem';
+
   container.innerHTML = `
     <div class="chart-card">
       <h3 style="text-align: center; margin-top: 0;">Year 3 - Placement Status</h3>
@@ -505,6 +520,11 @@ function renderStaffAnalytics(container) {
       <canvas id="chart-year4" class="chart-canvas"></canvas>
     </div>
   `;
+
+  container.querySelectorAll('.chart-card').forEach((card) => {
+    card.style.width = '100%';
+    card.style.minWidth = '0';
+  });
   
   setTimeout(() => {
     const year3Students = students.filter(s => s.year === 3);
