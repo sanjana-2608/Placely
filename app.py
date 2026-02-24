@@ -100,7 +100,43 @@ else:
     client_secrets = {}
 
 # Data
-students = []
+def _generate_toy_students(total_students=100):
+    first_names = [
+        'Aarav', 'Aadhya', 'Ishaan', 'Diya', 'Kavin', 'Meera', 'Nikhil', 'Riya', 'Aditya', 'Anika',
+        'Rahul', 'Sanjana', 'Vikram', 'Priya', 'Harish', 'Lavanya', 'Karthik', 'Sneha', 'Arjun', 'Nandini'
+    ]
+    last_names = [
+        'Sharma', 'Reddy', 'Patel', 'Kumar', 'Menon', 'Iyer', 'Singh', 'Gupta', 'Rao', 'Nair',
+        'Joshi', 'Agarwal', 'Mishra', 'Verma', 'Saxena', 'Bose', 'Pandey', 'Malhotra', 'Jain', 'Kapoor'
+    ]
+    departments = ['CSE', 'IT', 'ECE', 'EEE', 'MECH', 'CIVIL', 'AIDS', 'AIML']
+    interests = ['Placements', 'Higher Studies', 'Entrepreneurship']
+
+    generated_students = []
+    for student_index in range(1, total_students + 1):
+        first_name = first_names[(student_index - 1) % len(first_names)]
+        last_name = last_names[((student_index - 1) // len(first_names)) % len(last_names)]
+        full_name = f"{first_name} {last_name}"
+        email_local = f"{first_name.lower()}.{last_name.lower()}{student_index}"
+
+        generated_students.append({
+            'id': 1000 + student_index,
+            'name': full_name,
+            'email': f"{email_local}@college.edu",
+            'leetcodeUsername': f"{first_name.lower()}{student_index}",
+            'codingProblems': 40 + (student_index * 7) % 320,
+            'internships': (student_index + 1) % 4,
+            'certifications': (student_index + 2) % 6,
+            'gradePoints': round(6.5 + ((student_index * 11) % 35) / 10, 2),
+            'year': (student_index % 4) + 1,
+            'interest': interests[student_index % len(interests)],
+            'dept': departments[student_index % len(departments)]
+        })
+
+    return generated_students
+
+
+students = _generate_toy_students(100)
 
 recently_placed = [
     {"name": "Priya Sharma", "package": 18.5, "company": "Google", "position": "Software Engineer", "graduationYear": 2024, "date": "2026-01-25"},
@@ -180,7 +216,16 @@ def get_students_data():
     try:
         response = supabase.table('students').select('*').order('id').execute()
         rows = response.data or []
-        return [_db_to_student(row) for row in rows]
+        db_students = [_db_to_student(row) for row in rows]
+        if not db_students:
+            return students
+
+        db_emails = {str(entry.get('email', '')).lower() for entry in db_students}
+        merged_students = db_students + [
+            toy_student for toy_student in students
+            if str(toy_student.get('email', '')).lower() not in db_emails
+        ]
+        return merged_students
     except Exception as exc:
         print(f"Supabase get_students_data failed: {exc}")
         return students
@@ -194,7 +239,7 @@ def get_student_by_email(email):
         response = supabase.table('students').select('*').ilike('email', normalized_email).limit(1).execute()
         rows = response.data or []
         if not rows:
-            return None
+            return next((s for s in students if s['email'].lower() == normalized_email), None)
         return _db_to_student(rows[0])
     except Exception as exc:
         print(f"Supabase get_student_by_email failed: {exc}")
