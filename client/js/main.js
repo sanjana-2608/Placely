@@ -1084,7 +1084,7 @@ function renderProfile() {
     const twelfthPercentage = currentUser.twelfthPercentage ?? 'N/A';
     const tenthPercentage = currentUser.tenthPercentage ?? 'N/A';
 
-    // Student profile view - 3 box top row with LeetCode section below
+    // Student profile view - 3 box top row with LeetCode in second column
     profileContent.innerHTML = `
       <div class="profile-summary-grid" style="margin-bottom: 1rem;">
         <div class="card profile-summary-card profile-summary-card--identity">
@@ -1103,33 +1103,36 @@ function renderProfile() {
           </button>
         </div>
 
-        <div class="card profile-summary-card profile-summary-card--interest">
-          <h4 class="profile-box-title">Interest Track</h4>
-          <div class="profile-interest-top-right">
-            <div
-              id="profile-interest-switch"
-              class="profile-interest-switch profile-interest-compact"
-              data-state="${getInterestStateKey(interestCategory)}"
-            >
-              <div class="profile-interest-labels">
-                ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
-                  <label class="profile-interest-option ${interestCategory === option ? 'active' : ''}">
-                    <input
-                      type="radio"
-                      name="profile-interest-radio"
-                      value="${option}"
-                      disabled
-                      ${interestCategory === option ? 'checked' : ''}
-                    >
-                    <span>${option}</span>
-                  </label>
-                `).join('')}
-              </div>
-              <div class="profile-interest-track">
-                <div class="profile-interest-thumb"></div>
+        <div class="card profile-summary-card profile-summary-card--leetcode">
+          <div class="profile-leetcode-header">
+            <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
+            <div class="profile-interest-top-right">
+              <div
+                id="profile-interest-switch"
+                class="profile-interest-switch profile-interest-compact"
+                data-state="${getInterestStateKey(interestCategory)}"
+              >
+                <div class="profile-interest-labels">
+                  ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
+                    <label class="profile-interest-option ${interestCategory === option ? 'active' : ''}">
+                      <input
+                        type="radio"
+                        name="profile-interest-radio"
+                        value="${option}"
+                        disabled
+                        ${interestCategory === option ? 'checked' : ''}
+                      >
+                      <span>${option}</span>
+                    </label>
+                  `).join('')}
+                </div>
+                <div class="profile-interest-track">
+                  <div class="profile-interest-thumb"></div>
+                </div>
               </div>
             </div>
           </div>
+          <div id="leetcode-stats-container"></div>
         </div>
 
         <div class="card profile-summary-card profile-summary-card--academics">
@@ -1141,14 +1144,16 @@ function renderProfile() {
           </div>
         </div>
       </div>
-
-      <p style="color: #FEC524; font-size: 0.9rem; margin: 0 0 1rem 0;">📊 LeetCode stats are automatically updated daily at 10 PM</p>
-      <div id="leetcode-stats-container"></div>
     `;
     
     // Auto-fetch LeetCode stats if username is set
     if (currentUser.leetcodeUsername) {
       fetchAndDisplayLeetCodeStats(currentUser.leetcodeUsername);
+    } else {
+      const leetcodeContainer = document.getElementById('leetcode-stats-container');
+      if (leetcodeContainer) {
+        leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
+      }
     }
   } else if (isStaff) {
     // Staff view - LeetCode batch functionality
@@ -1263,19 +1268,43 @@ async function fetchAllStudentsLeetCodeStats() {
 }
 
 function renderLeetCodeStatsCard(data) {
+  const easySolved = Number(data.solved?.easy || 0);
+  const mediumSolved = Number(data.solved?.medium || 0);
+  const hardSolved = Number(data.solved?.hard || 0);
+  const totalSolved = Number(data.solved?.all || (easySolved + mediumSolved + hardSolved));
+
+  const easyTotal = 927;
+  const mediumTotal = 2014;
+  const hardTotal = 910;
+  const totalQuestions = easyTotal + mediumTotal + hardTotal;
+
+  const segmentTotal = Math.max(easySolved + mediumSolved + hardSolved, 1);
+  const easyPct = (easySolved / segmentTotal) * 100;
+  const mediumPct = (mediumSolved / segmentTotal) * 100;
+  const hardPct = (hardSolved / segmentTotal) * 100;
+  const easyEnd = easyPct;
+  const mediumEnd = easyPct + mediumPct;
+
   return `
-    <div class="card" style="padding: 1rem;">
-      <h4 style="margin: 0 0 0.75rem 0;">@${data.username}</h4>
-      <p style="margin: 0 0 0.75rem 0;"><strong>Ranking:</strong> ${data.ranking ?? 'N/A'}</p>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
-        <div class="stat-card"><h4 style="margin: 0;">${data.solved.all}</h4><p style="margin: 0.25rem 0 0 0;">Solved (All)</p></div>
-        <div class="stat-card"><h4 style="margin: 0;">${data.solved.easy}</h4><p style="margin: 0.25rem 0 0 0;">Easy</p></div>
-        <div class="stat-card"><h4 style="margin: 0;">${data.solved.medium}</h4><p style="margin: 0.25rem 0 0 0;">Medium</p></div>
-        <div class="stat-card"><h4 style="margin: 0;">${data.solved.hard}</h4><p style="margin: 0.25rem 0 0 0;">Hard</p></div>
+    <div class="leetcode-pie-card">
+      <div class="leetcode-pie-meta">
+        <h5>@${data.username || 'leetcode'}</h5>
+        <p>Rank ${data.ranking ?? 'N/A'}</p>
       </div>
-      <div style="margin-top: 0.9rem;">
-        <p style="margin: 0.2rem 0;"><strong>Acceptance Rate:</strong> ${data.acceptanceRates.all}%</p>
-        <p style="margin: 0.2rem 0; color: #999;">Easy: ${data.acceptanceRates.easy}% | Medium: ${data.acceptanceRates.medium}% | Hard: ${data.acceptanceRates.hard}%</p>
+      <div class="leetcode-pie-layout">
+        <div class="leetcode-pie-wrap">
+          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #fbbf24 ${easyEnd}% ${mediumEnd}%, #ef4444 ${mediumEnd}% ${Math.min(mediumEnd + hardPct, 100)}%, rgba(255,255,255,0.08) ${Math.min(mediumEnd + hardPct, 100)}% 100%);">
+            <div class="leetcode-pie-center">
+              <div class="leetcode-pie-total">${totalSolved}<span>/${totalQuestions}</span></div>
+              <div class="leetcode-pie-label">Solved</div>
+            </div>
+          </div>
+        </div>
+        <div class="leetcode-pie-breakdown">
+          <div><span class="easy">Easy</span> <strong>${easySolved}/${easyTotal}</strong></div>
+          <div><span class="medium">Med.</span> <strong>${mediumSolved}/${mediumTotal}</strong></div>
+          <div><span class="hard">Hard</span> <strong>${hardSolved}/${hardTotal}</strong></div>
+        </div>
       </div>
     </div>
   `;
