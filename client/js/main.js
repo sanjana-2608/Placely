@@ -158,29 +158,59 @@ function loginUser(e) {
 }
 
 function initializeApp() {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('navbar').style.display = 'flex';
+  const loginSection = document.getElementById('login-section');
+  const navbar = document.getElementById('navbar');
+  if (loginSection) loginSection.style.display = 'none';
+  if (navbar) navbar.style.display = 'flex';
   renderSortButtons();
 }
 
 function logout() {
   currentUser = null;
   isStaff = false;
-  document.getElementById('navbar').style.display = 'none';
-  document.getElementById('login-section').style.display = 'block';
-  document.getElementById('student-email').value = '';
-  document.getElementById('student-password').value = '';
-  document.getElementById('staff-email').value = '';
-  document.getElementById('staff-password').value = '';
+  const navbar = document.getElementById('navbar');
+  const loginSection = document.getElementById('login-section');
+  if (navbar) navbar.style.display = 'none';
+  if (loginSection) loginSection.style.display = 'block';
+
+  const studentEmail = document.getElementById('student-email');
+  const studentPassword = document.getElementById('student-password');
+  const staffEmail = document.getElementById('staff-email');
+  const staffPassword = document.getElementById('staff-password');
+  if (studentEmail) studentEmail.value = '';
+  if (studentPassword) studentPassword.value = '';
+  if (staffEmail) staffEmail.value = '';
+  if (staffPassword) staffPassword.value = '';
+
   sectionIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
-  document.getElementById('login-section').classList.add('active');
+  if (loginSection) {
+    loginSection.classList.add('active');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('login-form').addEventListener('submit', loginUser);
-  document.getElementById('logout-btn').addEventListener('click', function(e) { e.preventDefault(); logout(); });
-  document.getElementById('darkmode-toggle').addEventListener('click', function(e) { e.preventDefault(); toggleDarkMode(); });
+  const loginForm = document.getElementById('login-form');
+  const logoutBtn = document.getElementById('logout-btn');
+  const darkModeToggle = document.getElementById('darkmode-toggle');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', loginUser);
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function(e) { e.preventDefault(); logout(); });
+  }
+
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', function(e) { e.preventDefault(); toggleDarkMode(); });
+  }
+
   if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light-mode'); document.getElementById('darkmode-toggle').textContent = '☀️'; }
+
+  if (!document.getElementById('login-section')) {
+    initializeApp();
+    showSection('home-section');
+  }
   
   // Check for login callback or existing session
   checkLoginStatus();
