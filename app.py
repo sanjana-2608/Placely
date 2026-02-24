@@ -473,7 +473,7 @@ def get_linkedin_profile(access_token):
             'email': userinfo.get('email', ''),
             'picture': userinfo.get('picture', ''),
             'profile_id': userinfo.get('sub', ''),  # sub is the user ID
-            'headline': userinfo.get('locale', {}).get('country', '') if isinstance(userinfo.get('locale'), dict) else ''  # LinkedIn doesn't provide headline in userinfo
+            'headline': ''
         }
         
         # If name is empty, try to construct from given_name and family_name
