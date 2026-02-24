@@ -4,6 +4,13 @@ import json
 import os
 import time
 import requests as http_requests
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 import config
 
 try:
