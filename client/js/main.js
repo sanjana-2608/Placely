@@ -830,7 +830,13 @@ function renderProfile() {
           </div>
         </div>
       </div>
+      <div id="leetcode-stats-container"></div>
     `;
+    
+    // Auto-fetch LeetCode stats if username is set
+    if (currentUser.leetcodeUsername) {
+      fetchAndDisplayLeetCodeStats(currentUser.leetcodeUsername);
+    }
   } else if (isStaff) {
     // Staff view - LeetCode batch functionality
     profileContent.innerHTML = `
@@ -843,16 +849,36 @@ function renderProfile() {
       </div>
       <div id="leetcode-result"></div>
     `;
-  } else {
-    profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
-    return;
-  }
-
-  if (isStaff) {
+    
     const batchBtn = document.getElementById('leetcode-batch-btn');
     if (batchBtn) {
       batchBtn.addEventListener('click', fetchAllStudentsLeetCodeStats);
     }
+  } else {
+    profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
+    return;
+  }
+}
+
+async function fetchAndDisplayLeetCodeStats(username) {
+  const container = document.getElementById('leetcode-stats-container');
+  if (!container) return;
+  
+  container.innerHTML = '<div class="card" style="padding: 1rem;"><p>Loading LeetCode stats...</p></div>';
+
+  try {
+    const response = await fetch(`/api/leetcode/${encodeURIComponent(username)}`);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      container.innerHTML = `<div class="card" style="padding: 1rem;"><p style="margin: 0; color: #ff6b6b;">⚠️ Unable to fetch LeetCode stats: ${data.message || 'Unknown error'}</p></div>`;
+      return;
+    }
+
+    container.innerHTML = renderLeetCodeStatsCard(data);
+  } catch (error) {
+    console.error('LeetCode fetch error:', error);
+    container.innerHTML = '<div class="card" style="padding: 1rem;"><p style="margin: 0; color: #ff6b6b;">⚠️ Network error while fetching LeetCode stats.</p></div>';
   }
 }
 
