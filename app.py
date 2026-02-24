@@ -798,6 +798,7 @@ def linkedin_callback():
                 print(f"Session refreshed with updated student data")
                 print(f"Updated linkedinName: {updated_student.get('linkedinName')}")
                 session['user'] = updated_student
+                session.modified = True  # Ensure Flask saves the session
             else:
                 print("ERROR: Could not refresh student data")
             
