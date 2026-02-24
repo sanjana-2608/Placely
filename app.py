@@ -104,10 +104,12 @@ query getUserProfile($username: String!) {
       acSubmissionNum {
         difficulty
         count
+                submissions
       }
       totalSubmissionNum {
         difficulty
         count
+                submissions
       }
     }
   }
@@ -115,11 +117,11 @@ query getUserProfile($username: String!) {
 """
 
 
-def _difficulty_map(rows):
+def _difficulty_map(rows, field='count'):
     values = {}
     for row in rows or []:
         difficulty = row.get('difficulty')
-        values[difficulty] = int(row.get('count', 0))
+        values[difficulty] = int(row.get(field, 0))
     return values
 
 
@@ -161,8 +163,9 @@ def fetch_leetcode_profile(username):
         }
 
     stats = matched_user.get('submitStats') or {}
-    accepted_by_difficulty = _difficulty_map(stats.get('acSubmissionNum'))
-    total_by_difficulty = _difficulty_map(stats.get('totalSubmissionNum'))
+    accepted_by_difficulty = _difficulty_map(stats.get('acSubmissionNum'), 'count')
+    accepted_submission_attempts_by_difficulty = _difficulty_map(stats.get('acSubmissionNum'), 'submissions')
+    total_submission_attempts_by_difficulty = _difficulty_map(stats.get('totalSubmissionNum'), 'submissions')
 
     solved = {
         'all': accepted_by_difficulty.get('All', 0),
@@ -172,17 +175,17 @@ def fetch_leetcode_profile(username):
     }
 
     total_submissions = {
-        'all': total_by_difficulty.get('All', 0),
-        'easy': total_by_difficulty.get('Easy', 0),
-        'medium': total_by_difficulty.get('Medium', 0),
-        'hard': total_by_difficulty.get('Hard', 0)
+        'all': total_submission_attempts_by_difficulty.get('All', 0),
+        'easy': total_submission_attempts_by_difficulty.get('Easy', 0),
+        'medium': total_submission_attempts_by_difficulty.get('Medium', 0),
+        'hard': total_submission_attempts_by_difficulty.get('Hard', 0)
     }
 
     acceptance_rates = {
-        'all': _acceptance_rate(solved['all'], total_submissions['all']),
-        'easy': _acceptance_rate(solved['easy'], total_submissions['easy']),
-        'medium': _acceptance_rate(solved['medium'], total_submissions['medium']),
-        'hard': _acceptance_rate(solved['hard'], total_submissions['hard'])
+        'all': _acceptance_rate(accepted_submission_attempts_by_difficulty.get('All', 0), total_submissions['all']),
+        'easy': _acceptance_rate(accepted_submission_attempts_by_difficulty.get('Easy', 0), total_submissions['easy']),
+        'medium': _acceptance_rate(accepted_submission_attempts_by_difficulty.get('Medium', 0), total_submissions['medium']),
+        'hard': _acceptance_rate(accepted_submission_attempts_by_difficulty.get('Hard', 0), total_submissions['hard'])
     }
 
     return {
