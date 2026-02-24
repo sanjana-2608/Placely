@@ -915,6 +915,18 @@ def get_year_analytics(year):
     return jsonify({'year': year, 'data': counts})
 
 
+@app.route('/api/sync-leetcode', methods=['POST'])
+def manual_sync_leetcode():
+    """Manually trigger LeetCode stats sync for all students"""
+    try:
+        print("[MANUAL SYNC] User triggered LeetCode sync...")
+        scheduled_fetch_leetcode_stats()
+        return jsonify({'success': True, 'message': 'LeetCode stats sync completed'})
+    except Exception as e:
+        print(f"[MANUAL SYNC ERROR] {str(e)}")
+        return jsonify({'success': False, 'message': f'Sync failed: {str(e)}'}), 500
+
+
 def scheduled_fetch_leetcode_stats():
     """Fetch LeetCode stats for all students and update Supabase every day at 10 PM"""
     try:
@@ -945,11 +957,11 @@ def scheduled_fetch_leetcode_stats():
                         'leetcodeLastSyncedAt': datetime.utcnow().isoformat()
                     })
                     updated_count += 1
-                    print(f"  ✓ Updated {student['name']}: {profile['solved']['all']} problems")
+                    print(f"  [OK] Updated {student['name']}: {profile['solved']['all']} problems")
                     # Rate limiting delay
                     time.sleep(LEETCODE_BATCH_DELAY_SECONDS)
             except Exception as e:
-                print(f"  ✗ Failed to update {student.get('name', 'Unknown')}: {str(e)}")
+                print(f"  [FAIL] Failed to update {student.get('name', 'Unknown')}: {str(e)}")
         
         print(f"[{datetime.now()}] Scheduled LeetCode fetch completed. Updated {updated_count} students.")
     except Exception as e:
@@ -971,7 +983,7 @@ def init_scheduler():
     )
     scheduler.start()
     app._leetcode_scheduler = scheduler
-    print("✓ Scheduler initialized: LeetCode stats will be fetched daily at 10 PM")
+    print("[OK] Scheduler initialized: LeetCode stats will be fetched daily at 10 PM")
 
 
 if os.environ.get('DISABLE_LEETCODE_SCHEDULER', '0') != '1':

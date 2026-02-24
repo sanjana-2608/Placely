@@ -1088,28 +1088,21 @@ function renderProfile() {
     profileContent.innerHTML = `
       <div class="profile-summary-grid" style="margin-bottom: 1rem;">
         <div class="card profile-summary-card profile-summary-card--identity">
-          <div class="profile-summary-header">
+          <div class="profile-summary-header" style="flex-direction: column; align-items: center; text-align: center; gap: 1rem;">
             ${displayPhoto
-              ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium">`
-              : `<div class="profile-avatar-fallback profile-avatar-medium">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
-            <div class="profile-identity-block">
-              <h3>${displayName}</h3>
-              <p class="profile-headline">${displayHeadline || 'No LinkedIn headline available'}</p>
+              ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium" style="width: 120px; height: 120px; border-radius: 50%;">`
+              : `<div class="profile-avatar-fallback profile-avatar-medium" style="width: 120px; height: 120px;">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
+            <div class="profile-identity-block" style="width: 100%;">
+              <h3 style="margin-bottom: 0.25rem;">${displayName}</h3>
+              <p style="margin: 0; font-size: 0.9rem; color: #999;">${currentUser.dept || 'Student'} • Year ${currentUser.year || 'N/A'}</p>
             </div>
           </div>
-          <p class="profile-meta">${currentUser.email || 'N/A'}</p>
-          <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
-            ${currentUser.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
-          </button>
-        </div>
-
-        <div class="card profile-summary-card profile-summary-card--leetcode">
-          <div class="profile-leetcode-header">
-            <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
-            <div class="profile-interest-top-right">
+          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
+            <p class="profile-meta" style="margin-bottom: 0.75rem;">${currentUser.email || 'N/A'}</p>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
               <div
                 id="profile-interest-switch"
-                class="profile-interest-switch profile-interest-compact"
+                class="profile-interest-switch"
                 data-state="${getInterestStateKey(interestCategory)}"
               >
                 <div class="profile-interest-labels">
@@ -1130,6 +1123,18 @@ function renderProfile() {
                   <div class="profile-interest-thumb"></div>
                 </div>
               </div>
+              <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
+                ${currentUser.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card profile-summary-card profile-summary-card--leetcode">
+          <div class="profile-leetcode-header">
+            <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
+            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #999;">
+              ${currentUser.leetcodeUsername || 'Not set'}
             </div>
           </div>
           <div id="leetcode-stats-container"></div>
@@ -1160,17 +1165,17 @@ function renderProfile() {
     profileContent.innerHTML = `
       <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
         <h3 style="margin-top: 0;">Manual LeetCode Stats Update (Staff Only)</h3>
-        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Note: Stats are automatically updated daily at 10 PM. Use these tools to fetch manually.</p>
+        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Note: Stats are automatically updated daily at 10 PM. Use this button to fetch and cache stats immediately.</p>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <button class="btn" id="leetcode-batch-btn" type="button">Fetch All Students Now</button>
+          <button class="btn" id="leetcode-sync-btn" type="button">Sync LeetCode Stats Now</button>
         </div>
       </div>
       <div id="leetcode-result"></div>
     `;
     
-    const batchBtn = document.getElementById('leetcode-batch-btn');
-    if (batchBtn) {
-      batchBtn.addEventListener('click', fetchAllStudentsLeetCodeStats);
+    const syncBtn = document.getElementById('leetcode-sync-btn');
+    if (syncBtn) {
+      syncBtn.addEventListener('click', triggerLeetCodeSync);
     }
   } else {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
@@ -1308,6 +1313,33 @@ function renderLeetCodeStatsCard(data) {
       </div>
     </div>
   `;
+}
+
+async function triggerLeetCodeSync() {
+  const resultDiv = document.getElementById('leetcode-result');
+  const btn = document.getElementById('leetcode-sync-btn');
+  
+  if (!btn) return;
+  
+  btn.disabled = true;
+  btn.textContent = 'Syncing...';
+  resultDiv.innerHTML = '<p style="color: #999;">Fetching LeetCode stats for all students (this may take a few minutes)...</p>';
+  
+  try {
+    const response = await fetch('/api/sync-leetcode', { method: 'POST' });
+    const data = await response.json();
+    
+    if (data.success) {
+      resultDiv.innerHTML = '<div class="card" style="padding: 1rem; border-left: 4px solid #51cf66;"><p style="margin: 0; color: #51cf66;">[OK] ' + data.message + '</p><p style="margin: 0.5rem 0 0 0; color: #999; font-size: 0.9rem;">Stats are now cached and will display in student profiles.</p></div>';
+    } else {
+      resultDiv.innerHTML = '<div class="card" style="padding: 1rem; border-left: 4px solid #ff6b6b;"><p style="margin: 0; color: #ff6b6b;">[ERROR] ' + (data.message || 'Sync failed') + '</p></div>';
+    }
+  } catch (error) {
+    resultDiv.innerHTML = '<div class="card" style="padding: 1rem; border-left: 4px solid #ff6b6b;"><p style="margin: 0; color: #ff6b6b;">[ERROR] Network error: ' + error.message + '</p></div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sync LeetCode Stats Now';
+  }
 }
 
 function renderLeaderboard() {
