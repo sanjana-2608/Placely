@@ -10,6 +10,10 @@ This project now supports Supabase for the `students` data path.
    - `Project URL`
    - `service_role` key (server-side only)
 
+For this project, your URL is:
+
+- `https://nwtluvxaurtpvuityoyl.supabase.co`
+
 ## 2) Create the `students` table
 
 Run this SQL in **SQL Editor**:
@@ -65,6 +69,13 @@ Set these in local shell and Railway:
 
 - `SUPABASE_URL=<your_project_url>`
 - `SUPABASE_SERVICE_ROLE_KEY=<your_service_role_key>`
+
+If your Supabase UI only shows newer key labels, this app also accepts:
+
+- `SUPABASE_KEY`
+- `SUPABASE_SECRET_KEY`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_PUBLISHABLE_KEY`
 
 ## 5) Install dependencies and run
 

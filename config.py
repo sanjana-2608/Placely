@@ -14,8 +14,14 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIEN
 
 # Supabase Configuration (for database integration)
 # Create a project at https://supabase.com and copy values from Project Settings > API
-SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://nwtluvxaurtpvuityoyl.supabase.co')
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
+SUPABASE_KEY = (
+	os.environ.get('SUPABASE_KEY', '').strip()
+	or os.environ.get('SUPABASE_SECRET_KEY', '').strip()
+	or os.environ.get('SUPABASE_ANON_KEY', '').strip()
+	or os.environ.get('SUPABASE_PUBLISHABLE_KEY', '').strip()
+)
 
 # OAuth 2.0 scope for getting user profile information
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"

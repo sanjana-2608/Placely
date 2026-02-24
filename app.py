@@ -24,14 +24,31 @@ except ImportError:
 app = Flask(__name__, static_folder='client', template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'placely-secret-key-2026')
 
-SUPABASE_URL = os.environ.get('SUPABASE_URL', '').strip()
-SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '').strip()
-SUPABASE_ENABLED = bool(SUPABASE_AVAILABLE and SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+SUPABASE_URL = (
+    os.environ.get('SUPABASE_URL', '').strip()
+    or getattr(config, 'SUPABASE_URL', '').strip()
+)
+
+SUPABASE_SERVICE_ROLE_KEY = (
+    os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '').strip()
+    or getattr(config, 'SUPABASE_SERVICE_ROLE_KEY', '').strip()
+)
+
+SUPABASE_FALLBACK_KEY = (
+    os.environ.get('SUPABASE_KEY', '').strip()
+    or os.environ.get('SUPABASE_SECRET_KEY', '').strip()
+    or os.environ.get('SUPABASE_ANON_KEY', '').strip()
+    or os.environ.get('SUPABASE_PUBLISHABLE_KEY', '').strip()
+    or getattr(config, 'SUPABASE_KEY', '').strip()
+)
+
+SUPABASE_DB_KEY = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_FALLBACK_KEY
+SUPABASE_ENABLED = bool(SUPABASE_AVAILABLE and SUPABASE_URL and SUPABASE_DB_KEY)
 
 supabase = None
 if SUPABASE_ENABLED:
     try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        supabase = create_client(SUPABASE_URL, SUPABASE_DB_KEY)
     except Exception as exc:
         print(f"Supabase initialization failed: {exc}")
         supabase = None
