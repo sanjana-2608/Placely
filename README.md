@@ -60,22 +60,6 @@ For database integration setup, see:
 
 - [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
 
-## Login Credentials
-
-### Student Login
-Use any of the demo student emails:
-- aarav@college.edu
-- sneha@college.edu
-- rahul@college.edu
-- priya@college.edu
-- vikram@college.edu
-
-Password: Any password (demo mode)
-
-### Staff Login
-- Email: staff@college.edu
-- Password: staff123
-
 ## Project Structure
 
 ```

@@ -1,11 +1,5 @@
-// Placely Toy Data
-const students = [
-  { id: 1, name: "Aarav Kumar", email: "aarav@college.edu", leetcodeUsername: "ais1ee", codingProblems: 120, internships: 2, certifications: 3, gradePoints: 8.7, year: 3, interest: "Placed", dept: "CSE" },
-  { id: 2, name: "Sneha Reddy", email: "sneha@college.edu", leetcodeUsername: "student123", codingProblems: 80, internships: 1, certifications: 2, gradePoints: 9.1, year: 2, interest: "Higher Studies", dept: "IT" },
-  { id: 3, name: "Rahul Singh", email: "rahul@college.edu", leetcodeUsername: "rahulcodes", codingProblems: 200, internships: 0, certifications: 1, gradePoints: 7.9, year: 4, interest: "Placed", dept: "ECE" },
-  { id: 4, name: "Priya Sharma", email: "priya@college.edu", leetcodeUsername: "priya_dev", codingProblems: 150, internships: 1, certifications: 4, gradePoints: 8.3, year: 3, interest: "Uninterested", dept: "CSE" },
-  { id: 5, name: "Vikram Patel", email: "vikram@college.edu", leetcodeUsername: "vikrampatel", codingProblems: 60, internships: 2, certifications: 2, gradePoints: 8.9, year: 2, interest: "Interested", dept: "ME" }
-];
+// Runtime data
+let students = [];
 
 const recentlyPlaced = [
   { name: "Priya Sharma", package: 18.5, company: "Google", position: "Software Engineer", graduationYear: 2024, date: "2026-01-25" },
@@ -79,7 +73,6 @@ const companyLogoDomains = {
   "LINARC": "linarc.com"
 };
 
-const staffCredentials = { email: "staff@college.edu", password: "staff123" };
 const notifications = [ { msg: 'Welcome to Placely!', date: '2026-01-27' } ];
 
 let currentUser = null;
@@ -110,12 +103,28 @@ async function checkSession() {
     if (data.logged_in) {
       currentUser = data.user;
       isStaff = data.is_staff;
+      await refreshStudentsData();
       initializeApp();
       showSection('home-section');
       renderHome();
     }
   } catch (error) {
     console.error('Session check error:', error);
+  }
+}
+
+async function refreshStudentsData() {
+  try {
+    const response = await fetch('/api/students');
+    if (!response.ok) {
+      return;
+    }
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      students = data;
+    }
+  } catch (error) {
+    console.error('Students fetch error:', error);
   }
 }
 
@@ -158,35 +167,40 @@ function switchLoginTab(tab, triggerElement) {
   document.getElementById(tab + '-login').classList.add('active');
 }
 
-function loginUser(e) {
+async function loginUser(e) {
   e.preventDefault();
-  if (currentLoginTab === 'student') {
-    const email = document.getElementById('student-email').value.trim();
-    const password = document.getElementById('student-password').value.trim();
-    if (!email || !password) { alert('Please enter email and password.'); return; }
-    const found = students.find(s => s.email.toLowerCase() === email.toLowerCase());
-    if (found) {
-      currentUser = found;
-      isStaff = false;
-      initializeApp();
-      showSection('dashboard-section');
-      renderDashboard();
-    } else {
-      alert('Student email not found. Use one of the demo emails:\n' + students.map(s => s.email).join('\n'));
+  const loginType = currentLoginTab === 'student' ? 'student' : 'staff';
+
+  const email = document.getElementById(loginType === 'student' ? 'student-email' : 'staff-email').value.trim();
+  const password = document.getElementById(loginType === 'student' ? 'student-password' : 'staff-password').value.trim();
+
+  if (!email || !password) {
+    alert('Please enter email and password.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: loginType, email, password })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      alert(data.message || 'Login failed');
+      return;
     }
-  } else {
-    const email = document.getElementById('staff-email').value.trim();
-    const password = document.getElementById('staff-password').value.trim();
-    if (!email || !password) { alert('Please enter email and password.'); return; }
-    if (email === staffCredentials.email && password === staffCredentials.password) {
-      isStaff = true;
-      currentUser = null;
-      initializeApp();
-      showSection('dashboard-section');
-      renderDashboard();
-    } else {
-      alert('Invalid staff credentials.\nDemo: ' + staffCredentials.email + ' / ' + staffCredentials.password);
-    }
+
+    isStaff = !!data.is_staff;
+    currentUser = isStaff ? null : data.user;
+    await refreshStudentsData();
+    initializeApp();
+    showSection('dashboard-section');
+    renderDashboard();
+  } catch (error) {
+    console.error('Login error:', error);
+    alert('Unable to login right now. Please try again.');
   }
 }
 
@@ -199,6 +213,7 @@ function initializeApp() {
 }
 
 function logout() {
+  fetch('/logout', { method: 'POST' }).catch(() => null);
   currentUser = null;
   isStaff = false;
   const navbar = document.getElementById('navbar');
@@ -246,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Check for login callback or existing session
+  refreshStudentsData();
   checkLoginStatus();
   checkSession();
 });

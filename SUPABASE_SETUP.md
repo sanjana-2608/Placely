@@ -49,19 +49,9 @@ before update on public.students
 for each row execute function public.set_updated_at();
 ```
 
-## 3) Seed demo student rows (optional)
+## 3) Add real student data (optional)
 
-```sql
-insert into public.students
-(name, email, leetcode_username, coding_problems, internships, certifications, grade_points, year, interest, dept)
-values
-('Aarav Kumar', 'aarav@college.edu', 'ais1ee', 120, 2, 3, 8.7, 3, 'Placed', 'CSE'),
-('Sneha Reddy', 'sneha@college.edu', 'student123', 80, 1, 2, 9.1, 2, 'Higher Studies', 'IT'),
-('Rahul Singh', 'rahul@college.edu', 'rahulcodes', 200, 0, 1, 7.9, 4, 'Placed', 'ECE'),
-('Priya Sharma', 'priya@college.edu', 'priya_dev', 150, 1, 4, 8.3, 3, 'Uninterested', 'CSE'),
-('Vikram Patel', 'vikram@college.edu', 'vikrampatel', 60, 2, 2, 8.9, 2, 'Interested', 'ME')
-on conflict (email) do nothing;
-```
+You can insert students manually via SQL Editor or use the app's staff interface after login.
 
 ## 4) Set environment variables
 

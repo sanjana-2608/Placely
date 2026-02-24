@@ -94,13 +94,7 @@ else:
     client_secrets = {}
 
 # Data
-students = [
-    {"id": 1, "name": "Aarav Kumar", "email": "aarav@college.edu", "leetcodeUsername": "ais1ee", "codingProblems": 120, "internships": 2, "certifications": 3, "gradePoints": 8.7, "year": 3, "interest": "Placed", "dept": "CSE"},
-    {"id": 2, "name": "Sneha Reddy", "email": "sneha@college.edu", "leetcodeUsername": "student123", "codingProblems": 80, "internships": 1, "certifications": 2, "gradePoints": 9.1, "year": 2, "interest": "Higher Studies", "dept": "IT"},
-    {"id": 3, "name": "Rahul Singh", "email": "rahul@college.edu", "leetcodeUsername": "rahulcodes", "codingProblems": 200, "internships": 0, "certifications": 1, "gradePoints": 7.9, "year": 4, "interest": "Placed", "dept": "ECE"},
-    {"id": 4, "name": "Priya Sharma", "email": "priya@college.edu", "leetcodeUsername": "priya_dev", "codingProblems": 150, "internships": 1, "certifications": 4, "gradePoints": 8.3, "year": 3, "interest": "Uninterested", "dept": "CSE"},
-    {"id": 5, "name": "Vikram Patel", "email": "vikram@college.edu", "leetcodeUsername": "vikrampatel", "codingProblems": 60, "internships": 2, "certifications": 2, "gradePoints": 8.9, "year": 2, "interest": "Interested", "dept": "ME"}
-]
+students = []
 
 recently_placed = [
     {"name": "Priya Sharma", "package": 18.5, "company": "Google", "position": "Software Engineer", "graduationYear": 2024, "date": "2026-01-25"},
