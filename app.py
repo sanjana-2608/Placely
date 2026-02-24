@@ -523,7 +523,7 @@ def save_linkedin_data(student_id, linkedin_data):
         update_data = {
             'linkedin_name': linkedin_data.get('name', ''),
             'linkedin_photo_url': linkedin_data.get('picture', ''),
-            'linkedin_url': f"https://www.linkedin.com/in/{linkedin_data.get('profile_id', '')}" if linkedin_data.get('profile_id') else '',
+            'linkedin_url': linkedin_data.get('profile_url', ''),  # Use actual profile URL if provided
             'linkedin_headline': linkedin_data.get('headline', '')
         }
         
@@ -772,11 +772,11 @@ def linkedin_callback():
         user_id = session['user'].get('id')
         print(f"Saving data for user ID: {user_id}")
         
-        # Save LinkedIn data to database
+        # Save LinkedIn data to database (without profile URL since OpenID Connect doesn't provide public profile URLs)
         if save_linkedin_data(user_id, {
             'name': linkedin_profile.get('name', ''),
             'picture': linkedin_profile.get('picture', ''),
-            'profile_id': linkedin_profile.get('profile_id', ''),
+            'profile_url': '',  # OpenID Connect doesn't provide public profile URL
             'headline': linkedin_profile.get('headline', '')
         }):
             print("LinkedIn data saved successfully")
