@@ -155,7 +155,10 @@ staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
 STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
     'certifications', 'gradePoints', 'year', 'interest', 'dept',
-    'tenthPercentage', 'twelfthPercentage'
+    'tenthPercentage', 'twelfthPercentage',
+    'leetcodeRanking', 'leetcodeSolvedAll', 'leetcodeSolvedEasy', 'leetcodeSolvedMedium',
+    'leetcodeSolvedHard', 'leetcodeAcceptanceAll', 'leetcodeAcceptanceEasy',
+    'leetcodeAcceptanceMedium', 'leetcodeAcceptanceHard', 'leetcodeLastSyncedAt'
 }
 
 
@@ -178,6 +181,16 @@ def _db_to_student(row):
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
         'linkedinUrl': row.get('linkedin_url') or '',
         'linkedinHeadline': row.get('linkedin_headline') or '',
+        'leetcodeRanking': row.get('leetcode_ranking'),
+        'leetcodeSolvedAll': row.get('leetcode_solved_all'),
+        'leetcodeSolvedEasy': row.get('leetcode_solved_easy'),
+        'leetcodeSolvedMedium': row.get('leetcode_solved_medium'),
+        'leetcodeSolvedHard': row.get('leetcode_solved_hard'),
+        'leetcodeAcceptanceAll': row.get('leetcode_acceptance_all'),
+        'leetcodeAcceptanceEasy': row.get('leetcode_acceptance_easy'),
+        'leetcodeAcceptanceMedium': row.get('leetcode_acceptance_medium'),
+        'leetcodeAcceptanceHard': row.get('leetcode_acceptance_hard'),
+        'leetcodeLastSyncedAt': row.get('leetcode_last_synced_at'),
     }
 
 
@@ -195,7 +208,17 @@ def _student_to_db(payload):
         'interest': 'interest',
         'dept': 'dept',
         'tenthPercentage': 'tenth_percentage',
-        'twelfthPercentage': 'twelfth_percentage'
+        'twelfthPercentage': 'twelfth_percentage',
+        'leetcodeRanking': 'leetcode_ranking',
+        'leetcodeSolvedAll': 'leetcode_solved_all',
+        'leetcodeSolvedEasy': 'leetcode_solved_easy',
+        'leetcodeSolvedMedium': 'leetcode_solved_medium',
+        'leetcodeSolvedHard': 'leetcode_solved_hard',
+        'leetcodeAcceptanceAll': 'leetcode_acceptance_all',
+        'leetcodeAcceptanceEasy': 'leetcode_acceptance_easy',
+        'leetcodeAcceptanceMedium': 'leetcode_acceptance_medium',
+        'leetcodeAcceptanceHard': 'leetcode_acceptance_hard',
+        'leetcodeLastSyncedAt': 'leetcode_last_synced_at'
     }
     for key, value in payload.items():
         db_key = field_map.get(key)
@@ -363,6 +386,55 @@ def fetch_leetcode_profile(username):
         'solved': solved,
         'totalSubmissions': total_submissions,
         'acceptanceRates': acceptance_rates
+    }
+
+
+def _get_student_by_leetcode_username(username):
+    normalized = (username or '').strip().lower()
+    if not normalized:
+        return None
+
+    students_data = get_students_data()
+    return next(
+        (
+            student for student in students_data
+            if str(student.get('leetcodeUsername') or '').strip().lower() == normalized
+        ),
+        None
+    )
+
+
+def _cached_leetcode_payload(student):
+    username = student.get('leetcodeUsername') or ''
+    solved_all = student.get('leetcodeSolvedAll')
+    solved_easy = student.get('leetcodeSolvedEasy')
+    solved_medium = student.get('leetcodeSolvedMedium')
+    solved_hard = student.get('leetcodeSolvedHard')
+
+    if solved_all is None and solved_easy is None and solved_medium is None and solved_hard is None:
+        return {
+            'success': False,
+            'username': username,
+            'message': 'LeetCode stats are not cached yet. Daily sync runs at 10 PM.'
+        }
+
+    return {
+        'success': True,
+        'username': username,
+        'ranking': student.get('leetcodeRanking'),
+        'solved': {
+            'all': int(solved_all or 0),
+            'easy': int(solved_easy or 0),
+            'medium': int(solved_medium or 0),
+            'hard': int(solved_hard or 0)
+        },
+        'acceptanceRates': {
+            'all': float(student.get('leetcodeAcceptanceAll') or 0),
+            'easy': float(student.get('leetcodeAcceptanceEasy') or 0),
+            'medium': float(student.get('leetcodeAcceptanceMedium') or 0),
+            'hard': float(student.get('leetcodeAcceptanceHard') or 0)
+        },
+        'lastSyncedAt': student.get('leetcodeLastSyncedAt')
     }
 
 @app.route('/')
@@ -618,7 +690,15 @@ def get_students():
 
 @app.route('/api/leetcode/<string:username>')
 def get_leetcode_profile(username):
-    data = fetch_leetcode_profile(username)
+    student = _get_student_by_leetcode_username(username)
+    if not student:
+        return jsonify({
+            'success': False,
+            'username': username,
+            'message': 'No student found with this LeetCode username'
+        }), 404
+
+    data = _cached_leetcode_payload(student)
     status_code = 200 if data.get('success') else 404
     return jsonify(data), status_code
 
@@ -637,11 +717,13 @@ def get_leetcode_profiles_for_students():
             })
 
     results = []
-    for index, entry in enumerate(usernames):
-        if index > 0:
-            time.sleep(LEETCODE_BATCH_DELAY_SECONDS)
-
-        profile = fetch_leetcode_profile(entry['username'])
+    for entry in usernames:
+        student = _get_student_by_leetcode_username(entry['username'])
+        profile = _cached_leetcode_payload(student) if student else {
+            'success': False,
+            'username': entry['username'],
+            'message': 'No cached LeetCode stats found'
+        }
         results.append({
             'studentId': entry['studentId'],
             'studentName': entry['studentName'],
@@ -848,9 +930,19 @@ def scheduled_fetch_leetcode_stats():
             try:
                 profile = fetch_leetcode_profile(username)
                 if profile.get('success') and profile.get('solved'):
-                    # Update student with coding problems solved
+                    # Update student with cached LeetCode stats
                     update_student_data(student['id'], {
-                        'codingProblems': profile['solved']['all']
+                        'codingProblems': profile['solved']['all'],
+                        'leetcodeRanking': profile.get('ranking'),
+                        'leetcodeSolvedAll': profile['solved'].get('all', 0),
+                        'leetcodeSolvedEasy': profile['solved'].get('easy', 0),
+                        'leetcodeSolvedMedium': profile['solved'].get('medium', 0),
+                        'leetcodeSolvedHard': profile['solved'].get('hard', 0),
+                        'leetcodeAcceptanceAll': profile.get('acceptanceRates', {}).get('all', 0),
+                        'leetcodeAcceptanceEasy': profile.get('acceptanceRates', {}).get('easy', 0),
+                        'leetcodeAcceptanceMedium': profile.get('acceptanceRates', {}).get('medium', 0),
+                        'leetcodeAcceptanceHard': profile.get('acceptanceRates', {}).get('hard', 0),
+                        'leetcodeLastSyncedAt': datetime.utcnow().isoformat()
                     })
                     updated_count += 1
                     print(f"  ✓ Updated {student['name']}: {profile['solved']['all']} problems")
@@ -866,17 +958,28 @@ def scheduled_fetch_leetcode_stats():
 
 def init_scheduler():
     """Initialize the background scheduler"""
+    if getattr(app, '_leetcode_scheduler', None):
+        return
     scheduler = BackgroundScheduler()
-    # Schedule the job to run every day at 10 PM (22:00)
-    scheduler.add_job(func=scheduled_fetch_leetcode_stats, trigger="cron", hour=22, minute=0)
+    scheduler.add_job(
+        func=scheduled_fetch_leetcode_stats,
+        trigger="cron",
+        hour=22,
+        minute=0,
+        id='leetcode_daily_sync',
+        replace_existing=True
+    )
     scheduler.start()
+    app._leetcode_scheduler = scheduler
     print("✓ Scheduler initialized: LeetCode stats will be fetched daily at 10 PM")
+
+
+if os.environ.get('DISABLE_LEETCODE_SCHEDULER', '0') != '1':
+    init_scheduler()
 
 
 if __name__ == '__main__':
     # Use Railway's PORT environment variable, default to 5000 for local dev
     port = int(os.environ.get('PORT', 5000))
-    # Initialize scheduler for daily LeetCode stats fetch
-    init_scheduler()
     # Bind to 0.0.0.0 to allow external connections (required for Railway)
     app.run(host='0.0.0.0', port=port, debug=False)
