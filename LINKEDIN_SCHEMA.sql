@@ -9,12 +9,14 @@ Run these SQL commands in Supabase to add LinkedIn fields:
 ALTER TABLE public.students
 ADD COLUMN linkedin_name TEXT DEFAULT '',
 ADD COLUMN linkedin_photo_url TEXT DEFAULT '',
-ADD COLUMN linkedin_url TEXT DEFAULT '';
+ADD COLUMN linkedin_url TEXT DEFAULT '',
+ADD COLUMN linkedin_headline TEXT DEFAULT '';
 
 -- Add comments for clarity
 COMMENT ON COLUMN public.students.linkedin_name IS 'Student name from LinkedIn profile';
 COMMENT ON COLUMN public.students.linkedin_photo_url IS 'URL of student profile photo from LinkedIn';
 COMMENT ON COLUMN public.students.linkedin_url IS 'Direct URL to student LinkedIn profile';
+COMMENT ON COLUMN public.students.linkedin_headline IS 'Student headline/job title from LinkedIn profile';
 ```
 
 ## Steps to Apply Schema Update
@@ -38,10 +40,11 @@ WHERE table_name = 'students'
 AND column_name LIKE 'linkedin%';
 ```
 
-You should see three new columns:
+You should see four new columns:
 - `linkedin_name` (text)
 - `linkedin_photo_url` (text)
 - `linkedin_url` (text)
+- `linkedin_headline` (text)
 
 ## Notes
 

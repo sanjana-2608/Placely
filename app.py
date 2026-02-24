@@ -163,6 +163,7 @@ def _db_to_student(row):
         'linkedinName': row.get('linkedin_name') or '',
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
         'linkedinUrl': row.get('linkedin_url') or '',
+        'linkedinHeadline': row.get('linkedin_headline') or '',
     }
 
 
@@ -437,9 +438,9 @@ def get_linkedin_profile(access_token):
             'Accept': 'application/json'
         }
         
-        # Fetch user profile using OpenID Connect
+        # Fetch user profile using OpenID Connect with headline
         response = http_requests.get(
-            'https://api.linkedin.com/v2/me',
+            'https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,headline)',
             headers=headers,
             timeout=10
         )
@@ -454,6 +455,9 @@ def get_linkedin_profile(access_token):
         name = ''
         if 'localizedFirstName' in profile_data and 'localizedLastName' in profile_data:
             name = f"{profile_data['localizedFirstName']} {profile_data['localizedLastName']}"
+        
+        # Extract headline (description/job title)
+        headline = profile_data.get('headline', {}).get('localized', {}).get('en_US', '') if isinstance(profile_data.get('headline'), dict) else profile_data.get('headline', '')
         
         # Fetch email separately
         email_response = http_requests.get(
@@ -486,7 +490,8 @@ def get_linkedin_profile(access_token):
             'name': name,
             'email': email,
             'picture': picture_url,
-            'profile_id': profile_data.get('id', '')
+            'profile_id': profile_data.get('id', ''),
+            'headline': headline
         }
     except Exception as e:
         print(f"Error fetching LinkedIn profile: {str(e)}")
@@ -501,7 +506,8 @@ def save_linkedin_data(student_id, linkedin_data):
         update_data = {
             'linkedin_name': linkedin_data.get('name', ''),
             'linkedin_photo_url': linkedin_data.get('picture', ''),
-            'linkedin_url': f"https://www.linkedin.com/in/{linkedin_data.get('profile_id', '')}" if linkedin_data.get('profile_id') else ''
+            'linkedin_url': f"https://www.linkedin.com/in/{linkedin_data.get('profile_id', '')}" if linkedin_data.get('profile_id') else '',
+            'linkedin_headline': linkedin_data.get('headline', '')
         }
         
         response = supabase.table('students').update(update_data).eq('id', student_id).execute()
@@ -727,7 +733,8 @@ def linkedin_callback():
         if save_linkedin_data(user_id, {
             'name': linkedin_profile.get('name', ''),
             'picture': linkedin_profile.get('picture', ''),
-            'profile_id': linkedin_profile.get('profile_id', '')
+            'profile_id': linkedin_profile.get('profile_id', ''),
+            'headline': linkedin_profile.get('headline', '')
         }):
             # Refresh student data in session
             updated_student = get_student_by_email(session['user']['email'])

@@ -1129,8 +1129,9 @@ function renderProfile() {
               ${currentUser.linkedinName ? `
                 <div>
                   <strong>✓ Connected</strong>
-                  <p style="color: #999; margin: 0.5rem 0 0 0;">Name: ${currentUser.linkedinName}</p>
-                  ${currentUser.linkedinUrl ? `<p style="color: #999; margin: 0;"><a href="${currentUser.linkedinUrl}" target="_blank" style="color: #FEC524;">View Profile →</a></p>` : ''}
+                  <p style="color: #999; margin: 0.5rem 0 0 0;"><strong>Name:</strong> ${currentUser.linkedinName}</p>
+                  ${currentUser.linkedinHeadline ? `<p style="color: #999; margin: 0.5rem 0 0 0;"><strong>Headline:</strong> ${currentUser.linkedinHeadline}</p>` : ''}
+                  ${currentUser.linkedinUrl ? `<p style="color: #999; margin: 0.5rem 0 0 0;"><a href="${currentUser.linkedinUrl}" target="_blank" style="color: #FEC524;">View Profile →</a></p>` : ''}
                   ${currentUser.linkedinPhotoUrl ? `<img src="${currentUser.linkedinPhotoUrl}" alt="LinkedIn" style="width: 60px; height: 60px; border-radius: 50%; margin-top: 0.5rem;">` : ''}
                 </div>
                 <button class="btn" onclick="connectLinkedIn()" style="margin-top: 0.5rem; background: #0A66C2; width: 100%;">Update LinkedIn</button>
