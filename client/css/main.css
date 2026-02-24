@@ -269,8 +269,8 @@ table tr:hover {
 }
 
 .chart-card {
-    width: 40%;
-    min-width: 260px;
+    width: 100%;
+    min-width: 0;
     background: rgba(0,0,0,0.3);
     padding: 1.25rem;
     border-radius: 8px;
