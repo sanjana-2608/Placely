@@ -494,6 +494,68 @@ function renderDashboard() {
   }
 }
 
+function buildAnalyticsPieCard(chartId, title) {
+  return `
+    <div class="chart-card analytics-pie-card">
+      <h3 style="text-align: center; margin-top: 0;">${title}</h3>
+      <div class="analytics-pie-layout">
+        <div class="analytics-pie-wrap">
+          <canvas id="${chartId}" class="chart-canvas analytics-pie-canvas"></canvas>
+          <div class="analytics-pie-center" id="${chartId}-center">0.0%</div>
+        </div>
+        <div class="analytics-pie-legend" id="${chartId}-legend"></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
+  const canvas = document.getElementById(chartId);
+  const center = document.getElementById(`${chartId}-center`);
+  const legend = document.getElementById(`${chartId}-legend`);
+  if (!canvas || !center || !legend) {
+    return;
+  }
+
+  const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
+  const maxValue = values.length ? Math.max(...values) : 0;
+  const maxPercent = total > 0 ? (maxValue / total) * 100 : 0;
+  center.textContent = `${maxPercent.toFixed(1)}%`;
+
+  legend.innerHTML = labels.map((label, index) => {
+    const value = Number(values[index] || 0);
+    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+    const color = colors[index % colors.length];
+    return `
+      <div class="analytics-pie-legend-item">
+        <span class="analytics-pie-legend-color" style="background-color: ${color};"></span>
+        <span>${label} ${percent}%</span>
+      </div>
+    `;
+  }).join('');
+
+  new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+}
+
 function renderStudentAnalytics(container) {
   container.style.display = 'grid';
   container.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
@@ -501,18 +563,9 @@ function renderStudentAnalytics(container) {
   container.style.marginBottom = '2rem';
 
   container.innerHTML = `
-    <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Interest Distribution</h3>
-      <canvas id="chart-interest" class="chart-canvas"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Placement Distribution</h3>
-      <canvas id="chart-placement" class="chart-canvas"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Student Distribution</h3>
-      <canvas id="chart-student" class="chart-canvas"></canvas>
-    </div>
+    ${buildAnalyticsPieCard('chart-interest', 'Interest Distribution')}
+    ${buildAnalyticsPieCard('chart-placement', 'Placement Distribution')}
+    ${buildAnalyticsPieCard('chart-student', 'Student Distribution')}
     <div class="chart-card">
       <h3 style="text-align: center; margin-top: 0;">Department Distribution</h3>
       <canvas id="chart-dept" class="chart-canvas"></canvas>
@@ -539,27 +592,11 @@ function renderStudentAnalytics(container) {
       interestCounts[category] = (interestCounts[category] || 0) + 1;
     });
     
-    new Chart(document.getElementById('chart-interest'), {
-      type: 'pie',
-      data: {
-        labels: Object.keys(interestCounts),
-        datasets: [{
-          data: Object.values(interestCounts),
-          backgroundColor: ['#4F7FFF', '#21C1B6', '#9B6DFF', '#FF6B6B'],
-          borderColor: '#000',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#f5f5f5', font: { size: 12 } },
-            position: 'bottom'
-          }
-        }
-      }
+    renderStyledAnalyticsPieChart({
+      chartId: 'chart-interest',
+      labels: Object.keys(interestCounts),
+      values: Object.values(interestCounts),
+      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
     });
 
     const placementCounts = { Placements: 0, 'Non-Placement Tracks': 0 };
@@ -572,27 +609,11 @@ function renderStudentAnalytics(container) {
       }
     });
 
-    new Chart(document.getElementById('chart-placement'), {
-      type: 'pie',
-      data: {
-        labels: Object.keys(placementCounts),
-        datasets: [{
-          data: Object.values(placementCounts),
-          backgroundColor: ['#21C1B6', '#FF6B6B'],
-          borderColor: '#000',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#f5f5f5', font: { size: 12 } },
-            position: 'bottom'
-          }
-        }
-      }
+    renderStyledAnalyticsPieChart({
+      chartId: 'chart-placement',
+      labels: Object.keys(placementCounts),
+      values: Object.values(placementCounts),
+      colors: ['#10b981', '#ef4444']
     });
     
     const yearCounts = {};
@@ -601,27 +622,11 @@ function renderStudentAnalytics(container) {
       yearCounts[yr] = (yearCounts[yr] || 0) + 1;
     });
     
-    new Chart(document.getElementById('chart-student'), {
-      type: 'pie',
-      data: {
-        labels: Object.keys(yearCounts),
-        datasets: [{
-          data: Object.values(yearCounts),
-          backgroundColor: ['#4F7FFF', '#21C1B6', '#9B6DFF', '#FF6B6B'],
-          borderColor: '#000',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#f5f5f5', font: { size: 12 } },
-            position: 'bottom'
-          }
-        }
-      }
+    renderStyledAnalyticsPieChart({
+      chartId: 'chart-student',
+      labels: Object.keys(yearCounts),
+      values: Object.values(yearCounts),
+      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
     });
 
     const deptCounts = {};
@@ -741,14 +746,8 @@ function renderStaffAnalytics(container) {
   container.style.marginBottom = '2rem';
 
   container.innerHTML = `
-    <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Year 3 - Placement Status</h3>
-      <canvas id="chart-year3" class="chart-canvas"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3 style="text-align: center; margin-top: 0;">Year 4 - Placement Status</h3>
-      <canvas id="chart-year4" class="chart-canvas"></canvas>
-    </div>
+    ${buildAnalyticsPieCard('chart-year3', 'Year 3 - Placement Status')}
+    ${buildAnalyticsPieCard('chart-year4', 'Year 4 - Placement Status')}
   `;
 
   container.querySelectorAll('.chart-card').forEach((card) => {
@@ -777,50 +776,18 @@ function renderStaffAnalytics(container) {
     const year3Counts = countStudentsByCriteria(year3Students);
     const year4Counts = countStudentsByCriteria(year4Students);
     
-    new Chart(document.getElementById('chart-year3'), {
-      type: 'pie',
-      data: {
-        labels: criteria,
-        datasets: [{
-          data: criteria.map(c => year3Counts[c]),
-          backgroundColor: ['#4F7FFF', '#21C1B6', '#FF6B6B', '#9B6DFF'],
-          borderColor: '#000',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#f5f5f5', font: { size: 12 } },
-            position: 'bottom'
-          }
-        }
-      }
+    renderStyledAnalyticsPieChart({
+      chartId: 'chart-year3',
+      labels: criteria,
+      values: criteria.map(c => year3Counts[c]),
+      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
     });
     
-    new Chart(document.getElementById('chart-year4'), {
-      type: 'pie',
-      data: {
-        labels: criteria,
-        datasets: [{
-          data: criteria.map(c => year4Counts[c]),
-          backgroundColor: ['#4F7FFF', '#21C1B6', '#FF6B6B', '#9B6DFF'],
-          borderColor: '#000',
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            labels: { color: '#f5f5f5', font: { size: 12 } },
-            position: 'bottom'
-          }
-        }
-      }
+    renderStyledAnalyticsPieChart({
+      chartId: 'chart-year4',
+      labels: criteria,
+      values: criteria.map(c => year4Counts[c]),
+      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
     });
   }, 0);
 }

@@ -627,6 +627,74 @@ table tr:hover {
     margin: 0 auto;
 }
 
+.analytics-pie-card {
+    height: auto;
+    min-height: 300px;
+}
+
+.analytics-pie-layout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.analytics-pie-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    flex: 0 0 220px;
+}
+
+.analytics-pie-canvas {
+    width: 220px !important;
+    height: 220px !important;
+}
+
+.analytics-pie-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.analytics-pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+}
+
+.analytics-pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #f5f5f5;
+}
+
+.analytics-pie-legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex: 0 0 14px;
+}
+
+@media (max-width: 1100px) {
+    .analytics-pie-layout {
+        flex-direction: column;
+    }
+
+    .analytics-pie-legend {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
 /* Banner and Companies Styles */
 .banner-card {
     background: linear-gradient(135deg, #FEC524 0%, #FFD54F 100%);
@@ -1021,6 +1089,12 @@ body.light-mode .stat-card {
 body.light-mode .chart-card {
     background: #f8fafc;
     border: 1px solid rgba(59, 130, 246, 0.1);
+}
+body.light-mode .analytics-pie-center {
+    color: #1e3a8a;
+}
+body.light-mode .analytics-pie-legend-item {
+    color: #2c3e50;
 }
 body.light-mode .banner-card {
     background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
