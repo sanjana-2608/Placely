@@ -535,21 +535,35 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
   }).join('');
 
   new Chart(canvas, {
-    type: 'pie',
+    type: 'doughnut',
     data: {
       labels,
       datasets: [{
         data: values,
         backgroundColor: colors,
-        borderWidth: 0
+        borderWidth: 0,
+        hoverOffset: 6
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      cutout: '62%',
       plugins: {
         legend: {
           display: false
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const label = context.label || '';
+              const value = Number(context.raw || 0);
+              const allValues = context.chart.data.datasets[0].data || [];
+              const total = allValues.reduce((sum, item) => sum + Number(item || 0), 0);
+              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+              return `${label}: ${value} (${percentage}%)`;
+            }
+          }
         }
       }
     }
@@ -596,7 +610,7 @@ function renderStudentAnalytics(container) {
       chartId: 'chart-interest',
       labels: Object.keys(interestCounts),
       values: Object.values(interestCounts),
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+      colors: ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00']
     });
 
     const placementCounts = { Placements: 0, 'Non-Placement Tracks': 0 };
@@ -613,7 +627,7 @@ function renderStudentAnalytics(container) {
       chartId: 'chart-placement',
       labels: Object.keys(placementCounts),
       values: Object.values(placementCounts),
-      colors: ['#10b981', '#ef4444']
+      colors: ['#00E5FF', '#FF3D71']
     });
     
     const yearCounts = {};
@@ -626,7 +640,7 @@ function renderStudentAnalytics(container) {
       chartId: 'chart-student',
       labels: Object.keys(yearCounts),
       values: Object.values(yearCounts),
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+      colors: ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00', '#FFD600']
     });
 
     const deptCounts = {};
@@ -780,14 +794,14 @@ function renderStaffAnalytics(container) {
       chartId: 'chart-year3',
       labels: criteria,
       values: criteria.map(c => year3Counts[c]),
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+      colors: ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00']
     });
     
     renderStyledAnalyticsPieChart({
       chartId: 'chart-year4',
       labels: criteria,
       values: criteria.map(c => year4Counts[c]),
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+      colors: ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00']
     });
   }, 0);
 }

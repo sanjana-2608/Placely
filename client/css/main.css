@@ -680,7 +680,7 @@ table tr:hover {
 .analytics-pie-legend-color {
     width: 14px;
     height: 14px;
-    border-radius: 3px;
+    border-radius: 999px;
     flex: 0 0 14px;
 }
 
