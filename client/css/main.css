@@ -661,6 +661,7 @@ table tr:hover {
 .analytics-pie-legend {
     position: absolute;
     inset: 0;
+    pointer-events: none;
 }
 
 .analytics-pie-legend-item {
@@ -681,6 +682,7 @@ table tr:hover {
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.analytics-pie-zone:hover .analytics-pie-legend-item,
 .analytics-pie-zone.is-hovering .analytics-pie-legend-item {
     opacity: 1;
     visibility: visible;
