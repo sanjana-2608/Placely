@@ -857,9 +857,10 @@ table tr:hover {
 }
 
 .home-post-card {
-    display: grid;
-    grid-template-columns: minmax(240px, 320px) 1fr;
-    gap: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
     background: rgba(9, 12, 18, 0.95);
     border-radius: 10px;
     padding: 1rem;
@@ -867,15 +868,20 @@ table tr:hover {
 }
 
 .home-post-image {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
+    width: min(100%, 420px);
+    height: auto;
+    object-fit: contain;
     border-radius: 8px;
     background: #000;
 }
 
+.home-post-content {
+    width: 100%;
+}
+
 .home-post-content h3 {
     margin: 0 0 0.65rem 0;
+    text-align: center;
 }
 
 .home-post-content p {
@@ -890,13 +896,8 @@ table tr:hover {
 }
 
 @media (max-width: 860px) {
-    .home-post-card {
-        grid-template-columns: 1fr;
-    }
-
     .home-post-image {
-        height: auto;
-        max-height: 280px;
+        width: min(100%, 340px);
     }
 }
 
