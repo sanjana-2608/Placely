@@ -112,7 +112,7 @@ async function connectLinkedIn() {
     
     if (data.auth_url) {
       console.log("Redirecting to LinkedIn...");
-      window.location.href = data.auth_url;
+      window.open(data.auth_url, '_blank', 'noopener,noreferrer');
     } else {
       alert(data.message || 'Failed to initiate LinkedIn connection. Please try again.');
     }
