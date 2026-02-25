@@ -499,11 +499,13 @@ function buildAnalyticsPieCard(chartId, title) {
     <div class="chart-card analytics-pie-card">
       <h3 style="text-align: center; margin-top: 0;">${title}</h3>
       <div class="analytics-pie-layout">
-        <div class="analytics-pie-wrap">
+        <div class="analytics-pie-zone">
+          <div class="analytics-pie-wrap">
           <canvas id="${chartId}" class="chart-canvas analytics-pie-canvas"></canvas>
           <div class="analytics-pie-center" id="${chartId}-center">0.0%</div>
+          </div>
+          <div class="analytics-pie-legend" id="${chartId}-legend"></div>
         </div>
-        <div class="analytics-pie-legend" id="${chartId}-legend"></div>
       </div>
     </div>
   `;
@@ -522,12 +524,19 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
   const maxPercent = total > 0 ? (maxValue / total) * 100 : 0;
   center.textContent = `${maxPercent.toFixed(1)}%`;
 
+  const centerCoord = 160;
+  const surroundingRadius = 140;
+  const itemCount = Math.max(labels.length, 1);
   legend.innerHTML = labels.map((label, index) => {
     const value = Number(values[index] || 0);
     const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
     const color = colors[index % colors.length];
+    const angleDeg = (-90 + (360 / itemCount) * index);
+    const angle = (angleDeg * Math.PI) / 180;
+    const x = centerCoord + surroundingRadius * Math.cos(angle);
+    const y = centerCoord + surroundingRadius * Math.sin(angle);
     return `
-      <div class="analytics-pie-legend-item">
+      <div class="analytics-pie-legend-item" style="left: ${x}px; top: ${y}px;">
         <span class="analytics-pie-legend-color" style="background-color: ${color};"></span>
         <span>${label} ${percent}%</span>
       </div>

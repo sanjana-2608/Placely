@@ -629,21 +629,28 @@ table tr:hover {
 
 .analytics-pie-card {
     height: auto;
-    min-height: 300px;
+    min-height: 360px;
 }
 
 .analytics-pie-layout {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+}
+
+.analytics-pie-zone {
+    position: relative;
+    width: 320px;
+    height: 320px;
 }
 
 .analytics-pie-wrap {
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 220px;
     height: 220px;
-    flex: 0 0 220px;
+    transform: translate(-50%, -50%);
 }
 
 .analytics-pie-canvas {
@@ -663,18 +670,23 @@ table tr:hover {
 }
 
 .analytics-pie-legend {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 180px;
+    position: absolute;
+    inset: 0;
 }
 
 .analytics-pie-legend-item {
-    display: flex;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     color: #f5f5f5;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(254, 197, 36, 0.22);
+    border-radius: 999px;
+    padding: 0.28rem 0.52rem;
 }
 
 .analytics-pie-legend-color {
@@ -685,13 +697,22 @@ table tr:hover {
 }
 
 @media (max-width: 1100px) {
-    .analytics-pie-layout {
-        flex-direction: column;
+    .analytics-pie-zone {
+        width: 300px;
+        height: 300px;
     }
 
-    .analytics-pie-legend {
-        width: 100%;
-        min-width: 0;
+    .analytics-pie-wrap,
+    .analytics-pie-canvas {
+        width: 205px !important;
+        height: 205px !important;
+    }
+
+    .analytics-pie-legend-item {
+        font-size: 0.76rem;
+        max-width: 128px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
