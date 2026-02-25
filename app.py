@@ -102,6 +102,30 @@ LINKEDIN_OAUTH_ENABLED = (
     LINKEDIN_CLIENT_SECRET != 'YOUR_LINKEDIN_CLIENT_SECRET_HERE'
 )
 
+
+def get_linkedin_redirect_uri():
+    configured_redirect_uri = (
+        os.environ.get('LINKEDIN_REDIRECT_URI', '').strip()
+        or getattr(config, 'LINKEDIN_REDIRECT_URI', '').strip()
+    )
+    if configured_redirect_uri:
+        return configured_redirect_uri
+    return url_for('linkedin_callback', _external=True)
+
+
+def build_linkedin_authorization_url(state):
+    from urllib.parse import urlencode
+
+    auth_url = 'https://www.linkedin.com/oauth/v2/authorization'
+    params = {
+        'response_type': 'code',
+        'client_id': LINKEDIN_CLIENT_ID,
+        'redirect_uri': get_linkedin_redirect_uri(),
+        'state': state,
+        'scope': 'openid profile email'
+    }
+    return f"{auth_url}?{urlencode(params)}"
+
 # Determine base URL for OAuth redirect
 BASE_URL = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'localhost:5000')
 REDIRECT_URI = f"https://{BASE_URL}/callback" if 'RAILWAY_PUBLIC_DOMAIN' in os.environ else "http://localhost:5000/callback"
@@ -122,6 +146,7 @@ else:
 
 # Data
 students = []
+_STUDENTS_COLUMN_AVAILABILITY = {}
 
 recently_placed = [
     {"name": "Priya Sharma", "package": 18.5, "company": "Google", "position": "Software Engineer", "graduationYear": 2024, "date": "2026-01-25"},
@@ -492,38 +517,28 @@ def google_login():
 
 @app.route('/auth/linkedin')
 def linkedin_login():
-    """Initiate LinkedIn OAuth flow"""
-    if not LINKEDIN_OAUTH_ENABLED:
-        return jsonify({'success': False, 'message': 'LinkedIn OAuth not configured'}), 400
-    
-    try:
-        import secrets
-        state = secrets.token_urlsafe(32)
-        session['oauth_state'] = state
-        session['oauth_provider'] = 'linkedin'
-        
-        # LinkedIn OAuth 2.0 authorization endpoint
-        auth_url = 'https://www.linkedin.com/oauth/v2/authorization'
-        params = {
-            'response_type': 'code',
-            'client_id': LINKEDIN_CLIENT_ID,
-            'redirect_uri': url_for('callback', _external=True),
-            'state': state,
-            'scope': 'openid profile email'
-        }
-        
-        from urllib.parse import urlencode
-        authorization_url = f"{auth_url}?{urlencode(params)}"
-        
-        return jsonify({'auth_url': authorization_url})
-    except Exception as e:
-        print(f"LinkedIn OAuth error: {str(e)}")
-        return jsonify({'success': False, 'message': f'OAuth error: {str(e)}'}), 400
+    """Backward-compatible alias for the primary LinkedIn connect endpoint"""
+    return connect_linkedin()
 
 def get_linkedin_profile(access_token):
     """Fetch user profile data from LinkedIn API"""
     try:
         print("\n--- FETCHING LINKEDIN PROFILE ---")
+        def _extract_localized_text(value):
+            if isinstance(value, str):
+                return value
+            if not isinstance(value, dict):
+                return ''
+            localized = value.get('localized')
+            if isinstance(localized, dict) and localized:
+                preferred = value.get('preferredLocale') or {}
+                preferred_key = f"{preferred.get('language', '')}_{preferred.get('country', '')}".strip('_')
+                if preferred_key and preferred_key in localized:
+                    return localized.get(preferred_key) or ''
+                return next(iter(localized.values()), '') or ''
+            text = value.get('text')
+            return text if isinstance(text, str) else ''
+
         headers = {
             'Authorization': f'Bearer {access_token}',
             'Accept': 'application/json',
@@ -552,6 +567,7 @@ def get_linkedin_profile(access_token):
             'email': userinfo.get('email', ''),
             'picture': userinfo.get('picture', ''),
             'profile_id': userinfo.get('sub', ''),  # sub is the user ID
+            'profile_url': userinfo.get('profile', ''),
             'headline': ''
         }
         
@@ -574,12 +590,13 @@ def get_linkedin_profile(access_token):
                 print(f"Profile data: {profile_data}")
                 # Extract headline if available
                 if 'headline' in profile_data:
-                    if isinstance(profile_data['headline'], dict):
-                        headline = profile_data['headline'].get('localized', {}).get('en_US', '')
-                    else:
-                        headline = profile_data['headline']
+                    headline = _extract_localized_text(profile_data['headline'])
                     result['headline'] = headline if headline else ''
                     print(f"Extracted headline: {result['headline']}")
+
+                vanity_name = profile_data.get('vanityName')
+                if vanity_name and not result.get('profile_url'):
+                    result['profile_url'] = f"https://www.linkedin.com/in/{vanity_name}"
         except Exception as e:
             print(f"Headline fetch failed (non-critical): {e}")
         
@@ -597,17 +614,48 @@ def save_linkedin_data(student_id, linkedin_data):
     if not supabase or not linkedin_data:
         print("Supabase unavailable or no LinkedIn data")
         return False
+
+    db_client = supabase
+
+    def _is_students_column_available(column_name):
+        cached = _STUDENTS_COLUMN_AVAILABILITY.get(column_name)
+        if cached is not None:
+            return cached
+        try:
+            db_client.table('students').select(column_name).limit(1).execute()
+            _STUDENTS_COLUMN_AVAILABILITY[column_name] = True
+            return True
+        except Exception as exc:
+            error_message = str(exc).lower()
+            is_missing_column = 'column' in error_message and 'does not exist' in error_message
+            if not is_missing_column:
+                print(f"Column probe failed for {column_name}: {exc}")
+            _STUDENTS_COLUMN_AVAILABILITY[column_name] = False
+            return False
     
     try:
-        update_data = {
-            'linkedin_name': linkedin_data.get('name', ''),
-            'linkedin_photo_url': linkedin_data.get('picture', ''),
-            'linkedin_url': linkedin_data.get('profile_url', ''),  # Use actual profile URL if provided
-            'linkedin_bio': linkedin_data.get('headline', '')
-        }
+        update_data = {}
+
+        if _is_students_column_available('linkedin_name'):
+            update_data['linkedin_name'] = linkedin_data.get('name', '')
+
+        if _is_students_column_available('linkedin_photo_url'):
+            update_data['linkedin_photo_url'] = linkedin_data.get('picture', '')
+
+        if _is_students_column_available('linkedin_url'):
+            update_data['linkedin_url'] = linkedin_data.get('profile_url', '')
+
+        if _is_students_column_available('linkedin_bio'):
+            update_data['linkedin_bio'] = linkedin_data.get('headline', '')
+        elif _is_students_column_available('linkedin_headline'):
+            update_data['linkedin_headline'] = linkedin_data.get('headline', '')
+
+        if not update_data:
+            print("No compatible LinkedIn columns found in students table")
+            return False
         
         print(f"Saving LinkedIn data: {update_data}")
-        response = supabase.table('students').update(update_data).eq('id', student_id).execute()
+        response = db_client.table('students').update(update_data).eq('id', student_id).execute()
         print(f"LinkedIn data saved successfully for student {student_id}")
         return True
     except Exception as e:
@@ -760,19 +808,7 @@ def connect_linkedin():
         import secrets
         state = secrets.token_urlsafe(32)
         session['linkedin_state'] = state
-        
-        # LinkedIn OAuth 2.0 authorization endpoint
-        auth_url = 'https://www.linkedin.com/oauth/v2/authorization'
-        params = {
-            'response_type': 'code',
-            'client_id': LINKEDIN_CLIENT_ID,
-            'redirect_uri': url_for('linkedin_callback', _external=True),
-            'state': state,
-            'scope': 'openid profile email'
-        }
-        
-        from urllib.parse import urlencode
-        authorization_url = f"{auth_url}?{urlencode(params)}"
+        authorization_url = build_linkedin_authorization_url(state)
         
         return jsonify({'auth_url': authorization_url})
     except Exception as e:
@@ -828,7 +864,7 @@ def linkedin_callback():
             'code': code,
             'client_id': LINKEDIN_CLIENT_ID,
             'client_secret': LINKEDIN_CLIENT_SECRET,
-            'redirect_uri': url_for('linkedin_callback', _external=True)
+            'redirect_uri': get_linkedin_redirect_uri()
         }
         
         print(f"Exchanging code at {token_url}")
@@ -865,7 +901,7 @@ def linkedin_callback():
         if save_linkedin_data(user_id, {
             'name': linkedin_profile.get('name', ''),
             'picture': linkedin_profile.get('picture', ''),
-            'profile_url': '',  # OpenID Connect doesn't provide public profile URL
+            'profile_url': linkedin_profile.get('profile_url', ''),
             'headline': linkedin_profile.get('headline', '')
         }):
             print("LinkedIn data saved successfully")

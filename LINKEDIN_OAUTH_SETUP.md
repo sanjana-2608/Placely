@@ -22,8 +22,8 @@
 
 1. In the "Auth" tab, scroll to "Authorized redirect URLs for your app"
 2. Click "Add redirect URL" and add:
-   - `http://localhost:5000/callback` (for local development)
-   - `https://<your-railway-domain>/callback` (for production)
+   - `http://localhost:5000/linkedin-callback` (for local development)
+   - `https://<your-railway-domain>/linkedin-callback` (for production)
 3. Click "Update"
 
 ## Step 4: Request Access to Sign In with LinkedIn
@@ -47,6 +47,12 @@ If deploying to Railway or similar platform:
 ```
 LINKEDIN_CLIENT_ID=your-client-id
 LINKEDIN_CLIENT_SECRET=your-client-secret
+LINKEDIN_REDIRECT_URI=https://<your-railway-domain>/linkedin-callback
+```
+
+For local development, you can set:
+```
+LINKEDIN_REDIRECT_URI=http://localhost:5000/linkedin-callback
 ```
 
 ## API Scopes Used
