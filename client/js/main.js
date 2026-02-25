@@ -245,8 +245,12 @@ function logout() {
   isStaff = false;
   const navbar = document.getElementById('navbar');
   const loginSection = document.getElementById('login-section');
-  if (navbar) navbar.style.display = 'none';
-  if (loginSection) loginSection.style.display = 'block';
+  if (loginSection) {
+    if (navbar) navbar.style.display = 'none';
+    loginSection.style.display = 'block';
+  } else {
+    if (navbar) navbar.style.display = 'flex';
+  }
 
   const studentEmail = document.getElementById('student-email');
   const studentPassword = document.getElementById('student-password');
@@ -260,6 +264,8 @@ function logout() {
   sectionIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   if (loginSection) {
     loginSection.classList.add('active');
+  } else {
+    showSection('home-section');
   }
 }
 
