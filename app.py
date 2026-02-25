@@ -77,10 +77,6 @@ if SUPABASE_ENABLED:
         print(f"Supabase initialization failed: {exc}")
         supabase = None
 
-# Disable HTTPS requirement for local development only
-if os.environ.get('RAILWAY_ENVIRONMENT') != 'production':
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
 # Google OAuth Setup
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID') or getattr(config, 'GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID_HERE')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET') or getattr(config, 'GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET_HERE')
@@ -102,15 +98,36 @@ LINKEDIN_OAUTH_ENABLED = (
     LINKEDIN_CLIENT_SECRET != 'YOUR_LINKEDIN_CLIENT_SECRET_HERE'
 )
 
+RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
+
+
+def get_deployed_base_url():
+    if not RAILWAY_PUBLIC_DOMAIN:
+        return ''
+    return f"https://{RAILWAY_PUBLIC_DOMAIN}"
+
+
+def get_google_redirect_uri():
+    base_url = get_deployed_base_url()
+    if not base_url:
+        return ''
+    return f"{base_url}/callback"
+
 
 def get_linkedin_redirect_uri():
     configured_redirect_uri = (
         os.environ.get('LINKEDIN_REDIRECT_URI', '').strip()
         or getattr(config, 'LINKEDIN_REDIRECT_URI', '').strip()
     )
-    if configured_redirect_uri:
-        return configured_redirect_uri
-    return url_for('linkedin_callback', _external=True)
+    if configured_redirect_uri and configured_redirect_uri != 'YOUR_LINKEDIN_REDIRECT_URI_HERE':
+        if configured_redirect_uri.startswith('https://'):
+            return configured_redirect_uri
+
+    base_url = get_deployed_base_url()
+    if base_url:
+        return f"{base_url}/linkedin-callback"
+
+    raise ValueError('LINKEDIN_REDIRECT_URI or RAILWAY_PUBLIC_DOMAIN is required for deployed LinkedIn OAuth')
 
 
 def build_linkedin_authorization_url(state):
@@ -126,9 +143,8 @@ def build_linkedin_authorization_url(state):
     }
     return f"{auth_url}?{urlencode(params)}"
 
-# Determine base URL for OAuth redirect
-BASE_URL = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'localhost:5000')
-REDIRECT_URI = f"https://{BASE_URL}/callback" if 'RAILWAY_PUBLIC_DOMAIN' in os.environ else "http://localhost:5000/callback"
+# Determine deployed OAuth redirect URI
+REDIRECT_URI = get_google_redirect_uri()
 
 # Only create client_secrets if OAuth is available
 if GOOGLE_OAUTH_ENABLED:
@@ -498,13 +514,15 @@ def google_login():
     """Initiate Google OAuth flow"""
     if not GOOGLE_OAUTH_ENABLED or not Flow:
         return jsonify({'success': False, 'message': 'Google OAuth not configured'}), 400
+    if not REDIRECT_URI:
+        return jsonify({'success': False, 'message': 'RAILWAY_PUBLIC_DOMAIN is required for deployed Google OAuth'}), 400
     
     try:
         flow = Flow.from_client_config(
             client_secrets,
             scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email', 
                     'https://www.googleapis.com/auth/userinfo.profile'],
-            redirect_uri=url_for('callback', _external=True)
+            redirect_uri=REDIRECT_URI
         )
         authorization_url, state = flow.authorization_url(
             access_type='offline',
@@ -669,6 +687,8 @@ def callback():
     """Handle Google OAuth callback"""
     if not GOOGLE_OAUTH_ENABLED or not Flow or not id_token or not google_requests:
         return redirect('/?login=error&msg=Google OAuth not configured')
+    if not REDIRECT_URI:
+        return redirect('/?login=error&msg=RAILWAY_PUBLIC_DOMAIN required for deployed Google OAuth')
     
     try:
         state = session.get('state')
@@ -677,7 +697,7 @@ def callback():
             scopes=['openid', 'https://www.googleapis.com/auth/userinfo.email',
                     'https://www.googleapis.com/auth/userinfo.profile'],
             state=state,
-            redirect_uri=url_for('callback', _external=True)
+            redirect_uri=REDIRECT_URI
         )
         
         # Fetch token using the authorization response
