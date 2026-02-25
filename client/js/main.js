@@ -533,21 +533,29 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
 
   const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
 
-  const centerCoord = 160;
-  const surroundingRadius = 140;
-  const itemCount = Math.max(labels.length, 1);
+  const zoneRect = pieZone ? pieZone.getBoundingClientRect() : { width: 320, height: 320 };
+  const canvasRect = canvas.getBoundingClientRect();
+  const centerX = zoneRect.width / 2;
+  const centerY = zoneRect.height / 2;
+  const outerRadius = Math.min(canvasRect.width, canvasRect.height) * 0.5 * 0.98;
+  const cutoutRatio = 0.45;
+  const innerRadius = outerRadius * cutoutRatio;
+  const labelRadius = innerRadius + (outerRadius - innerRadius) * 0.5;
+
+  let currentAngle = -Math.PI / 2;
   legend.innerHTML = labels.map((label, index) => {
     const value = Number(values[index] || 0);
-    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-    const color = colors[index % colors.length];
-    const angleDeg = (-90 + (360 / itemCount) * index);
-    const angle = (angleDeg * Math.PI) / 180;
-    const x = centerCoord + surroundingRadius * Math.cos(angle);
-    const y = centerCoord + surroundingRadius * Math.sin(angle);
+    const percent = total > 0 ? (value / total) * 100 : 0;
+    const sweep = total > 0 ? (value / total) * Math.PI * 2 : 0;
+    const midAngle = currentAngle + sweep / 2;
+    const x = centerX + labelRadius * Math.cos(midAngle);
+    const y = centerY + labelRadius * Math.sin(midAngle);
+    currentAngle += sweep;
+
     return `
       <div class="analytics-pie-legend-item" data-index="${index}" style="left: ${x}px; top: ${y}px;">
-        <span class="analytics-pie-legend-color" style="background-color: ${color};"></span>
-        <span>${label} ${percent}%</span>
+        <span class="analytics-pie-segment-label">${label}</span>
+        <span class="analytics-pie-segment-percent">${percent.toFixed(1)}%</span>
       </div>
     `;
   }).join('');
@@ -560,27 +568,14 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         data: values,
         backgroundColor: colors,
         borderWidth: 0,
-        hoverOffset: 18
+        hoverOffset: 0,
+        radius: '98%'
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '50%',
-      onHover(event, activeElements, chartInstance) {
-        const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
-        legendItems.forEach((item) => item.classList.remove('is-active'));
-        if (activeElements && activeElements.length > 0) {
-          const activeIndex = activeElements[0].index;
-          const activeLegend = legend.querySelector(`.analytics-pie-legend-item[data-index="${activeIndex}"]`);
-          if (activeLegend) {
-            activeLegend.classList.add('is-active');
-          }
-          if (pieZone) pieZone.classList.add('is-hovering');
-        } else {
-          if (pieZone) pieZone.classList.remove('is-hovering');
-        }
-      },
+      cutout: '45%',
       plugins: {
         legend: {
           display: false
@@ -599,18 +594,6 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         }
       }
     }
-  });
-
-  canvas.addEventListener('mouseleave', () => {
-    if (pieZone) pieZone.classList.remove('is-hovering');
-    const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
-    legendItems.forEach((item) => item.classList.remove('is-active'));
-    chart.setActiveElements([]);
-    chart.update();
-  });
-
-  canvas.addEventListener('mouseenter', () => {
-    if (pieZone) pieZone.classList.add('is-hovering');
   });
 }
 
