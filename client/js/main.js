@@ -355,10 +355,23 @@ function renderHome() {
   const bannerContainer = document.getElementById('home-banner-container');
   const homeContent = document.getElementById('home-content');
   
-  title.textContent = 'Home';
+  title.textContent = '';
   renderBanner(bannerContainer);
   
   homeContent.innerHTML = `
+    <article class="home-post-card">
+      <img
+        class="home-post-image"
+        src="https://media.licdn.com/dms/image/v2/D5622AQGAluiG297vnA/feedshare-shrink_800/B56ZyUo72FKYAk-/0/1772020285115?e=1773878400&v=beta&t=2VKK-icCkRHDvhtBwqmWHMx7h4p96B4WTeBDKtqrQpA"
+        alt="FOSSEE Internship announcement"
+      >
+      <div class="home-post-content">
+        <h3>🔥 FOSSEE Interns Continue the Legacy at Sri Eshwar!</h3>
+        <p>Sharukhesh S (II Year – IT) and Poojitha S K (II Year – CSBS) are selected for the Semester-Long FOSSEE Internship 2026 at IIT Bombay.</p>
+        <p>This milestone strengthens Sri Eshwar’s growing FOSSEE footprint and highlights the campus culture of innovation, research, and academic excellence.</p>
+        <p class="home-post-tags">#FOSSEEAtSECE #SriEshwar #SECEPride #IITBombay #FOSSEEInternship</p>
+      </div>
+    </article>
     <h3 style="margin-top: 2rem; margin-bottom: 1.5rem;">Our Recruiting Partners</h3>
     <div id="companies-grid-container"></div>
   `;

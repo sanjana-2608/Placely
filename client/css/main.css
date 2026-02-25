@@ -856,6 +856,50 @@ table tr:hover {
     color: #ccc;
 }
 
+.home-post-card {
+    display: grid;
+    grid-template-columns: minmax(240px, 320px) 1fr;
+    gap: 1.2rem;
+    background: rgba(9, 12, 18, 0.95);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.home-post-image {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #000;
+}
+
+.home-post-content h3 {
+    margin: 0 0 0.65rem 0;
+}
+
+.home-post-content p {
+    margin: 0 0 0.55rem 0;
+    color: #d0d0d0;
+    line-height: 1.45;
+}
+
+.home-post-tags {
+    color: #FEC524;
+    font-weight: 600;
+}
+
+@media (max-width: 860px) {
+    .home-post-card {
+        grid-template-columns: 1fr;
+    }
+
+    .home-post-image {
+        height: auto;
+        max-height: 280px;
+    }
+}
+
 /* Removed old light mode banner override */
 
 body.light-mode .banner-student {
