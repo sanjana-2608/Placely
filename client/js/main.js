@@ -480,13 +480,13 @@ function renderDashboard() {
   const defaultSortedStudents = getDefaultAnalyticsSortedStudents();
   
   if (isStaff) {
-    title.textContent = 'Analytics - Staff Dashboard';
+    title.textContent = '';
     renderStaffAnalytics(chartsContainer);
     dash.innerHTML = `<div id="analytics-insights"></div><h3>Student Directory</h3><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     renderTable(defaultSortedStudents, true);
   } else {
-    title.textContent = `Welcome, ${currentUser.name}`;
+    title.textContent = '';
     renderStudentAnalytics(chartsContainer);
     dash.innerHTML = `<div id="analytics-insights"></div><h3>Your Ranking</h3><div id="student-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
@@ -502,7 +502,6 @@ function buildAnalyticsPieCard(chartId, title) {
         <div class="analytics-pie-zone">
           <div class="analytics-pie-wrap">
           <canvas id="${chartId}" class="chart-canvas analytics-pie-canvas"></canvas>
-          <div class="analytics-pie-center" id="${chartId}-center">0.0%</div>
           </div>
           <div class="analytics-pie-legend" id="${chartId}-legend"></div>
         </div>
@@ -513,16 +512,13 @@ function buildAnalyticsPieCard(chartId, title) {
 
 function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
   const canvas = document.getElementById(chartId);
-  const center = document.getElementById(`${chartId}-center`);
   const legend = document.getElementById(`${chartId}-legend`);
-  if (!canvas || !center || !legend) {
+  const pieZone = canvas ? canvas.closest('.analytics-pie-zone') : null;
+  if (!canvas || !legend) {
     return;
   }
 
   const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
-  const maxValue = values.length ? Math.max(...values) : 0;
-  const maxPercent = total > 0 ? (maxValue / total) * 100 : 0;
-  center.textContent = `${maxPercent.toFixed(1)}%`;
 
   const centerCoord = 160;
   const surroundingRadius = 140;
@@ -536,14 +532,14 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
     const x = centerCoord + surroundingRadius * Math.cos(angle);
     const y = centerCoord + surroundingRadius * Math.sin(angle);
     return `
-      <div class="analytics-pie-legend-item" style="left: ${x}px; top: ${y}px;">
+      <div class="analytics-pie-legend-item" data-index="${index}" style="left: ${x}px; top: ${y}px;">
         <span class="analytics-pie-legend-color" style="background-color: ${color};"></span>
         <span>${label} ${percent}%</span>
       </div>
     `;
   }).join('');
 
-  new Chart(canvas, {
+  const chart = new Chart(canvas, {
     type: 'doughnut',
     data: {
       labels,
@@ -551,13 +547,27 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         data: values,
         backgroundColor: colors,
         borderWidth: 0,
-        hoverOffset: 6
+        hoverOffset: 18
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '62%',
+      cutout: '50%',
+      onHover(event, activeElements, chartInstance) {
+        const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
+        legendItems.forEach((item) => item.classList.remove('is-active'));
+        if (activeElements && activeElements.length > 0) {
+          const activeIndex = activeElements[0].index;
+          const activeLegend = legend.querySelector(`.analytics-pie-legend-item[data-index="${activeIndex}"]`);
+          if (activeLegend) {
+            activeLegend.classList.add('is-active');
+          }
+          if (pieZone) pieZone.classList.add('is-hovering');
+        } else {
+          if (pieZone) pieZone.classList.remove('is-hovering');
+        }
+      },
       plugins: {
         legend: {
           display: false
@@ -576,6 +586,18 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         }
       }
     }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (pieZone) pieZone.classList.remove('is-hovering');
+    const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
+    legendItems.forEach((item) => item.classList.remove('is-active'));
+    chart.setActiveElements([]);
+    chart.update();
+  });
+
+  canvas.addEventListener('mouseenter', () => {
+    if (pieZone) pieZone.classList.add('is-hovering');
   });
 }
 

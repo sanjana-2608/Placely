@@ -5,7 +5,7 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    background: #000000;
     color: #f5f5f5;
     min-height: 100vh;
     width: 100%;
@@ -18,8 +18,8 @@ nav {
     justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
-    border-bottom: 2px solid #FEC524;
-    box-shadow: 0 4px 12px rgba(254, 197, 36, 0.2);
+    border-bottom: none;
+    box-shadow: none;
 }
 nav .logo {
     font-size: 1.5rem;
@@ -58,14 +58,14 @@ nav ul li a:hover {
     background: rgba(254, 197, 36, 0.15);
 }
 .container {
-    width: 95%;
+    width: 100%;
     max-width: none;
-    margin: 2rem auto;
-    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-    border-radius: 12px;
+    margin: 0;
+    background: transparent;
+    border-radius: 0;
     padding: 2rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(254, 197, 36, 0.2);
-    border: 1px solid rgba(254, 197, 36, 0.15);
+    box-shadow: none;
+    border: none;
 }
 .login-box {
     max-width: 500px;
@@ -614,10 +614,10 @@ table tr:hover {
 .chart-card {
     width: 100%;
     min-width: 0;
-    background: rgba(0,0,0,0.3);
+    background: #090c12;
     padding: 1.25rem;
     border-radius: 8px;
-    border: 1px solid rgba(254, 197, 36, 0.15);
+    border: none;
     height: 300px;
 }
 .chart-canvas {
@@ -658,17 +658,6 @@ table tr:hover {
     height: 220px !important;
 }
 
-.analytics-pie-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #fff;
-    font-size: 2rem;
-    font-weight: 700;
-    pointer-events: none;
-}
-
 .analytics-pie-legend {
     position: absolute;
     inset: 0;
@@ -684,9 +673,22 @@ table tr:hover {
     color: #f5f5f5;
     white-space: nowrap;
     background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(254, 197, 36, 0.22);
+    border: none;
     border-radius: 999px;
     padding: 0.28rem 0.52rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.analytics-pie-zone.is-hovering .analytics-pie-legend-item {
+    opacity: 1;
+    visibility: visible;
+}
+
+.analytics-pie-legend-item.is-active {
+    transform: translate(-50%, -50%) scale(1.06);
+    background: rgba(0, 0, 0, 0.58);
 }
 
 .analytics-pie-legend-color {
@@ -1015,7 +1017,7 @@ body.light-mode {
 }
 body.light-mode nav {
     background: linear-gradient(90deg, #ffffff 0%, #fafbfc 100%);
-    border-bottom: 2px solid #3b82f6;
+    border-bottom: none;
 }
 body.light-mode nav .logo {
     color: #1e3a8a;
@@ -1034,8 +1036,8 @@ body.light-mode nav ul li a:hover {
 body.light-mode .container {
     background: #ffffff;
     color: #2c3e50;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(59, 130, 246, 0.1);
+    box-shadow: none;
+    border: none;
 }
 body.light-mode .login-box {
     background: #ffffff;
@@ -1109,10 +1111,7 @@ body.light-mode .stat-card {
 }
 body.light-mode .chart-card {
     background: #f8fafc;
-    border: 1px solid rgba(59, 130, 246, 0.1);
-}
-body.light-mode .analytics-pie-center {
-    color: #1e3a8a;
+    border: none;
 }
 body.light-mode .analytics-pie-legend-item {
     color: #2c3e50;
