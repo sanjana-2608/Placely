@@ -1432,5 +1432,70 @@ async function triggerLeetCodeSync() {
 }
 
 function renderLeaderboard() {
-  // Placeholder for leaderboard rendering
+  const leaderboardContent = document.getElementById('leaderboard-content');
+  if (!leaderboardContent) {
+    return;
+  }
+
+  const studentsData = Array.isArray(students) ? [...students] : [];
+  if (!studentsData.length) {
+    leaderboardContent.innerHTML = '<p style="color:#999;">No student data available for leaderboard.</p>';
+    return;
+  }
+
+  const codingRank = [...studentsData]
+    .sort((a, b) => Number(b.codingProblems || 0) - Number(a.codingProblems || 0));
+
+  const cgpaRank = [...studentsData]
+    .sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
+
+  const renderRows = (list, valueFn) => list.map((student, index) => {
+    const isCurrentUser = !isStaff && currentUser && student.id === currentUser.id;
+    return `
+      <tr${isCurrentUser ? ' style="background: rgba(254, 197, 36, 0.15); border-left: 3px solid #FEC524;"' : ''}>
+        <td>${index + 1}</td>
+        <td>${student.name || 'N/A'}</td>
+        <td>${student.dept || 'N/A'}</td>
+        <td>${valueFn(student)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  leaderboardContent.innerHTML = `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+      <div class="card" style="padding: 1.1rem;">
+        <h3 style="margin-top:0; margin-bottom:0.9rem; text-align:center;">Coding Problems Leaderboard</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70px;">Rank</th>
+              <th>Name</th>
+              <th style="width:100px;">Dept</th>
+              <th style="width:140px;">Problems</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderRows(codingRank, (student) => Number(student.codingProblems || 0))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="padding: 1.1rem;">
+        <h3 style="margin-top:0; margin-bottom:0.9rem; text-align:center;">CGPA Leaderboard</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70px;">Rank</th>
+              <th>Name</th>
+              <th style="width:100px;">Dept</th>
+              <th style="width:140px;">CGPA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderRows(cgpaRank, (student) => Number(student.gradePoints || 0).toFixed(2))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
