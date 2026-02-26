@@ -99,8 +99,9 @@ Placely/
 - Sorting options by multiple criteria
 
 ### LeetCode Stats API
-- `GET /api/leetcode/<username>`: Fetches profile stats for a specific LeetCode username
-- `GET /api/leetcode/students`: Batch-fetches stats for demo students with a safe delay between requests
+- `GET /api/leetcode/<username>`: Returns cached LeetCode stats from database for a specific username
+- `GET /api/leetcode/students`: Returns cached LeetCode stats for all students with configured usernames
+- `POST /api/sync-leetcode`: Updates DB from LeetCode GraphQL (at most once per day per student)
 
 ## Color Themes
 

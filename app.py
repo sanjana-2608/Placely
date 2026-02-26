@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 import time
@@ -479,6 +479,37 @@ def _cached_leetcode_payload(student):
         },
         'lastSyncedAt': student.get('leetcodeLastSyncedAt')
     }
+
+
+def _parse_iso_datetime(value):
+    if not value:
+        return None
+    if not isinstance(value, str):
+        return None
+
+    normalized = value.strip()
+    if not normalized:
+        return None
+
+    if normalized.endswith('Z'):
+        normalized = f"{normalized[:-1]}+00:00"
+
+    try:
+        return datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+
+def _was_leetcode_synced_today(student, now_utc):
+    last_synced_raw = student.get('leetcodeLastSyncedAt')
+    last_synced = _parse_iso_datetime(last_synced_raw)
+    if not last_synced:
+        return False
+
+    if last_synced.tzinfo is not None:
+        last_synced = last_synced.astimezone(timezone.utc).replace(tzinfo=None)
+
+    return last_synced.date() == now_utc.date()
 
 @app.route('/')
 def index():
@@ -982,31 +1013,54 @@ def get_year_analytics(year):
 
 @app.route('/api/sync-leetcode', methods=['POST'])
 def manual_sync_leetcode():
-    """Manually trigger LeetCode stats sync for all students"""
+    """Manually trigger LeetCode stats sync for all students.
+    Sync uses cached DB reads and updates each student at most once per day.
+    """
     try:
         print("[MANUAL SYNC] User triggered LeetCode sync...")
-        scheduled_fetch_leetcode_stats()
-        return jsonify({'success': True, 'message': 'LeetCode stats sync completed'})
+        summary = scheduled_fetch_leetcode_stats()
+        if summary.get('error'):
+            return jsonify({'success': False, 'message': f"Sync failed: {summary['error']}", 'summary': summary}), 500
+
+        message = (
+            f"LeetCode sync completed. "
+            f"Updated {summary['updated']}, skipped {summary['skipped']} (already synced today), "
+            f"failed {summary['failed']}."
+        )
+        return jsonify({'success': True, 'message': message, 'summary': summary})
     except Exception as e:
         print(f"[MANUAL SYNC ERROR] {str(e)}")
         return jsonify({'success': False, 'message': f'Sync failed: {str(e)}'}), 500
 
 
 def scheduled_fetch_leetcode_stats():
-    """Fetch LeetCode stats for all students and update Supabase every day at 10 PM"""
+    """Fetch LeetCode stats from GraphQL and update Supabase at most once per day per student."""
     try:
-        print(f"[{datetime.now()}] Starting scheduled LeetCode stats fetch...")
+        now_local = datetime.now()
+        now_utc = datetime.utcnow()
+        print(f"[{now_local}] Starting scheduled LeetCode stats fetch...")
         students_data = get_students_data()
         
         updated_count = 0
+        skipped_count = 0
+        failed_count = 0
+        eligible_count = 0
         for student in students_data:
             username = student.get('leetcodeUsername')
             if not username:
+                continue
+
+            eligible_count += 1
+
+            if _was_leetcode_synced_today(student, now_utc):
+                skipped_count += 1
+                print(f"  [SKIP] {student.get('name', 'Unknown')} already synced today")
                 continue
             
             try:
                 profile = fetch_leetcode_profile(username)
                 if profile.get('success') and profile.get('solved'):
+                    synced_at_utc = datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
                     # Update student with cached LeetCode stats
                     update_student_data(student['id'], {
                         'codingProblems': profile['solved']['all'],
@@ -1019,18 +1073,39 @@ def scheduled_fetch_leetcode_stats():
                         'leetcodeAcceptanceEasy': profile.get('acceptanceRates', {}).get('easy', 0),
                         'leetcodeAcceptanceMedium': profile.get('acceptanceRates', {}).get('medium', 0),
                         'leetcodeAcceptanceHard': profile.get('acceptanceRates', {}).get('hard', 0),
-                        'leetcodeLastSyncedAt': datetime.utcnow().isoformat()
+                        'leetcodeLastSyncedAt': synced_at_utc
                     })
                     updated_count += 1
                     print(f"  [OK] Updated {student['name']}: {profile['solved']['all']} problems")
                     # Rate limiting delay
                     time.sleep(LEETCODE_BATCH_DELAY_SECONDS)
+                else:
+                    failed_count += 1
+                    print(f"  [FAIL] Failed to fetch {student.get('name', 'Unknown')}: {profile.get('message', 'Unknown error')}")
             except Exception as e:
+                failed_count += 1
                 print(f"  [FAIL] Failed to update {student.get('name', 'Unknown')}: {str(e)}")
         
-        print(f"[{datetime.now()}] Scheduled LeetCode fetch completed. Updated {updated_count} students.")
+        summary = {
+            'eligible': eligible_count,
+            'updated': updated_count,
+            'skipped': skipped_count,
+            'failed': failed_count
+        }
+        print(
+            f"[{datetime.now()}] Scheduled LeetCode fetch completed. "
+            f"Eligible {eligible_count}, updated {updated_count}, skipped {skipped_count}, failed {failed_count}."
+        )
+        return summary
     except Exception as e:
         print(f"[{datetime.now()}] Scheduled LeetCode fetch failed: {str(e)}")
+        return {
+            'eligible': 0,
+            'updated': 0,
+            'skipped': 0,
+            'failed': 0,
+            'error': str(e)
+        }
 
 
 def init_scheduler():
