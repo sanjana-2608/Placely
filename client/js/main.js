@@ -344,7 +344,7 @@ function renderCompaniesList(container) {
       <h3 style="margin-top: 0;">Companies Coming Soon 📅</h3>
       <div class="companies-scroll">
         ${upcomingCompanies.map(company => `
-          <div class="company-card">
+          <div class="company-card company-card--interactive" data-company="${company.name}" role="button" tabindex="0" aria-label="View details for ${company.name}">
             <div class="company-header">
               <h4 style="margin: 0 0 0.5rem 0;">${company.name}</h4>
               <span class="company-date">📍 ${company.visitDate}</span>
@@ -352,12 +352,24 @@ function renderCompaniesList(container) {
             <p style="margin: 0.3rem 0;"><strong>Position:</strong> ${company.position}</p>
             <p style="margin: 0.3rem 0;"><strong>Salary Range:</strong> ${company.salary}</p>
             <p style="margin: 0.3rem 0;"><strong>CTC:</strong> ${company.ctc}</p>
+            <p style="margin: 0.55rem 0 0 0; color: #FEC524; font-size: 0.85rem;">Tap to view application details →</p>
           </div>
         `).join('')}
       </div>
     </div>
   `;
   container.innerHTML = companiesHtml;
+
+  container.querySelectorAll('.company-card--interactive').forEach((card) => {
+    const openDetails = () => openCompanyDetailsModal(card.dataset.company || '');
+    card.addEventListener('click', openDetails);
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDetails();
+      }
+    });
+  });
 }
 
 function renderHome() {
@@ -422,6 +434,187 @@ function getCompanyLogoUrl(companyName) {
 function getCompanyInitials(companyName) {
   const parts = companyName.split(/[\s&-]+/).filter(Boolean);
   return parts.slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('');
+}
+
+function getTopPercentile(sortedList, studentRecord) {
+  if (!sortedList.length || !studentRecord) return 'N/A';
+
+  const index = sortedList.findIndex((entry) => {
+    if (studentRecord.id != null && entry.id != null) {
+      return Number(entry.id) === Number(studentRecord.id);
+    }
+    return String(entry.email || '').toLowerCase() === String(studentRecord.email || '').toLowerCase();
+  });
+
+  if (index < 0) return 'N/A';
+
+  const rank = index + 1;
+  const percentile = (rank / sortedList.length) * 100;
+  return percentile.toFixed(1);
+}
+
+function getDynamicScoreMeta(studentsData) {
+  return {
+    maxCodingProblems: Math.max(...studentsData.map((student) => Number(student.codingProblems || 0)), 0),
+    maxOfficialCertificates: Math.max(...studentsData.map((student) => Number(student.certifications || 0)), 0),
+    maxInternships: Math.max(...studentsData.map((student) => Number(student.internships || 0)), 0)
+  };
+}
+
+function getDynamicPlacementScore(student, scoreMeta) {
+  const clampUnit = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+  const cgpa = Number(student.gradePoints || 0);
+  const codingProblems = Number(student.codingProblems || 0);
+  const officialCertificates = Number(student.certifications || 0);
+  const internships = Number(student.internships || 0);
+
+  const cgpaComponent = clampUnit(cgpa / 10) * 30;
+  const codingComponent = scoreMeta.maxCodingProblems > 0 ? clampUnit(codingProblems / scoreMeta.maxCodingProblems) * 30 : 0;
+  const certificatesComponent = scoreMeta.maxOfficialCertificates > 0 ? clampUnit(officialCertificates / scoreMeta.maxOfficialCertificates) * 15 : 0;
+  const internshipsComponent = scoreMeta.maxInternships > 0 ? clampUnit(internships / scoreMeta.maxInternships) * 25 : 0;
+
+  return cgpaComponent + codingComponent + certificatesComponent + internshipsComponent;
+}
+
+function formatVisitDateOffset(visitDate, daysOffset) {
+  const parsedDate = new Date(visitDate);
+  if (Number.isNaN(parsedDate.getTime())) return 'TBA';
+  parsedDate.setDate(parsedDate.getDate() + daysOffset);
+  return parsedDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+function getCompanyDetailInfo(company) {
+  const detailsMap = {
+    'Microsoft': { minCgpa: '7.5', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'Online Assessment, 2 Technical Interviews, HR', keySkills: 'DSA, OOPS, DBMS, System Design', location: 'Bangalore / Hyderabad' },
+    'Amazon': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'OA (Coding), Technical Interview Loop, HR', keySkills: 'DSA, OS, DBMS, CS Fundamentals', location: 'Chennai / Bangalore' },
+    'ServiceNow': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'Max 1 historical backlog', process: 'OA, 2 Technical Interviews, Managerial', keySkills: 'JavaScript, DSA, SQL, Web Basics', location: 'Hyderabad' },
+    'Wells Fargo': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'Aptitude + Coding, Technical, HR', keySkills: 'Java/Python, SQL, Problem Solving', location: 'Bangalore / Chennai' }
+  };
+
+  const specific = detailsMap[company.name] || {};
+  return {
+    applicationClose: specific.applicationClose || formatVisitDateOffset(company.visitDate, -2),
+    testDate: specific.testDate || formatVisitDateOffset(company.visitDate, -1),
+    minCgpa: specific.minCgpa || '6.5',
+    eligibleYears: specific.eligibleYears || 'Final Year',
+    allowedBacklogs: specific.allowedBacklogs || 'No active backlogs preferred',
+    process: specific.process || 'Aptitude/Coding Round, Technical Round(s), HR',
+    keySkills: specific.keySkills || 'Problem Solving, CS Fundamentals, Communication',
+    location: specific.location || 'As per business requirement',
+    stipendInternship: specific.stipendInternship || 'May include internship-to-PPO track',
+    documents: specific.documents || 'Updated Resume, Govt ID, Academic Mark Sheets'
+  };
+}
+
+function ensureCompanyDetailsModal() {
+  let modalOverlay = document.getElementById('company-details-modal');
+  if (modalOverlay) {
+    return modalOverlay;
+  }
+
+  const modalMarkup = `
+    <div id="company-details-modal" class="company-modal-overlay" aria-hidden="true">
+      <div class="company-modal-card" role="dialog" aria-modal="true" aria-label="Company details">
+        <button type="button" class="company-modal-close" id="company-modal-close" aria-label="Close company details">×</button>
+        <div id="company-modal-content"></div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalMarkup);
+
+  modalOverlay = document.getElementById('company-details-modal');
+  const closeBtn = document.getElementById('company-modal-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeCompanyDetailsModal);
+  }
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (event) => {
+      if (event.target === modalOverlay) {
+        closeCompanyDetailsModal();
+      }
+    });
+  }
+
+  if (!document.body.dataset.companyModalEscBound) {
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeCompanyDetailsModal();
+      }
+    });
+    document.body.dataset.companyModalEscBound = '1';
+  }
+
+  return modalOverlay;
+}
+
+function openCompanyDetailsModal(companyName) {
+  const company = upcomingCompanies.find((entry) => entry.name === companyName);
+  if (!company) return;
+
+  const modalOverlay = ensureCompanyDetailsModal();
+  const content = document.getElementById('company-modal-content');
+  if (!modalOverlay || !content) return;
+
+  const detailInfo = getCompanyDetailInfo(company);
+  const logoUrl = getCompanyLogoUrl(company.name);
+  const initials = getCompanyInitials(company.name);
+
+  content.innerHTML = `
+    <div class="company-modal-header">
+      <div class="company-modal-logo-wrap">
+        <img class="company-modal-logo" src="${logoUrl}" alt="${company.name} logo" ${logoUrl ? '' : 'style="display:none;"'} onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="company-modal-logo-fallback" ${logoUrl ? 'style="display:none;"' : ''}>${initials}</div>
+      </div>
+      <div>
+        <h3 style="margin: 0 0 0.2rem 0;">${company.name}</h3>
+        <p style="margin: 0; color: #999;">${company.position} • Visit: ${company.visitDate}</p>
+      </div>
+    </div>
+
+    <div class="company-modal-grid">
+      <div><strong>Application Closes:</strong> ${detailInfo.applicationClose}</div>
+      <div><strong>Assessment Date:</strong> ${detailInfo.testDate}</div>
+      <div><strong>Salary Range:</strong> ${company.salary}</div>
+      <div><strong>CTC:</strong> ${company.ctc}</div>
+      <div><strong>Minimum CGPA:</strong> ${detailInfo.minCgpa}</div>
+      <div><strong>Eligible Batch:</strong> ${detailInfo.eligibleYears}</div>
+      <div><strong>Backlog Policy:</strong> ${detailInfo.allowedBacklogs}</div>
+      <div><strong>Job Location:</strong> ${detailInfo.location}</div>
+    </div>
+
+    <div class="company-modal-section">
+      <h4>Selection Process</h4>
+      <p>${detailInfo.process}</p>
+    </div>
+
+    <div class="company-modal-section">
+      <h4>Preferred Skills</h4>
+      <p>${detailInfo.keySkills}</p>
+    </div>
+
+    <div class="company-modal-section">
+      <h4>Required Documents</h4>
+      <p>${detailInfo.documents}</p>
+    </div>
+
+    <div class="company-modal-note">Tip: Keep your resume, coding profile, and latest semester marks ready before applying.</div>
+  `;
+
+  modalOverlay.classList.add('active');
+  modalOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompanyDetailsModal() {
+  const modalOverlay = document.getElementById('company-details-modal');
+  if (!modalOverlay) return;
+  modalOverlay.classList.remove('active');
+  modalOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
 }
 
 function getInterestCategory(interest) {
@@ -1441,6 +1634,14 @@ function renderProfile() {
     const displayHeadline = currentUser.linkedinHeadline || `${currentUser.dept || 'Student'} • Year ${currentUser.year || 'N/A'}`;
     const twelfthPercentage = currentUser.twelfthPercentage ?? 'N/A';
     const tenthPercentage = currentUser.tenthPercentage ?? 'N/A';
+    const studentsData = Array.isArray(students) ? [...students] : [];
+    const cgpaRanked = [...studentsData].sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
+    const codingRanked = [...studentsData].sort((a, b) => Number(b.codingProblems || 0) - Number(a.codingProblems || 0));
+    const scoreMeta = getDynamicScoreMeta(studentsData);
+    const overallRanked = [...studentsData].sort((a, b) => getDynamicPlacementScore(b, scoreMeta) - getDynamicPlacementScore(a, scoreMeta));
+    const cgpaTopPercent = getTopPercentile(cgpaRanked, currentUser);
+    const codingTopPercent = getTopPercentile(codingRanked, currentUser);
+    const overallTopPercent = getTopPercentile(overallRanked, currentUser);
 
     // Student profile view - 3 box top row with LeetCode in second column
     profileContent.innerHTML = `
@@ -1508,6 +1709,15 @@ function renderProfile() {
             <div><strong>12th %:</strong> <span>${twelfthPercentage}</span></div>
             <div><strong>10th %:</strong> <span>${tenthPercentage}</span></div>
           </div>
+        </div>
+      </div>
+
+      <div class="card profile-percentile-card">
+        <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Your Performance Insights</h4>
+        <div class="profile-percentile-list">
+          <div class="profile-percentile-item">You are in the <strong>Top ${cgpaTopPercent}%</strong> in CGPA.</div>
+          <div class="profile-percentile-item">You are in the <strong>Top ${codingTopPercent}%</strong> in Coding Problems.</div>
+          <div class="profile-percentile-item">Overall, you are in the <strong>Top ${overallTopPercent}%</strong> in Placement Readiness Score.</div>
         </div>
       </div>
     `;
