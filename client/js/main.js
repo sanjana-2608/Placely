@@ -314,6 +314,25 @@ function toggleDarkMode() {
   document.body.classList.toggle('light-mode');
   localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
   document.getElementById('darkmode-toggle').textContent = document.body.classList.contains('light-mode') ? '☀️' : '🌙';
+
+  const activeSectionId = document.querySelector('section.active')?.id;
+  if (activeSectionId === 'dashboard-section') renderDashboard();
+  if (activeSectionId === 'profile-section') renderProfile();
+  if (activeSectionId === 'notifications-section') renderNotifications();
+  if (activeSectionId === 'home-section') renderHome();
+  if (activeSectionId === 'leaderboard-section') renderLeaderboard();
+}
+
+function getChartThemeColors() {
+  const isLightMode = document.body.classList.contains('light-mode');
+  return {
+    axisTickColor: isLightMode ? '#334155' : '#f5f5f5',
+    axisGridColor: isLightMode ? 'rgba(30, 58, 138, 0.18)' : 'rgba(255,255,255,0.08)',
+    radarGridColor: isLightMode ? 'rgba(30, 58, 138, 0.26)' : 'rgba(255,255,255,0.15)',
+    radarPointLabelColor: isLightMode ? '#1e293b' : '#f5f5f5',
+    legendColor: isLightMode ? '#334155' : '#f5f5f5',
+    radarTickBackdrop: isLightMode ? 'rgba(255,255,255,0.75)' : 'transparent'
+  };
 }
 
 function renderBanner(container) {
@@ -838,6 +857,8 @@ function renderStudentAnalytics(container) {
   });
   
   setTimeout(() => {
+    const chartTheme = getChartThemeColors();
+
     const interestCounts = {};
     students.forEach(s => {
       const category = getInterestCategory(s.interest);
@@ -906,8 +927,8 @@ function renderStudentAnalytics(container) {
           legend: { display: false }
         },
         scales: {
-          x: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' } },
-          y: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
+          x: { ticks: { color: chartTheme.axisTickColor }, grid: { color: chartTheme.axisGridColor } },
+          y: { ticks: { color: chartTheme.axisTickColor }, grid: { color: chartTheme.axisGridColor }, beginAtZero: true }
         }
       }
     });
@@ -945,14 +966,14 @@ function renderStudentAnalytics(container) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: '#f5f5f5' } }
+          legend: { labels: { color: chartTheme.legendColor } }
         },
         scales: {
           r: {
-            angleLines: { color: 'rgba(255,255,255,0.15)' },
-            grid: { color: 'rgba(255,255,255,0.15)' },
-            pointLabels: { color: '#f5f5f5' },
-            ticks: { color: '#f5f5f5', backdropColor: 'transparent' },
+            angleLines: { color: chartTheme.radarGridColor },
+            grid: { color: chartTheme.radarGridColor },
+            pointLabels: { color: chartTheme.radarPointLabelColor },
+            ticks: { color: chartTheme.axisTickColor, backdropColor: chartTheme.radarTickBackdrop },
             min: 0,
             max: 100
           }
@@ -988,8 +1009,8 @@ function renderStudentAnalytics(container) {
           legend: { display: false }
         },
         scales: {
-          x: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' } },
-          y: { ticks: { color: '#f5f5f5' }, grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
+          x: { ticks: { color: chartTheme.axisTickColor }, grid: { color: chartTheme.axisGridColor } },
+          y: { ticks: { color: chartTheme.axisTickColor }, grid: { color: chartTheme.axisGridColor }, beginAtZero: true }
         }
       }
     });

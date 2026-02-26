@@ -1673,6 +1673,106 @@ body.light-mode .profile-academics-list span {
     color: #64748b;
 }
 
+body.light-mode .profile-percentile-card {
+    background: #ffffff;
+    border-color: rgba(59, 130, 246, 0.18);
+}
+
+body.light-mode .profile-percentile-item {
+    color: #334155;
+}
+
+body.light-mode .profile-percentile-item strong {
+    color: #1e3a8a;
+}
+
+body.light-mode .dashboard-filter-panel {
+    background: rgba(15, 23, 42, 0.35);
+}
+
+body.light-mode .dashboard-filter-dialog {
+    background: #ffffff;
+    border-color: rgba(59, 130, 246, 0.18);
+}
+
+body.light-mode .dashboard-filter-dialog-header h3,
+body.light-mode .dashboard-filter-group h4 {
+    color: #1e3a8a;
+}
+
+body.light-mode .dashboard-filter-header-sort label,
+body.light-mode .dashboard-filter-check,
+body.light-mode .dashboard-range-wrap,
+body.light-mode .dashboard-filter-group {
+    color: #334155;
+}
+
+body.light-mode .dashboard-filter-group {
+    background: rgba(59, 130, 246, 0.04);
+    border-color: rgba(59, 130, 246, 0.15);
+}
+
+body.light-mode .dashboard-filter-close {
+    color: #334155;
+    border-color: rgba(51, 65, 85, 0.25);
+}
+
+body.light-mode .dashboard-filter-btn,
+body.light-mode .dashboard-export-btn,
+body.light-mode .dashboard-filter-action-btn,
+body.light-mode .dashboard-filter-header-sort select,
+body.light-mode .dashboard-sort-wrap select {
+    background: #f8fafc;
+    color: #2c3e50;
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+body.light-mode .company-modal-overlay {
+    background: rgba(15, 23, 42, 0.45);
+}
+
+body.light-mode .company-modal-card {
+    background: #ffffff;
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+body.light-mode .company-modal-close {
+    color: #334155;
+    border-color: rgba(51, 65, 85, 0.25);
+}
+
+body.light-mode .company-modal-header p,
+body.light-mode .company-modal-section p,
+body.light-mode .company-modal-grid div,
+body.light-mode .company-modal-note {
+    color: #334155;
+}
+
+body.light-mode .company-modal-section h4 {
+    color: #1e3a8a;
+}
+
+body.light-mode .company-modal-grid div {
+    background: rgba(59, 130, 246, 0.04);
+    border-color: rgba(59, 130, 246, 0.18);
+}
+
+body.light-mode .company-modal-note {
+    border-left-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+body.light-mode .company-apply-btn {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
+
+body.light-mode .company-apply-btn:hover {
+    background: #2563eb;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
+}
+
 @media (max-width: 768px) {
     nav {
         padding: 0.75rem 0.9rem;
