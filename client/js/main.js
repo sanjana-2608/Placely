@@ -489,13 +489,17 @@ function formatVisitDateOffset(visitDate, daysOffset) {
 
 function getCompanyDetailInfo(company) {
   const detailsMap = {
-    'Microsoft': { minCgpa: '7.5', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'Online Assessment, 2 Technical Interviews, HR', keySkills: 'DSA, OOPS, DBMS, System Design', location: 'Bangalore / Hyderabad' },
-    'Amazon': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'OA (Coding), Technical Interview Loop, HR', keySkills: 'DSA, OS, DBMS, CS Fundamentals', location: 'Chennai / Bangalore' },
-    'ServiceNow': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'Max 1 historical backlog', process: 'OA, 2 Technical Interviews, Managerial', keySkills: 'JavaScript, DSA, SQL, Web Basics', location: 'Hyderabad' },
-    'Wells Fargo': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'Aptitude + Coding, Technical, HR', keySkills: 'Java/Python, SQL, Problem Solving', location: 'Bangalore / Chennai' }
+    'Microsoft': { minCgpa: '7.5', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'Online Assessment, 2 Technical Interviews, HR', keySkills: 'DSA, OOPS, DBMS, System Design', location: 'Bangalore / Hyderabad', applyUrl: 'https://careers.microsoft.com/' },
+    'Amazon': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'OA (Coding), Technical Interview Loop, HR', keySkills: 'DSA, OS, DBMS, CS Fundamentals', location: 'Chennai / Bangalore', applyUrl: 'https://www.amazon.jobs/' },
+    'ServiceNow': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'Max 1 historical backlog', process: 'OA, 2 Technical Interviews, Managerial', keySkills: 'JavaScript, DSA, SQL, Web Basics', location: 'Hyderabad', applyUrl: 'https://careers.servicenow.com/' },
+    'Wells Fargo': { minCgpa: '7.0', eligibleYears: 'Final Year', allowedBacklogs: 'No active backlogs', process: 'Aptitude + Coding, Technical, HR', keySkills: 'Java/Python, SQL, Problem Solving', location: 'Bangalore / Chennai', applyUrl: 'https://www.wellsfargo.com/about/careers/' }
   };
 
   const specific = detailsMap[company.name] || {};
+  const domain = companyLogoDomains[company.name];
+  const defaultApplyUrl = domain
+    ? `https://www.google.com/search?q=${encodeURIComponent(`${company.name} careers`)}`
+    : `https://www.google.com/search?q=${encodeURIComponent(`${company.name} jobs`)}`;
   return {
     applicationClose: specific.applicationClose || formatVisitDateOffset(company.visitDate, -2),
     testDate: specific.testDate || formatVisitDateOffset(company.visitDate, -1),
@@ -506,7 +510,8 @@ function getCompanyDetailInfo(company) {
     keySkills: specific.keySkills || 'Problem Solving, CS Fundamentals, Communication',
     location: specific.location || 'As per business requirement',
     stipendInternship: specific.stipendInternship || 'May include internship-to-PPO track',
-    documents: specific.documents || 'Updated Resume, Govt ID, Academic Mark Sheets'
+    documents: specific.documents || 'Updated Resume, Govt ID, Academic Mark Sheets',
+    applyUrl: specific.applyUrl || defaultApplyUrl
   };
 }
 
@@ -602,6 +607,10 @@ function openCompanyDetailsModal(companyName) {
     </div>
 
     <div class="company-modal-note">Tip: Keep your resume, coding profile, and latest semester marks ready before applying.</div>
+
+    <div class="company-modal-actions">
+      <a class="company-apply-btn" href="${detailInfo.applyUrl}" target="_blank" rel="noopener noreferrer">Apply Now</a>
+    </div>
   `;
 
   modalOverlay.classList.add('active');
