@@ -677,20 +677,8 @@ table tr:hover {
     border: none;
     border-radius: 999px;
     padding: 0.28rem 0.52rem;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.analytics-pie-zone:hover .analytics-pie-legend-item,
-.analytics-pie-zone.is-hovering .analytics-pie-legend-item {
     opacity: 1;
     visibility: visible;
-}
-
-.analytics-pie-legend-item.is-active {
-    transform: translate(-50%, -50%) scale(1.06);
-    background: rgba(0, 0, 0, 0.58);
 }
 
 .analytics-pie-legend-color {

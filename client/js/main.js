@@ -543,7 +543,6 @@ function buildAnalyticsPieCard(chartId, title) {
 function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
   const canvas = document.getElementById(chartId);
   const legend = document.getElementById(`${chartId}-legend`);
-  const pieZone = canvas ? canvas.closest('.analytics-pie-zone') : null;
   if (!canvas || !legend) {
     return;
   }
@@ -578,27 +577,13 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         data: values,
         backgroundColor: colors,
         borderWidth: 0,
-        hoverOffset: 18
+        hoverOffset: 0
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       cutout: '50%',
-      onHover(event, activeElements, chartInstance) {
-        const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
-        legendItems.forEach((item) => item.classList.remove('is-active'));
-        if (activeElements && activeElements.length > 0) {
-          const activeIndex = activeElements[0].index;
-          const activeLegend = legend.querySelector(`.analytics-pie-legend-item[data-index="${activeIndex}"]`);
-          if (activeLegend) {
-            activeLegend.classList.add('is-active');
-          }
-          if (pieZone) pieZone.classList.add('is-hovering');
-        } else {
-          if (pieZone) pieZone.classList.remove('is-hovering');
-        }
-      },
       plugins: {
         legend: {
           display: false
@@ -617,18 +602,6 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         }
       }
     }
-  });
-
-  canvas.addEventListener('mouseleave', () => {
-    if (pieZone) pieZone.classList.remove('is-hovering');
-    const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
-    legendItems.forEach((item) => item.classList.remove('is-active'));
-    chart.setActiveElements([]);
-    chart.update();
-  });
-
-  canvas.addEventListener('mouseenter', () => {
-    if (pieZone) pieZone.classList.add('is-hovering');
   });
 }
 
