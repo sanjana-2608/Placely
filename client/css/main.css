@@ -1490,3 +1490,181 @@ body.light-mode .profile-academics-list div {
 body.light-mode .profile-academics-list span {
     color: #64748b;
 }
+
+@media (max-width: 768px) {
+    nav {
+        padding: 0.75rem 0.9rem;
+    }
+
+    nav .logo {
+        font-size: 1.2rem;
+    }
+
+    nav ul {
+        width: 100%;
+        gap: 0.4rem;
+    }
+
+    nav ul li a {
+        font-size: 0.9rem;
+        padding: 0.45rem 0.6rem;
+    }
+
+    .container {
+        padding: 1rem 0.75rem;
+    }
+
+    h2 {
+        font-size: 1.35rem;
+    }
+
+    .login-box {
+        width: 100%;
+        margin: 1rem auto;
+        padding: 1.4rem 1rem;
+    }
+
+    .dashboard-filter-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dashboard-export-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-filter-btn,
+    .dashboard-export-btn {
+        width: 100%;
+    }
+
+    .dashboard-filter-panel {
+        padding: 0.45rem;
+    }
+
+    .dashboard-filter-dialog {
+        width: 100%;
+        max-height: 95vh;
+        padding: 0.75rem;
+    }
+
+    .dashboard-filter-dialog-header {
+        align-items: flex-start;
+    }
+
+    .dashboard-filter-header-sort {
+        width: 100%;
+    }
+
+    .dashboard-filter-header-sort-row {
+        min-width: 0;
+        flex: 1 1 calc(50% - 0.35rem);
+    }
+
+    .dashboard-filter-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-filter-actions {
+        justify-content: stretch;
+    }
+
+    .dashboard-filter-action-btn {
+        flex: 1 1 0;
+    }
+
+    #charts-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .chart-card {
+        height: 265px;
+        padding: 0.95rem;
+    }
+
+    .chart-canvas {
+        height: 190px !important;
+    }
+
+    .analytics-pie-zone {
+        width: 260px;
+        height: 260px;
+    }
+
+    .analytics-pie-wrap,
+    .analytics-pie-canvas {
+        width: 185px !important;
+        height: 185px !important;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        margin-top: 1rem;
+    }
+
+    .banner-card {
+        padding: 1.25rem;
+        min-height: auto;
+    }
+
+    .banner-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .banner-icon {
+        font-size: 2.2rem;
+        min-width: 0;
+    }
+
+    .company-card {
+        flex: 0 0 270px;
+    }
+
+    .companies-grid-section {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    nav ul li a {
+        font-size: 0.84rem;
+        padding: 0.35rem 0.5rem;
+    }
+
+    .dashboard-filter-header-sort-row {
+        flex-basis: 100%;
+    }
+
+    .dashboard-filter-list {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-card {
+        height: 245px;
+    }
+
+    .chart-canvas {
+        height: 172px !important;
+    }
+
+    .analytics-pie-zone {
+        width: 230px;
+        height: 230px;
+    }
+
+    .analytics-pie-wrap,
+    .analytics-pie-canvas {
+        width: 165px !important;
+        height: 165px !important;
+    }
+
+    .company-card {
+        flex: 0 0 240px;
+    }
+}
