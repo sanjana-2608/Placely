@@ -886,6 +886,11 @@ function initializeDashboardFilters(staffView, highlightId = null) {
       </div>
     </div>
     <div id="dashboard-filter-panel" class="dashboard-filter-panel" style="display:none;">
+      <div class="dashboard-filter-dialog">
+        <div class="dashboard-filter-dialog-header">
+          <h3>Filter Students</h3>
+          <button type="button" id="dashboard-filter-close" class="dashboard-filter-close" aria-label="Close filters">×</button>
+        </div>
       <div class="dashboard-filter-grid">
         <div class="dashboard-filter-group">
           <h4>Years</h4>
@@ -974,19 +979,46 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         <button type="button" id="dashboard-filter-apply" class="dashboard-filter-action-btn">Apply</button>
         <button type="button" id="dashboard-filter-reset" class="dashboard-filter-action-btn dashboard-filter-action-btn--ghost">Reset</button>
       </div>
+      </div>
     </div>
   `;
 
   const panel = document.getElementById('dashboard-filter-panel');
   const toggleBtn = document.getElementById('dashboard-filter-toggle');
+  const closeBtn = document.getElementById('dashboard-filter-close');
+  const dialog = panel ? panel.querySelector('.dashboard-filter-dialog') : null;
   const applyBtn = document.getElementById('dashboard-filter-apply');
   const resetBtn = document.getElementById('dashboard-filter-reset');
   const exportCsvBtn = document.getElementById('dashboard-export-csv');
   const exportExcelBtn = document.getElementById('dashboard-export-excel');
 
+  const closePanel = () => {
+    if (panel) {
+      panel.style.display = 'none';
+    }
+  };
+
   if (toggleBtn && panel) {
     toggleBtn.addEventListener('click', () => {
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closePanel);
+  }
+
+  if (panel) {
+    panel.addEventListener('click', (event) => {
+      if (event.target === panel) {
+        closePanel();
+      }
+    });
+  }
+
+  if (dialog) {
+    dialog.addEventListener('click', (event) => {
+      event.stopPropagation();
     });
   }
 
@@ -1009,7 +1041,10 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   bindRangeValue('twelfth-max', 'twelfth-max-value');
 
   if (applyBtn) {
-    applyBtn.addEventListener('click', () => applyDashboardFilters(staffView, highlightId));
+    applyBtn.addEventListener('click', () => {
+      applyDashboardFilters(staffView, highlightId);
+      closePanel();
+    });
   }
 
   if (resetBtn) {
