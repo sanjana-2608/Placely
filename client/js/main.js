@@ -236,7 +236,6 @@ function initializeApp() {
   const navbar = document.getElementById('navbar');
   if (loginSection) loginSection.style.display = 'none';
   if (navbar) navbar.style.display = 'flex';
-  renderSortButtons();
 }
 
 function logout() {
@@ -490,18 +489,27 @@ function renderDashboard() {
   const dash = document.getElementById('dashboard-content');
   const title = document.getElementById('dashboard-title');
   const chartsContainer = document.getElementById('charts-container');
+  const topSortContainer = document.getElementById('sort-buttons');
   const defaultSortedStudents = getDefaultAnalyticsSortedStudents();
   
   if (isStaff) {
     title.textContent = '';
     renderStaffAnalytics(chartsContainer);
+    if (topSortContainer) {
+      topSortContainer.innerHTML = '';
+      renderSortButtons('sort-buttons');
+    }
     dash.innerHTML = `<div id="analytics-insights"></div><h3>Student Directory</h3><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     renderTable(defaultSortedStudents, true);
   } else {
     title.textContent = '';
     renderStudentAnalytics(chartsContainer);
-    dash.innerHTML = `<div id="analytics-insights"></div><h3>Your Ranking</h3><div id="student-table"></div>`;
+    if (topSortContainer) {
+      topSortContainer.innerHTML = '';
+    }
+    dash.innerHTML = `<div id="analytics-insights"></div><h3 style="margin:0 0 0.8rem 0;">Your Ranking</h3><div style="display:flex; justify-content:center; margin-bottom:1rem;"><div id="sort-buttons-inline"></div></div><div id="student-table"></div>`;
+    renderSortButtons('sort-buttons-inline');
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     renderTable(defaultSortedStudents, false, currentUser && currentUser.id);
   }
@@ -533,29 +541,22 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
 
   const total = values.reduce((sum, value) => sum + Number(value || 0), 0);
 
-  const zoneRect = pieZone ? pieZone.getBoundingClientRect() : { width: 320, height: 320 };
-  const canvasRect = canvas.getBoundingClientRect();
-  const centerX = zoneRect.width / 2;
-  const centerY = zoneRect.height / 2;
-  const outerRadius = Math.min(canvasRect.width, canvasRect.height) * 0.5 * 0.98;
-  const cutoutRatio = 0.45;
-  const innerRadius = outerRadius * cutoutRatio;
-  const labelRadius = innerRadius + (outerRadius - innerRadius) * 0.5;
-
-  let currentAngle = -Math.PI / 2;
+  const centerCoord = 160;
+  const surroundingRadius = 140;
+  const itemCount = Math.max(labels.length, 1);
   legend.innerHTML = labels.map((label, index) => {
     const value = Number(values[index] || 0);
-    const percent = total > 0 ? (value / total) * 100 : 0;
-    const sweep = total > 0 ? (value / total) * Math.PI * 2 : 0;
-    const midAngle = currentAngle + sweep / 2;
-    const x = centerX + labelRadius * Math.cos(midAngle);
-    const y = centerY + labelRadius * Math.sin(midAngle);
-    currentAngle += sweep;
+    const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+    const color = colors[index % colors.length];
+    const angleDeg = (-90 + (360 / itemCount) * index);
+    const angle = (angleDeg * Math.PI) / 180;
+    const x = centerCoord + surroundingRadius * Math.cos(angle);
+    const y = centerCoord + surroundingRadius * Math.sin(angle);
 
     return `
       <div class="analytics-pie-legend-item" data-index="${index}" style="left: ${x}px; top: ${y}px;">
-        <span class="analytics-pie-segment-label">${label}</span>
-        <span class="analytics-pie-segment-percent">${percent.toFixed(1)}%</span>
+        <span class="analytics-pie-legend-color" style="background-color: ${color};"></span>
+        <span>${label} ${percent}%</span>
       </div>
     `;
   }).join('');
@@ -568,14 +569,27 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         data: values,
         backgroundColor: colors,
         borderWidth: 0,
-        hoverOffset: 0,
-        radius: '98%'
+        hoverOffset: 18
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '45%',
+      cutout: '50%',
+      onHover(event, activeElements, chartInstance) {
+        const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
+        legendItems.forEach((item) => item.classList.remove('is-active'));
+        if (activeElements && activeElements.length > 0) {
+          const activeIndex = activeElements[0].index;
+          const activeLegend = legend.querySelector(`.analytics-pie-legend-item[data-index="${activeIndex}"]`);
+          if (activeLegend) {
+            activeLegend.classList.add('is-active');
+          }
+          if (pieZone) pieZone.classList.add('is-hovering');
+        } else {
+          if (pieZone) pieZone.classList.remove('is-hovering');
+        }
+      },
       plugins: {
         legend: {
           display: false
@@ -594,6 +608,18 @@ function renderStyledAnalyticsPieChart({ chartId, labels, values, colors }) {
         }
       }
     }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    if (pieZone) pieZone.classList.remove('is-hovering');
+    const legendItems = legend.querySelectorAll('.analytics-pie-legend-item');
+    legendItems.forEach((item) => item.classList.remove('is-active'));
+    chart.setActiveElements([]);
+    chart.update();
+  });
+
+  canvas.addEventListener('mouseenter', () => {
+    if (pieZone) pieZone.classList.add('is-hovering');
   });
 }
 
@@ -833,8 +859,11 @@ function renderStaffAnalytics(container) {
   }, 0);
 }
 
-function renderSortButtons() {
-  const sortDiv = document.getElementById('sort-buttons');
+function renderSortButtons(targetId = 'sort-buttons') {
+  const sortDiv = document.getElementById(targetId);
+  if (!sortDiv) {
+    return;
+  }
   const sorts = [
     { key: 'codingProblems', label: 'Coding Problems' },
     { key: 'internships', label: 'Internships' },
@@ -847,22 +876,60 @@ function renderSortButtons() {
   sortDiv.innerHTML = `
     <div style="display: flex; align-items: center; gap: 0.8rem;">
       <label for="sort-dropdown" style="margin: 0; font-weight: bold; color: #FEC524;">Sort by:</label>
-      <select id="sort-dropdown" onchange="sortBy(this.value)" style="width: 200px; padding: 0.6rem; background: #0a0a0a; color: #f5f5f5; border: 1px solid #FEC524; border-radius: 6px; cursor: pointer;">
+      <select id="sort-dropdown" onchange="sortBy(this.value)" onfocus="this.style.boxShadow='0 0 0 2px rgba(254, 197, 36, 0.35)'; this.style.borderColor='#FEC524';" onblur="this.style.boxShadow='none';" style="width: 200px; padding: 0.6rem; background: #0a0a0a; color: #f5f5f5; border: 1px solid #FEC524; border-radius: 6px; cursor: pointer; outline: none;">
         <option value="">-- Select --</option>
         ${sorts.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
+      </select>
+      <label for="year-filter-dropdown" style="margin: 0 0 0 0.6rem; font-weight: bold; color: #FEC524;">Year:</label>
+      <select id="year-filter-dropdown" onchange="sortBy(document.getElementById('sort-dropdown')?.value || '')" onfocus="this.style.boxShadow='0 0 0 2px rgba(254, 197, 36, 0.35)'; this.style.borderColor='#FEC524';" onblur="this.style.boxShadow='none';" style="width: 150px; padding: 0.6rem; background: #0a0a0a; color: #f5f5f5; border: 1px solid #FEC524; border-radius: 6px; cursor: pointer; outline: none;">
+        <option value="">All Years</option>
+        <option value="1">I year</option>
+        <option value="2">II year</option>
+        <option value="3">III year</option>
+        <option value="4">IV year</option>
       </select>
     </div>
   `;
 }
 
 function sortBy(key) {
+  const selectedYear = Number(document.getElementById('year-filter-dropdown')?.value || 0);
+  const applyYearPriority = (list) => {
+    if (!selectedYear) {
+      return list;
+    }
+    return [...list].sort((a, b) => {
+      const aMatch = Number(a.year || 0) === selectedYear ? 0 : 1;
+      const bMatch = Number(b.year || 0) === selectedYear ? 0 : 1;
+      return aMatch - bMatch;
+    });
+  };
+
   let sorted;
   if (key === 'interest') {
-    sorted = [...students].sort((a, b) => a.interest.localeCompare(b.interest));
+    const getInterestSortRank = (interest) => {
+      const normalized = String(interest || '').trim().toLowerCase();
+      if (normalized.includes('placed')) return 0;
+      if (normalized.includes('not interested') || normalized.includes('uninterested')) return 2;
+      if (normalized.includes('interested') || normalized.includes('placement')) return 1;
+      if (normalized.includes('higher')) return 3;
+      if (normalized.includes('entrepreneur')) return 4;
+      return 5;
+    };
+
+    sorted = [...students].sort((a, b) => {
+      const rankDiff = getInterestSortRank(a.interest) - getInterestSortRank(b.interest);
+      if (rankDiff !== 0) {
+        return rankDiff;
+      }
+      return String(a.interest || '').localeCompare(String(b.interest || ''));
+    });
+  } else if (key) {
+    sorted = [...students].sort((a, b) => Number(b[key] || 0) - Number(a[key] || 0));
   } else {
-    sorted = [...students].sort((a, b) => b[key] - a[key]);
+    sorted = getDefaultAnalyticsSortedStudents();
   }
-  renderTable(sorted, isStaff, currentUser && currentUser.id);
+  renderTable(applyYearPriority(sorted), isStaff, currentUser && currentUser.id);
 }
 
 function renderTable(data, staffView, highlightId) {
