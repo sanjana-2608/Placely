@@ -149,6 +149,15 @@ async function refreshStudentsData() {
     const data = await response.json();
     if (Array.isArray(data)) {
       students = data;
+      if (currentUser && !isStaff) {
+        const matchedStudent = students.find((student) =>
+          (currentUser.id && student.id === currentUser.id) ||
+          (currentUser.email && student.email === currentUser.email)
+        );
+        if (matchedStudent) {
+          currentUser = { ...currentUser, ...matchedStudent };
+        }
+      }
     }
   } catch (error) {
     console.error('Students fetch error:', error);

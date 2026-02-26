@@ -745,9 +745,16 @@ def callback():
 def check_session():
     """Check if user is logged in"""
     if 'user' in session:
+        user = session['user']
+        if not session.get('is_staff', False):
+            refreshed_user = get_student_by_email(user.get('email')) if isinstance(user, dict) else None
+            if refreshed_user:
+                session['user'] = refreshed_user
+                session.modified = True
+                user = refreshed_user
         return jsonify({
             'logged_in': True,
-            'user': session['user'],
+            'user': user,
             'is_staff': session.get('is_staff', False),
             'google_auth': session.get('google_authenticated', False)
         })
