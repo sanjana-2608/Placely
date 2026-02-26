@@ -79,6 +79,7 @@ let currentUser = null;
 let isStaff = false;
 let currentLoginTab = 'student';
 let dashboardFilteredStudents = [];
+let currentDashboardSortKey = 'codingProblems';
 
 const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'reports-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
 
@@ -1125,7 +1126,8 @@ function applyDashboardFilters(staffView, highlightId = null) {
   });
 
   dashboardFilteredStudents = filtered;
-  renderTable(filtered, staffView, highlightId);
+  currentDashboardSortKey = sortKey;
+  renderTable(filtered, staffView, highlightId, sortKey);
 }
 
 function downloadBlob(content, filename, mimeType) {
@@ -1172,27 +1174,48 @@ function exportFilteredDataAsExcel() {
   downloadBlob(html, 'filtered_students.xls', 'application/vnd.ms-excel;charset=utf-8;');
 }
 
-function renderTable(data, staffView, highlightId) {
+function renderTable(data, staffView, highlightId, sortKey = currentDashboardSortKey) {
+  const columnDefs = {
+    codingProblems: {
+      header: 'Coding Problems',
+      cell: (s) => `<span id="val-problems-${s.id}">${s.codingProblems}</span>${staffView ? `<input type="number" id="input-problems-${s.id}" value="${s.codingProblems}" style="display:none;">` : ''}`
+    },
+    internships: {
+      header: 'Internships',
+      cell: (s) => `<span id="val-internships-${s.id}">${s.internships}</span>${staffView ? `<input type="number" id="input-internships-${s.id}" value="${s.internships}" style="display:none;">` : ''}`
+    },
+    certifications: {
+      header: 'Certifications',
+      cell: (s) => `<span id="val-certs-${s.id}">${s.certifications}</span>${staffView ? `<input type="number" id="input-certs-${s.id}" value="${s.certifications}" style="display:none;">` : ''}`
+    },
+    gradePoints: {
+      header: 'Grade Points',
+      cell: (s) => `<span id="val-grade-${s.id}">${s.gradePoints}</span>${staffView ? `<input type="number" step="0.1" id="input-grade-${s.id}" value="${s.gradePoints}" style="display:none;">` : ''}`
+    },
+    year: {
+      header: 'Year',
+      cell: (s) => `<span id="val-year-${s.id}">${s.year}</span>${staffView ? `<input type="number" id="input-year-${s.id}" value="${s.year}" style="display:none;">` : ''}`
+    },
+    interest: {
+      header: 'Interest',
+      cell: (s) => `<span id="val-interest-${s.id}">${s.interest}</span>${staffView ? `<input type="text" id="input-interest-${s.id}" value="${s.interest}" style="display:none;">` : ''}`
+    }
+  };
+
+  const baseOrder = ['codingProblems', 'internships', 'certifications', 'gradePoints', 'year', 'interest'];
+  const selectedColumn = columnDefs[sortKey] ? sortKey : 'codingProblems';
+  const orderedColumns = [selectedColumn, ...baseOrder.filter((key) => key !== selectedColumn)];
+
   const tableHtml = `<table><thead><tr>
     <th>Name</th>
     <th>Dept</th>
-    <th>Coding Problems</th>
-    <th>Internships</th>
-    <th>Certifications</th>
-    <th>Grade Points</th>
-    <th>Year</th>
-    <th>Interest</th>
+    ${orderedColumns.map((key) => `<th>${columnDefs[key].header}</th>`).join('')}
     ${staffView ? '<th>Action</th>' : ''}
   </tr></thead><tbody>
     ${data.map(s => `<tr${highlightId === s.id ? ' style="background:rgba(254, 197, 36, 0.15);border-left:3px solid #FEC524;"' : ''}>
       <td>${s.name}</td>
       <td>${s.dept}</td>
-      <td><span id="val-problems-${s.id}">${s.codingProblems}</span>${staffView ? `<input type="number" id="input-problems-${s.id}" value="${s.codingProblems}" style="display:none;">` : ''}</td>
-      <td><span id="val-internships-${s.id}">${s.internships}</span>${staffView ? `<input type="number" id="input-internships-${s.id}" value="${s.internships}" style="display:none;">` : ''}</td>
-      <td><span id="val-certs-${s.id}">${s.certifications}</span>${staffView ? `<input type="number" id="input-certs-${s.id}" value="${s.certifications}" style="display:none;">` : ''}</td>
-      <td><span id="val-grade-${s.id}">${s.gradePoints}</span>${staffView ? `<input type="number" step="0.1" id="input-grade-${s.id}" value="${s.gradePoints}" style="display:none;">` : ''}</td>
-      <td><span id="val-year-${s.id}">${s.year}</span>${staffView ? `<input type="number" id="input-year-${s.id}" value="${s.year}" style="display:none;">` : ''}</td>
-      <td><span id="val-interest-${s.id}">${s.interest}</span>${staffView ? `<input type="text" id="input-interest-${s.id}" value="${s.interest}" style="display:none;">` : ''}</td>
+      ${orderedColumns.map((key) => `<td>${columnDefs[key].cell(s)}</td>`).join('')}
       ${staffView ? `<td><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem;" id="btn-${s.id}" onclick="toggleEdit(${s.id})">Edit</button><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem; display: none; background: #E6A800;" id="save-${s.id}" onclick="saveEdit(${s.id})">Save</button></td>` : ''}
     </tr>`).join('')}
   </tbody></table>`;
