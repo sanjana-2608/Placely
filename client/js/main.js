@@ -78,6 +78,7 @@ const notifications = [ { msg: 'Welcome to Placely!', date: '2026-01-27' } ];
 let currentUser = null;
 let isStaff = false;
 let currentLoginTab = 'student';
+let dashboardFilteredStudents = [];
 
 const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'reports-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
 
@@ -500,26 +501,25 @@ function renderDashboard() {
   const chartsContainer = document.getElementById('charts-container');
   const topSortContainer = document.getElementById('sort-buttons');
   const defaultSortedStudents = getDefaultAnalyticsSortedStudents();
+  if (topSortContainer) {
+    topSortContainer.innerHTML = '';
+  }
   
   if (isStaff) {
     title.textContent = '';
     renderStaffAnalytics(chartsContainer);
-    if (topSortContainer) {
-      topSortContainer.innerHTML = '';
-      renderSortButtons('sort-buttons');
-    }
-    dash.innerHTML = `<div id="analytics-insights"></div><h3>Student Directory</h3><div id="staff-table"></div>`;
+    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
+    initializeDashboardFilters(true);
+    dashboardFilteredStudents = [...defaultSortedStudents];
     renderTable(defaultSortedStudents, true);
   } else {
     title.textContent = '';
     renderStudentAnalytics(chartsContainer);
-    if (topSortContainer) {
-      topSortContainer.innerHTML = '';
-    }
-    dash.innerHTML = `<div id="analytics-insights"></div><h3 style="margin:0 0 0.8rem 0;">Your Ranking</h3><div style="display:flex; justify-content:center; margin-bottom:1rem;"><div id="sort-buttons-inline"></div></div><div id="student-table"></div>`;
-    renderSortButtons('sort-buttons-inline');
+    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="student-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
+    initializeDashboardFilters(false, currentUser && currentUser.id);
+    dashboardFilteredStudents = [...defaultSortedStudents];
     renderTable(defaultSortedStudents, false, currentUser && currentUser.id);
   }
 }
@@ -841,77 +841,290 @@ function renderStaffAnalytics(container) {
   }, 0);
 }
 
-function renderSortButtons(targetId = 'sort-buttons') {
-  const sortDiv = document.getElementById(targetId);
-  if (!sortDiv) {
+function initializeDashboardFilters(staffView, highlightId = null) {
+  const container = document.getElementById('dashboard-filter-controls');
+  if (!container) {
     return;
   }
-  const sorts = [
-    { key: 'codingProblems', label: 'Coding Problems' },
-    { key: 'internships', label: 'Internships' },
-    { key: 'certifications', label: 'Certifications' },
-    { key: 'gradePoints', label: 'Grade Points' },
-    { key: 'year', label: 'Year of Study' },
-    { key: 'interest', label: 'Placement Interest' }
-  ];
-  
-  sortDiv.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 0.8rem;">
-      <label for="sort-dropdown" style="margin: 0; font-weight: bold; color: #FEC524;">Sort by:</label>
-      <select id="sort-dropdown" onchange="sortBy(this.value)" onfocus="this.style.boxShadow='0 0 0 2px rgba(254, 197, 36, 0.35)'; this.style.borderColor='#FEC524';" onblur="this.style.boxShadow='none';" style="width: 200px; padding: 0.6rem; background: #0a0a0a; color: #f5f5f5; border: 1px solid #FEC524; border-radius: 6px; cursor: pointer; outline: none;">
-        <option value="">-- Select --</option>
-        ${sorts.map(s => `<option value="${s.key}">${s.label}</option>`).join('')}
-      </select>
-      <label for="year-filter-dropdown" style="margin: 0 0 0 0.6rem; font-weight: bold; color: #FEC524;">Year:</label>
-      <select id="year-filter-dropdown" onchange="sortBy(document.getElementById('sort-dropdown')?.value || '')" onfocus="this.style.boxShadow='0 0 0 2px rgba(254, 197, 36, 0.35)'; this.style.borderColor='#FEC524';" onblur="this.style.boxShadow='none';" style="width: 150px; padding: 0.6rem; background: #0a0a0a; color: #f5f5f5; border: 1px solid #FEC524; border-radius: 6px; cursor: pointer; outline: none;">
-        <option value="">All Years</option>
-        <option value="1">I year</option>
-        <option value="2">II year</option>
-        <option value="3">III year</option>
-        <option value="4">IV year</option>
-      </select>
+
+  const source = Array.isArray(students) ? [...students] : [];
+  const years = [...new Set(source.map((student) => Number(student.year || 0)).filter(Boolean))].sort((a, b) => a - b);
+  const departments = [...new Set(source.map((student) => String(student.dept || '').trim()).filter(Boolean))].sort();
+  const interests = [...new Set(source.map((student) => String(student.interest || '').trim()).filter(Boolean))].sort();
+
+  const getRange = (values, fallbackMin, fallbackMax) => {
+    const numericValues = values
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+    if (!numericValues.length) {
+      return { min: fallbackMin, max: fallbackMax };
+    }
+    return {
+      min: Math.floor(Math.min(...numericValues)),
+      max: Math.ceil(Math.max(...numericValues))
+    };
+  };
+
+  const codingRange = getRange(source.map((student) => student.codingProblems), 0, 1000);
+  const cgpaRange = getRange(source.map((student) => student.gradePoints), 0, 10);
+  const tenthRange = getRange(source.map((student) => student.tenthPercentage), 0, 100);
+  const twelfthRange = getRange(source.map((student) => student.twelfthPercentage), 0, 100);
+
+  const makeCheckboxes = (name, items, formatter = (item) => item) => items.map((item) => `
+    <label class="dashboard-filter-check">
+      <input type="checkbox" name="${name}" value="${item}" checked>
+      <span>${formatter(item)}</span>
+    </label>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="dashboard-filter-toolbar">
+      <button type="button" id="dashboard-filter-toggle" class="dashboard-filter-btn">Filters</button>
+      <div class="dashboard-export-actions">
+        <button type="button" id="dashboard-export-csv" class="dashboard-export-btn">Export CSV</button>
+        <button type="button" id="dashboard-export-excel" class="dashboard-export-btn">Export Excel</button>
+      </div>
+    </div>
+    <div id="dashboard-filter-panel" class="dashboard-filter-panel" style="display:none;">
+      <div class="dashboard-filter-grid">
+        <div class="dashboard-filter-group">
+          <h4>Years</h4>
+          <div class="dashboard-filter-list">
+            ${makeCheckboxes('dashboard-year', years, (year) => `Year ${year}`)}
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>Departments</h4>
+          <div class="dashboard-filter-list">
+            ${makeCheckboxes('dashboard-dept', departments)}
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>Placement Interest</h4>
+          <div class="dashboard-filter-list">
+            ${makeCheckboxes('dashboard-interest', interests)}
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>Coding Problems</h4>
+          <div class="dashboard-range-wrap">
+            <label>Min <span id="coding-min-value">${codingRange.min}</span></label>
+            <input type="range" id="coding-min" min="${codingRange.min}" max="${codingRange.max}" value="${codingRange.min}">
+            <label>Max <span id="coding-max-value">${codingRange.max}</span></label>
+            <input type="range" id="coding-max" min="${codingRange.min}" max="${codingRange.max}" value="${codingRange.max}">
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>CGPA</h4>
+          <div class="dashboard-range-wrap">
+            <label>Min <span id="cgpa-min-value">${cgpaRange.min}</span></label>
+            <input type="range" id="cgpa-min" min="${cgpaRange.min}" max="${cgpaRange.max}" step="0.1" value="${cgpaRange.min}">
+            <label>Max <span id="cgpa-max-value">${cgpaRange.max}</span></label>
+            <input type="range" id="cgpa-max" min="${cgpaRange.min}" max="${cgpaRange.max}" step="0.1" value="${cgpaRange.max}">
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>10th %</h4>
+          <div class="dashboard-range-wrap">
+            <label>Min <span id="tenth-min-value">${tenthRange.min}</span></label>
+            <input type="range" id="tenth-min" min="${tenthRange.min}" max="${tenthRange.max}" step="0.1" value="${tenthRange.min}">
+            <label>Max <span id="tenth-max-value">${tenthRange.max}</span></label>
+            <input type="range" id="tenth-max" min="${tenthRange.min}" max="${tenthRange.max}" step="0.1" value="${tenthRange.max}">
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>12th %</h4>
+          <div class="dashboard-range-wrap">
+            <label>Min <span id="twelfth-min-value">${twelfthRange.min}</span></label>
+            <input type="range" id="twelfth-min" min="${twelfthRange.min}" max="${twelfthRange.max}" step="0.1" value="${twelfthRange.min}">
+            <label>Max <span id="twelfth-max-value">${twelfthRange.max}</span></label>
+            <input type="range" id="twelfth-max" min="${twelfthRange.min}" max="${twelfthRange.max}" step="0.1" value="${twelfthRange.max}">
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group">
+          <h4>Sort</h4>
+          <div class="dashboard-sort-wrap">
+            <label for="dashboard-sort-key">Sort field</label>
+            <select id="dashboard-sort-key">
+              <option value="codingProblems">Coding Problems</option>
+              <option value="gradePoints">CGPA</option>
+              <option value="tenthPercentage">10th %</option>
+              <option value="twelfthPercentage">12th %</option>
+              <option value="internships">Internships</option>
+              <option value="certifications">Certifications</option>
+              <option value="year">Year</option>
+              <option value="name">Name</option>
+            </select>
+            <label for="dashboard-sort-dir">Direction</label>
+            <select id="dashboard-sort-dir">
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="dashboard-filter-actions">
+        <button type="button" id="dashboard-filter-apply" class="dashboard-filter-action-btn">Apply</button>
+        <button type="button" id="dashboard-filter-reset" class="dashboard-filter-action-btn dashboard-filter-action-btn--ghost">Reset</button>
+      </div>
     </div>
   `;
-}
 
-function sortBy(key) {
-  const selectedYear = Number(document.getElementById('year-filter-dropdown')?.value || 0);
-  const applyYearPriority = (list) => {
-    if (!selectedYear) {
-      return list;
-    }
-    return [...list].sort((a, b) => {
-      const aMatch = Number(a.year || 0) === selectedYear ? 0 : 1;
-      const bMatch = Number(b.year || 0) === selectedYear ? 0 : 1;
-      return aMatch - bMatch;
+  const panel = document.getElementById('dashboard-filter-panel');
+  const toggleBtn = document.getElementById('dashboard-filter-toggle');
+  const applyBtn = document.getElementById('dashboard-filter-apply');
+  const resetBtn = document.getElementById('dashboard-filter-reset');
+  const exportCsvBtn = document.getElementById('dashboard-export-csv');
+  const exportExcelBtn = document.getElementById('dashboard-export-excel');
+
+  if (toggleBtn && panel) {
+    toggleBtn.addEventListener('click', () => {
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+
+  const bindRangeValue = (inputId, valueId) => {
+    const input = document.getElementById(inputId);
+    const valueEl = document.getElementById(valueId);
+    if (!input || !valueEl) return;
+    input.addEventListener('input', () => {
+      valueEl.textContent = Number(input.value).toFixed(input.step === '0.1' ? 1 : 0);
     });
   };
 
-  let sorted;
-  if (key === 'interest') {
-    const getInterestSortRank = (interest) => {
-      const normalized = String(interest || '').trim().toLowerCase();
-      if (normalized.includes('placed')) return 0;
-      if (normalized.includes('not interested') || normalized.includes('uninterested')) return 2;
-      if (normalized.includes('interested') || normalized.includes('placement')) return 1;
-      if (normalized.includes('higher')) return 3;
-      if (normalized.includes('entrepreneur')) return 4;
-      return 5;
-    };
+  bindRangeValue('coding-min', 'coding-min-value');
+  bindRangeValue('coding-max', 'coding-max-value');
+  bindRangeValue('cgpa-min', 'cgpa-min-value');
+  bindRangeValue('cgpa-max', 'cgpa-max-value');
+  bindRangeValue('tenth-min', 'tenth-min-value');
+  bindRangeValue('tenth-max', 'tenth-max-value');
+  bindRangeValue('twelfth-min', 'twelfth-min-value');
+  bindRangeValue('twelfth-max', 'twelfth-max-value');
 
-    sorted = [...students].sort((a, b) => {
-      const rankDiff = getInterestSortRank(a.interest) - getInterestSortRank(b.interest);
-      if (rankDiff !== 0) {
-        return rankDiff;
-      }
-      return String(a.interest || '').localeCompare(String(b.interest || ''));
-    });
-  } else if (key) {
-    sorted = [...students].sort((a, b) => Number(b[key] || 0) - Number(a[key] || 0));
-  } else {
-    sorted = getDefaultAnalyticsSortedStudents();
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => applyDashboardFilters(staffView, highlightId));
   }
-  renderTable(applyYearPriority(sorted), isStaff, currentUser && currentUser.id);
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => initializeDashboardFilters(staffView, highlightId));
+  }
+
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener('click', exportFilteredDataAsCsv);
+  }
+
+  if (exportExcelBtn) {
+    exportExcelBtn.addEventListener('click', exportFilteredDataAsExcel);
+  }
+}
+
+function applyDashboardFilters(staffView, highlightId = null) {
+  const getCheckedValues = (name, asNumber = false) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+    .map((input) => (asNumber ? Number(input.value) : input.value));
+
+  const selectedYears = getCheckedValues('dashboard-year', true);
+  const selectedDepts = getCheckedValues('dashboard-dept');
+  const selectedInterests = getCheckedValues('dashboard-interest');
+
+  const codingMin = Number(document.getElementById('coding-min')?.value || 0);
+  const codingMax = Number(document.getElementById('coding-max')?.value || Number.MAX_SAFE_INTEGER);
+  const cgpaMin = Number(document.getElementById('cgpa-min')?.value || 0);
+  const cgpaMax = Number(document.getElementById('cgpa-max')?.value || 10);
+  const tenthMin = Number(document.getElementById('tenth-min')?.value || 0);
+  const tenthMax = Number(document.getElementById('tenth-max')?.value || 100);
+  const twelfthMin = Number(document.getElementById('twelfth-min')?.value || 0);
+  const twelfthMax = Number(document.getElementById('twelfth-max')?.value || 100);
+  const sortKey = document.getElementById('dashboard-sort-key')?.value || 'codingProblems';
+  const sortDir = document.getElementById('dashboard-sort-dir')?.value || 'desc';
+
+  const inRange = (value, min, max) => value >= min && value <= max;
+  const toNumberOrNull = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
+  let filtered = [...students].filter((student) => {
+    const year = Number(student.year || 0);
+    const coding = Number(student.codingProblems || 0);
+    const cgpa = Number(student.gradePoints || 0);
+    const tenth = toNumberOrNull(student.tenthPercentage);
+    const twelfth = toNumberOrNull(student.twelfthPercentage);
+
+    const yearOk = selectedYears.length ? selectedYears.includes(year) : true;
+    const deptOk = selectedDepts.length ? selectedDepts.includes(String(student.dept || '')) : true;
+    const interestOk = selectedInterests.length ? selectedInterests.includes(String(student.interest || '')) : true;
+    const codingOk = inRange(coding, Math.min(codingMin, codingMax), Math.max(codingMin, codingMax));
+    const cgpaOk = inRange(cgpa, Math.min(cgpaMin, cgpaMax), Math.max(cgpaMin, cgpaMax));
+    const tenthOk = tenth === null ? true : inRange(tenth, Math.min(tenthMin, tenthMax), Math.max(tenthMin, tenthMax));
+    const twelfthOk = twelfth === null ? true : inRange(twelfth, Math.min(twelfthMin, twelfthMax), Math.max(twelfthMin, twelfthMax));
+
+    return yearOk && deptOk && interestOk && codingOk && cgpaOk && tenthOk && twelfthOk;
+  });
+
+  const numericSortKeys = new Set(['codingProblems', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'internships', 'certifications', 'year']);
+  filtered.sort((a, b) => {
+    let compare = 0;
+    if (numericSortKeys.has(sortKey)) {
+      compare = Number(a[sortKey] || 0) - Number(b[sortKey] || 0);
+    } else {
+      compare = String(a[sortKey] || '').localeCompare(String(b[sortKey] || ''));
+    }
+    return sortDir === 'asc' ? compare : -compare;
+  });
+
+  dashboardFilteredStudents = filtered;
+  renderTable(filtered, staffView, highlightId);
+}
+
+function downloadBlob(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getFilteredExportRows() {
+  return (dashboardFilteredStudents && dashboardFilteredStudents.length ? dashboardFilteredStudents : students).map((student) => ({
+    Name: student.name || '',
+    Department: student.dept || '',
+    Year: student.year || '',
+    Interest: student.interest || '',
+    CodingProblems: student.codingProblems || 0,
+    CGPA: student.gradePoints || '',
+    TenthPercentage: student.tenthPercentage ?? '',
+    TwelfthPercentage: student.twelfthPercentage ?? '',
+    Internships: student.internships || 0,
+    Certifications: student.certifications || 0
+  }));
+}
+
+function exportFilteredDataAsCsv() {
+  const rows = getFilteredExportRows();
+  const headers = Object.keys(rows[0] || {});
+  const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const csv = [headers.join(','), ...rows.map((row) => headers.map((header) => escapeCsv(row[header])).join(','))].join('\n');
+  downloadBlob(csv, 'filtered_students.csv', 'text/csv;charset=utf-8;');
+}
+
+function exportFilteredDataAsExcel() {
+  const rows = getFilteredExportRows();
+  const headers = Object.keys(rows[0] || {});
+  const tableHeader = headers.map((header) => `<th>${header}</th>`).join('');
+  const tableRows = rows.map((row) => `<tr>${headers.map((header) => `<td>${row[header] ?? ''}</td>`).join('')}</tr>`).join('');
+  const html = `<table><thead><tr>${tableHeader}</tr></thead><tbody>${tableRows}</tbody></table>`;
+  downloadBlob(html, 'filtered_students.xls', 'application/vnd.ms-excel;charset=utf-8;');
 }
 
 function renderTable(data, staffView, highlightId) {

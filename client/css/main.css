@@ -611,6 +611,108 @@ table tr:hover {
     color: #f5f5f5;
 }
 
+.dashboard-filter-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.9rem;
+}
+
+.dashboard-filter-btn,
+.dashboard-export-btn,
+.dashboard-filter-action-btn {
+    background: #0a0a0a;
+    color: #f5f5f5;
+    border: 1px solid rgba(254, 197, 36, 0.45);
+    border-radius: 6px;
+    padding: 0.55rem 0.85rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.dashboard-export-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dashboard-filter-panel {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(254, 197, 36, 0.2);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+}
+
+.dashboard-filter-group {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(254, 197, 36, 0.15);
+    border-radius: 8px;
+    padding: 0.7rem;
+}
+
+.dashboard-filter-group h4 {
+    margin: 0 0 0.5rem 0;
+    color: #FEC524;
+    font-size: 0.95rem;
+}
+
+.dashboard-filter-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.45rem;
+}
+
+.dashboard-filter-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+}
+
+.dashboard-range-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+}
+
+.dashboard-range-wrap input[type="range"] {
+    width: 100%;
+}
+
+.dashboard-sort-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.dashboard-sort-wrap select {
+    background: #0a0a0a;
+    color: #f5f5f5;
+    border: 1px solid rgba(254, 197, 36, 0.35);
+    border-radius: 6px;
+    padding: 0.45rem;
+}
+
+.dashboard-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.55rem;
+    margin-top: 0.9rem;
+}
+
+.dashboard-filter-action-btn--ghost {
+    border-color: rgba(245, 245, 245, 0.25);
+}
+
 .chart-card {
     width: 100%;
     min-width: 0;
