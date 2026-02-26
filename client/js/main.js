@@ -909,6 +909,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
                 <option value="internships">Internships</option>
                 <option value="certifications">Certifications</option>
                 <option value="year">Year</option>
+                <option value="interest">Interest</option>
                 <option value="name">Name</option>
               </select>
             </div>
@@ -1192,6 +1193,14 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
       header: 'Grade Points',
       cell: (s) => `<span id="val-grade-${s.id}">${s.gradePoints}</span>${staffView ? `<input type="number" step="0.1" id="input-grade-${s.id}" value="${s.gradePoints}" style="display:none;">` : ''}`
     },
+    tenthPercentage: {
+      header: '10th %',
+      cell: (s) => `${s.tenthPercentage ?? 'N/A'}`
+    },
+    twelfthPercentage: {
+      header: '12th %',
+      cell: (s) => `${s.twelfthPercentage ?? 'N/A'}`
+    },
     year: {
       header: 'Year',
       cell: (s) => `<span id="val-year-${s.id}">${s.year}</span>${staffView ? `<input type="number" id="input-year-${s.id}" value="${s.year}" style="display:none;">` : ''}`
@@ -1202,7 +1211,7 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     }
   };
 
-  const baseOrder = ['codingProblems', 'internships', 'certifications', 'gradePoints', 'year', 'interest'];
+  const baseOrder = ['codingProblems', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'year', 'interest'];
   const selectedColumn = columnDefs[sortKey] ? sortKey : 'codingProblems';
   const orderedColumns = [selectedColumn, ...baseOrder.filter((key) => key !== selectedColumn)];
 
