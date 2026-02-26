@@ -850,7 +850,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   const source = Array.isArray(students) ? [...students] : [];
   const years = [...new Set(source.map((student) => Number(student.year || 0)).filter(Boolean))].sort((a, b) => a - b);
   const departments = [...new Set(source.map((student) => String(student.dept || '').trim()).filter(Boolean))].sort();
-  const interests = [...new Set(source.map((student) => String(student.interest || '').trim()).filter(Boolean))].sort();
+  const interests = [...new Set(source.map((student) => getInterestCategory(student.interest)).filter(Boolean))].sort();
 
   const getRange = (values, fallbackMin, fallbackMax) => {
     const numericValues = values
@@ -1094,7 +1094,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
 
     const yearOk = selectedYears.length ? selectedYears.includes(year) : true;
     const deptOk = selectedDepts.length ? selectedDepts.includes(String(student.dept || '')) : true;
-    const interestOk = selectedInterests.length ? selectedInterests.includes(String(student.interest || '')) : true;
+    const interestOk = selectedInterests.length ? selectedInterests.includes(getInterestCategory(student.interest)) : true;
     const codingOk = inRange(coding, Math.min(codingMin, codingMax), Math.max(codingMin, codingMax));
     const cgpaOk = inRange(cgpa, Math.min(cgpaMin, cgpaMax), Math.max(cgpaMin, cgpaMax));
     const tenthOk = tenth === null ? true : inRange(tenth, Math.min(tenthMin, tenthMax), Math.max(tenthMin, tenthMax));
