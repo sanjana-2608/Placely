@@ -763,15 +763,20 @@ function renderStudentAnalytics(container) {
       .slice(0, 5);
 
     new Chart(document.getElementById('chart-top-coders'), {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: topCoders.map(s => s.name),
         datasets: [{
           label: 'Problems Solved',
           data: topCoders.map(s => Number(s.codingProblems || 0)),
-          backgroundColor: '#FEC524',
+          backgroundColor: 'rgba(254, 197, 36, 0.22)',
           borderColor: '#E6A800',
-          borderWidth: 1
+          borderWidth: 2,
+          tension: 0.28,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#FEC524'
         }]
       },
       options: {
