@@ -1668,6 +1668,29 @@ function renderLeaderboard() {
   const cgpaRank = [...studentsData]
     .sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
 
+  const maxCodingProblems = Math.max(...studentsData.map((student) => Number(student.codingProblems || 0)), 0);
+  const maxOfficialCertificates = Math.max(...studentsData.map((student) => Number(student.certifications || 0)), 0);
+  const maxInternships = Math.max(...studentsData.map((student) => Number(student.internships || 0)), 0);
+
+  const clampUnit = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+
+  const getDynamicScore = (student) => {
+    const cgpa = Number(student.gradePoints || 0);
+    const codingProblems = Number(student.codingProblems || 0);
+    const officialCertificates = Number(student.certifications || 0);
+    const internships = Number(student.internships || 0);
+
+    const cgpaComponent = clampUnit(cgpa / 10) * 30;
+    const codingComponent = maxCodingProblems > 0 ? clampUnit(codingProblems / maxCodingProblems) * 30 : 0;
+    const certificatesComponent = maxOfficialCertificates > 0 ? clampUnit(officialCertificates / maxOfficialCertificates) * 15 : 0;
+    const internshipsComponent = maxInternships > 0 ? clampUnit(internships / maxInternships) * 25 : 0;
+
+    return cgpaComponent + codingComponent + certificatesComponent + internshipsComponent;
+  };
+
+  const dynamicRank = [...studentsData]
+    .sort((a, b) => getDynamicScore(b) - getDynamicScore(a));
+
   const renderRows = (list, valueFn) => list.map((student, index) => {
     const isCurrentUser = !isStaff && currentUser && student.id === currentUser.id;
     return `
@@ -1712,6 +1735,23 @@ function renderLeaderboard() {
           </thead>
           <tbody>
             ${renderRows(cgpaRank, (student) => Number(student.gradePoints || 0).toFixed(2))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="padding: 1.1rem;">
+        <h3 style="margin-top:0; margin-bottom:0.9rem; text-align:center;">Dynamic Score Leaderboard</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70px;">Rank</th>
+              <th>Name</th>
+              <th style="width:100px;">Dept</th>
+              <th style="width:140px;">Score / 100</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderRows(dynamicRank, (student) => getDynamicScore(student).toFixed(2))}
           </tbody>
         </table>
       </div>
