@@ -673,14 +673,22 @@ table tr:hover {
 
 .dashboard-filter-header-sort {
     display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: min(420px, 100%);
 }
 
 .dashboard-filter-header-sort label {
     font-size: 0.84rem;
     color: #f5f5f5;
+}
+
+.dashboard-filter-header-sort-row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.55rem;
 }
 
 .dashboard-filter-header-sort select {
@@ -689,6 +697,7 @@ table tr:hover {
     border: 1px solid rgba(254, 197, 36, 0.35);
     border-radius: 6px;
     padding: 0.4rem 0.5rem;
+    width: 100%;
 }
 
 .dashboard-filter-close {
@@ -704,7 +713,7 @@ table tr:hover {
 
 .dashboard-filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: 1fr;
     gap: 0.9rem;
 }
 

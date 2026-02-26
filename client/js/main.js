@@ -890,22 +890,26 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         <div class="dashboard-filter-dialog-header">
           <h3>Filter Students</h3>
           <div class="dashboard-filter-header-sort">
-            <label for="dashboard-sort-key">Sort by</label>
-            <select id="dashboard-sort-key">
-              <option value="codingProblems">Coding Problems</option>
-              <option value="gradePoints">CGPA</option>
-              <option value="tenthPercentage">10th %</option>
-              <option value="twelfthPercentage">12th %</option>
-              <option value="internships">Internships</option>
-              <option value="certifications">Certifications</option>
-              <option value="year">Year</option>
-              <option value="name">Name</option>
-            </select>
-            <label for="dashboard-sort-dir">Direction</label>
-            <select id="dashboard-sort-dir">
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
+            <div class="dashboard-filter-header-sort-row">
+              <label for="dashboard-sort-key">Sort by</label>
+              <select id="dashboard-sort-key">
+                <option value="codingProblems">Coding Problems</option>
+                <option value="gradePoints">CGPA</option>
+                <option value="tenthPercentage">10th %</option>
+                <option value="twelfthPercentage">12th %</option>
+                <option value="internships">Internships</option>
+                <option value="certifications">Certifications</option>
+                <option value="year">Year</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
+            <div class="dashboard-filter-header-sort-row">
+              <label for="dashboard-sort-dir">Direction</label>
+              <select id="dashboard-sort-dir">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </div>
           </div>
           <button type="button" id="dashboard-filter-close" class="dashboard-filter-close" aria-label="Close filters">×</button>
         </div>
