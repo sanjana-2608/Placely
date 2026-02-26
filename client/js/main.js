@@ -877,6 +877,14 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     </label>
   `).join('');
 
+  const formatYearLabel = (year) => {
+    if (Number(year) === 1) return 'First Year';
+    if (Number(year) === 2) return 'Second Year';
+    if (Number(year) === 3) return 'Third Year';
+    if (Number(year) === 4) return 'Fourth Year';
+    return `Year ${year}`;
+  };
+
   container.innerHTML = `
     <div class="dashboard-filter-toolbar">
       <button type="button" id="dashboard-filter-toggle" class="dashboard-filter-btn">Filters</button>
@@ -917,7 +925,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         <div class="dashboard-filter-group">
           <h4>Years</h4>
           <div class="dashboard-filter-list">
-            ${makeCheckboxes('dashboard-year', years, (year) => `Year ${year}`)}
+            ${makeCheckboxes('dashboard-year', years, formatYearLabel)}
           </div>
         </div>
 
