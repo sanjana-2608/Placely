@@ -197,6 +197,10 @@ STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
     'certifications', 'gradePoints', 'year', 'interest', 'dept',
     'tenthPercentage', 'twelfthPercentage',
+    'rollNo', 'registerNo', 'section', 'gender', 'residencyType',
+    'diplomaPercentage', 'personalMail', 'collegeMail', 'contactNo',
+    'address', 'resumeLink', 'preferredRoles', 'preferredShift',
+    'travelPriority', 'achievements',
     'linkedinHeadline',
     'leetcodeRanking', 'leetcodeSolvedAll', 'leetcodeSolvedEasy', 'leetcodeSolvedMedium',
     'leetcodeSolvedHard', 'leetcodeAcceptanceAll', 'leetcodeAcceptanceEasy',
@@ -205,8 +209,9 @@ STUDENT_ALLOWED_FIELDS = {
 
 
 def _db_to_student(row):
+    register_no = row.get('register_no')
     return {
-        'id': row.get('id'),
+        'id': register_no if register_no is not None else row.get('id'),
         'name': row.get('name'),
         'email': row.get('email'),
         'leetcodeUsername': row.get('leetcode_username') or '',
@@ -217,12 +222,27 @@ def _db_to_student(row):
         'year': row.get('year', 0),
         'interest': row.get('interest') or '',
         'dept': row.get('dept') or '',
+        'rollNo': row.get('roll_no') or '',
+        'registerNo': register_no or '',
+        'section': row.get('section') or '',
+        'gender': row.get('gender') or '',
+        'residencyType': row.get('residency_type') or '',
         'tenthPercentage': row.get('tenth_percentage'),
         'twelfthPercentage': row.get('twelfth_percentage'),
+        'diplomaPercentage': row.get('diploma_percentage'),
+        'personalMail': row.get('personal_mail') or '',
+        'collegeMail': row.get('college_mail') or '',
+        'contactNo': row.get('contact_no') or '',
+        'address': row.get('address') or '',
+        'resumeLink': row.get('resume_link') or '',
+        'preferredRoles': row.get('preferred_roles') or '',
+        'preferredShift': row.get('preferred_shift') or '',
+        'travelPriority': row.get('travel_priority') or '',
+        'achievements': row.get('achievements') or '',
         'linkedinName': row.get('linkedin_name') or '',
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
         'linkedinUrl': row.get('linkedin_url') or '',
-        'linkedinHeadline': row.get('linkedin_bio') or row.get('linkedin_headline') or '',
+        'linkedinHeadline': row.get('linkedin_headline') or row.get('linkedin_bio') or '',
         'leetcodeRanking': row.get('leetcode_ranking'),
         'leetcodeSolvedAll': row.get('leetcode_solved_all'),
         'leetcodeSolvedEasy': row.get('leetcode_solved_easy'),
@@ -249,9 +269,24 @@ def _student_to_db(payload):
         'year': 'year',
         'interest': 'interest',
         'dept': 'dept',
+        'rollNo': 'roll_no',
+        'registerNo': 'register_no',
+        'section': 'section',
+        'gender': 'gender',
+        'residencyType': 'residency_type',
         'tenthPercentage': 'tenth_percentage',
         'twelfthPercentage': 'twelfth_percentage',
-        'linkedinHeadline': 'linkedin_bio',
+        'diplomaPercentage': 'diploma_percentage',
+        'personalMail': 'personal_mail',
+        'collegeMail': 'college_mail',
+        'contactNo': 'contact_no',
+        'address': 'address',
+        'resumeLink': 'resume_link',
+        'preferredRoles': 'preferred_roles',
+        'preferredShift': 'preferred_shift',
+        'travelPriority': 'travel_priority',
+        'achievements': 'achievements',
+        'linkedinHeadline': 'linkedin_headline',
         'leetcodeRanking': 'leetcode_ranking',
         'leetcodeSolvedAll': 'leetcode_solved_all',
         'leetcodeSolvedEasy': 'leetcode_solved_easy',
@@ -274,7 +309,7 @@ def get_students_data():
     if not supabase:
         return students
     try:
-        response = supabase.table('students').select('*').order('id').execute()
+        response = supabase.table('students').select('*').order('register_no').execute()
         rows = response.data or []
         return [_db_to_student(row) for row in rows]
     except Exception as exc:
@@ -302,8 +337,11 @@ def update_student_data(student_id, payload):
     if not allowed_payload:
         return None
 
+    def _student_pk(student_record):
+        return student_record.get('registerNo') or student_record.get('id')
+
     if not supabase:
-        student = next((s for s in students if s['id'] == student_id), None)
+        student = next((s for s in students if _student_pk(s) == student_id), None)
         if not student:
             return None
         student.update(allowed_payload)
@@ -314,7 +352,7 @@ def update_student_data(student_id, payload):
         return None
 
     try:
-        response = supabase.table('students').update(db_payload).eq('id', student_id).execute()
+        response = supabase.table('students').update(db_payload).eq('register_no', student_id).execute()
         rows = response.data or []
         if not rows:
             return None
@@ -694,17 +732,17 @@ def save_linkedin_data(student_id, linkedin_data):
         if _is_students_column_available('linkedin_url'):
             update_data['linkedin_url'] = linkedin_data.get('profile_url', '')
 
-        if _is_students_column_available('linkedin_bio'):
-            update_data['linkedin_bio'] = linkedin_data.get('headline', '')
-        elif _is_students_column_available('linkedin_headline'):
+        if _is_students_column_available('linkedin_headline'):
             update_data['linkedin_headline'] = linkedin_data.get('headline', '')
+        elif _is_students_column_available('linkedin_bio'):
+            update_data['linkedin_bio'] = linkedin_data.get('headline', '')
 
         if not update_data:
             print("No compatible LinkedIn columns found in students table")
             return False
         
         print(f"Saving LinkedIn data: {update_data}")
-        response = db_client.table('students').update(update_data).eq('id', student_id).execute()
+        response = db_client.table('students').update(update_data).eq('register_no', student_id).execute()
         print(f"LinkedIn data saved successfully for student {student_id}")
         return True
     except Exception as e:

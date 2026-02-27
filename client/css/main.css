@@ -793,8 +793,20 @@ table tr:hover {
     font-size: 0.82rem;
 }
 
-.dashboard-range-wrap input[type="range"] {
+.dashboard-number-range {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-range-wrap input[type="number"] {
     width: 100%;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    border: 1px solid rgba(254, 197, 36, 0.35);
+    border-radius: 6px;
+    padding: 0.38rem 0.45rem;
 }
 
 .dashboard-sort-wrap {
@@ -1721,7 +1733,8 @@ body.light-mode .dashboard-filter-btn,
 body.light-mode .dashboard-export-btn,
 body.light-mode .dashboard-filter-action-btn,
 body.light-mode .dashboard-filter-header-sort select,
-body.light-mode .dashboard-sort-wrap select {
+body.light-mode .dashboard-sort-wrap select,
+body.light-mode .dashboard-range-wrap input[type="number"] {
     background: #f8fafc;
     color: #2c3e50;
     border-color: rgba(59, 130, 246, 0.25);

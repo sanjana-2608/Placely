@@ -7,6 +7,14 @@ const recentlyPlaced = [
   { name: "Sneha Reddy", package: 15.2, company: "Amazon", position: "Associate Engineer", graduationYear: 2025, date: "2026-01-18" }
 ];
 
+const staffPlacedStudents = [
+  { name: "Priya Sharma", dept: "CSE", package: 18.5, company: "Google", position: "Software Engineer", graduationYear: 2024, date: "2026-01-25", codingProblems: 150, internships: 1, certifications: 4, gradePoints: 8.3, achievements: "SIH Finalist" },
+  { name: "Aarav Kumar", dept: "CSE", package: 16.8, company: "Microsoft", position: "SDE-2", graduationYear: 2024, date: "2026-01-20", codingProblems: 120, internships: 2, certifications: 3, gradePoints: 8.7, achievements: "Hackathon Winner" },
+  { name: "Sneha Reddy", dept: "IT", package: 15.2, company: "Amazon", position: "Associate Engineer", graduationYear: 2025, date: "2026-01-18", codingProblems: 80, internships: 1, certifications: 2, gradePoints: 9.1, achievements: "Open Source Contributor" },
+  { name: "Rahul Singh", dept: "ECE", package: 14.5, company: "Infosys", position: "Systems Engineer", graduationYear: 2024, date: "2026-01-15", codingProblems: 200, internships: 0, certifications: 1, gradePoints: 7.9, achievements: "NPTEL Topper" },
+  { name: "Vikram Patel", dept: "ME", package: 12.0, company: "TCS", position: "Digital Engineer", graduationYear: 2025, date: "2026-01-10", codingProblems: 60, internships: 2, certifications: 2, gradePoints: 8.9, achievements: "Tech Club Lead" }
+];
+
 const upcomingCompanies = [
   { name: "Microsoft", visitDate: "Feb 5, 2026", position: "Software Engineer", salary: "20-24 LPA", ctc: "22 LPA" },
   { name: "ServiceNow", visitDate: "Feb 7, 2026", position: "Developer", salary: "18-22 LPA", ctc: "20 LPA" },
@@ -81,7 +89,7 @@ let currentLoginTab = 'student';
 let dashboardFilteredStudents = [];
 let currentDashboardSortKey = 'codingProblems';
 
-const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'reports-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
+const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
 
 // Google Login Function
 async function loginWithGoogle() {
@@ -189,7 +197,6 @@ function showSection(sectionId) {
   if (el) el.classList.add('active');
   if (sectionId === 'home-section') renderHome();
   if (sectionId === 'dashboard-section') renderDashboard();
-  if (sectionId === 'reports-section') renderReports();
   if (sectionId === 'profile-section') renderProfile();
   if (sectionId === 'notifications-section') renderNotifications();
   if (sectionId === 'leaderboard-section') renderLeaderboard();
@@ -607,7 +614,6 @@ function openCompanyDetailsModal(companyName) {
       <div><strong>Minimum CGPA:</strong> ${detailInfo.minCgpa}</div>
       <div><strong>Eligible Batch:</strong> ${detailInfo.eligibleYears}</div>
       <div><strong>Backlog Policy:</strong> ${detailInfo.allowedBacklogs}</div>
-      <div><strong>Job Location:</strong> ${detailInfo.location}</div>
     </div>
 
     <div class="company-modal-section">
@@ -730,11 +736,12 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = '';
     renderStaffAnalytics(chartsContainer);
-    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div>`;
+    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div><div id="staff-reports" style="margin-top: 1.25rem;"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
     renderTable(defaultSortedStudents, true);
+    renderStaffReports(document.getElementById('staff-reports'));
   } else {
     title.textContent = '';
     renderStudentAnalytics(chartsContainer);
@@ -1178,40 +1185,56 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         <div class="dashboard-filter-group">
           <h4>Coding Problems</h4>
           <div class="dashboard-range-wrap">
-            <label>Min <span id="coding-min-value">${codingRange.min}</span></label>
-            <input type="range" id="coding-min" min="${codingRange.min}" max="${codingRange.max}" value="${codingRange.min}">
-            <label>Max <span id="coding-max-value">${codingRange.max}</span></label>
-            <input type="range" id="coding-max" min="${codingRange.min}" max="${codingRange.max}" value="${codingRange.max}">
+            <div class="dashboard-number-range">
+              <label for="coding-min">Min</label>
+              <input type="number" id="coding-min" min="${codingRange.min}" max="${codingRange.max}" value="${codingRange.min}">
+            </div>
+            <div class="dashboard-number-range">
+              <label for="coding-max">Max</label>
+              <input type="number" id="coding-max" min="${codingRange.min}" max="${codingRange.max}" value="${codingRange.max}">
+            </div>
           </div>
         </div>
 
         <div class="dashboard-filter-group">
           <h4>CGPA</h4>
           <div class="dashboard-range-wrap">
-            <label>Min <span id="cgpa-min-value">${cgpaRange.min}</span></label>
-            <input type="range" id="cgpa-min" min="${cgpaRange.min}" max="${cgpaRange.max}" step="0.1" value="${cgpaRange.min}">
-            <label>Max <span id="cgpa-max-value">${cgpaRange.max}</span></label>
-            <input type="range" id="cgpa-max" min="${cgpaRange.min}" max="${cgpaRange.max}" step="0.1" value="${cgpaRange.max}">
+            <div class="dashboard-number-range">
+              <label for="cgpa-min">Min</label>
+              <input type="number" id="cgpa-min" min="${cgpaRange.min}" max="${cgpaRange.max}" step="0.1" value="${cgpaRange.min}">
+            </div>
+            <div class="dashboard-number-range">
+              <label for="cgpa-max">Max</label>
+              <input type="number" id="cgpa-max" min="${cgpaRange.min}" max="${cgpaRange.max}" step="0.1" value="${cgpaRange.max}">
+            </div>
           </div>
         </div>
 
         <div class="dashboard-filter-group">
           <h4>10th %</h4>
           <div class="dashboard-range-wrap">
-            <label>Min <span id="tenth-min-value">${tenthRange.min}</span></label>
-            <input type="range" id="tenth-min" min="${tenthRange.min}" max="${tenthRange.max}" step="0.1" value="${tenthRange.min}">
-            <label>Max <span id="tenth-max-value">${tenthRange.max}</span></label>
-            <input type="range" id="tenth-max" min="${tenthRange.min}" max="${tenthRange.max}" step="0.1" value="${tenthRange.max}">
+            <div class="dashboard-number-range">
+              <label for="tenth-min">Min</label>
+              <input type="number" id="tenth-min" min="${tenthRange.min}" max="${tenthRange.max}" step="0.1" value="${tenthRange.min}">
+            </div>
+            <div class="dashboard-number-range">
+              <label for="tenth-max">Max</label>
+              <input type="number" id="tenth-max" min="${tenthRange.min}" max="${tenthRange.max}" step="0.1" value="${tenthRange.max}">
+            </div>
           </div>
         </div>
 
         <div class="dashboard-filter-group">
           <h4>12th %</h4>
           <div class="dashboard-range-wrap">
-            <label>Min <span id="twelfth-min-value">${twelfthRange.min}</span></label>
-            <input type="range" id="twelfth-min" min="${twelfthRange.min}" max="${twelfthRange.max}" step="0.1" value="${twelfthRange.min}">
-            <label>Max <span id="twelfth-max-value">${twelfthRange.max}</span></label>
-            <input type="range" id="twelfth-max" min="${twelfthRange.min}" max="${twelfthRange.max}" step="0.1" value="${twelfthRange.max}">
+            <div class="dashboard-number-range">
+              <label for="twelfth-min">Min</label>
+              <input type="number" id="twelfth-min" min="${twelfthRange.min}" max="${twelfthRange.max}" step="0.1" value="${twelfthRange.min}">
+            </div>
+            <div class="dashboard-number-range">
+              <label for="twelfth-max">Max</label>
+              <input type="number" id="twelfth-max" min="${twelfthRange.min}" max="${twelfthRange.max}" step="0.1" value="${twelfthRange.max}">
+            </div>
           </div>
         </div>
       </div>
@@ -1261,24 +1284,6 @@ function initializeDashboardFilters(staffView, highlightId = null) {
       event.stopPropagation();
     });
   }
-
-  const bindRangeValue = (inputId, valueId) => {
-    const input = document.getElementById(inputId);
-    const valueEl = document.getElementById(valueId);
-    if (!input || !valueEl) return;
-    input.addEventListener('input', () => {
-      valueEl.textContent = Number(input.value).toFixed(input.step === '0.1' ? 1 : 0);
-    });
-  };
-
-  bindRangeValue('coding-min', 'coding-min-value');
-  bindRangeValue('coding-max', 'coding-max-value');
-  bindRangeValue('cgpa-min', 'cgpa-min-value');
-  bindRangeValue('cgpa-max', 'cgpa-max-value');
-  bindRangeValue('tenth-min', 'tenth-min-value');
-  bindRangeValue('tenth-max', 'tenth-max-value');
-  bindRangeValue('twelfth-min', 'twelfth-min-value');
-  bindRangeValue('twelfth-max', 'twelfth-max-value');
 
   if (applyBtn) {
     applyBtn.addEventListener('click', () => {
@@ -1577,40 +1582,55 @@ function renderNotifications() {
   `;
 }
 
-function renderReports() {
-  const reportsContent = document.getElementById('reports-chart');
-  reportsContent.style.display = 'none';
-  
-  const reportsSection = document.getElementById('reports-section');
-  let reportsDiv = document.getElementById('reports-content');
+function renderStaffReports(reportsDiv) {
   if (!reportsDiv) {
-    reportsDiv = document.createElement('div');
-    reportsDiv.id = 'reports-content';
-    reportsSection.appendChild(reportsDiv);
+    return;
   }
-  
-  const placedStudents = [
-    { name: "Priya Sharma", dept: "CSE", package: 18.5, company: "Google", position: "Software Engineer", graduationYear: 2024, date: "2026-01-25", codingProblems: 150, internships: 1, certifications: 4, gradePoints: 8.3 },
-    { name: "Aarav Kumar", dept: "CSE", package: 16.8, company: "Microsoft", position: "SDE-2", graduationYear: 2024, date: "2026-01-20", codingProblems: 120, internships: 2, certifications: 3, gradePoints: 8.7 },
-    { name: "Sneha Reddy", dept: "IT", package: 15.2, company: "Amazon", position: "Associate Engineer", graduationYear: 2025, date: "2026-01-18", codingProblems: 80, internships: 1, certifications: 2, gradePoints: 9.1 },
-    { name: "Rahul Singh", dept: "ECE", package: 14.5, company: "Infosys", position: "Systems Engineer", graduationYear: 2024, date: "2026-01-15", codingProblems: 200, internships: 0, certifications: 1, gradePoints: 7.9 },
-    { name: "Vikram Patel", dept: "ME", package: 12.0, company: "TCS", position: "Digital Engineer", graduationYear: 2025, date: "2026-01-10", codingProblems: 60, internships: 2, certifications: 2, gradePoints: 8.9 }
-  ];
-  
+
+  const placedStudents = [...staffPlacedStudents];
+  const averagePackage = placedStudents.length
+    ? (placedStudents.reduce((sum, student) => sum + Number(student.package || 0), 0) / placedStudents.length).toFixed(1)
+    : '0.0';
+  const highestPackage = placedStudents.length
+    ? Math.max(...placedStudents.map((student) => Number(student.package || 0))).toFixed(1)
+    : '0.0';
+  const adminRows = (Array.isArray(students) ? students : []).map((student) => ({
+    name: student.name || 'N/A',
+    rollNo: student.rollNo || 'N/A',
+    registerNo: student.registerNo || 'N/A',
+    dept: student.dept || 'N/A',
+    section: student.section || 'N/A',
+    gender: student.gender || 'N/A',
+    residencyType: student.residencyType || 'N/A',
+    tenth: student.tenthPercentage ?? 'N/A',
+    twelfth: student.twelfthPercentage ?? 'N/A',
+    diploma: student.diplomaPercentage ?? 'N/A',
+    cgpa: student.gradePoints ?? 'N/A',
+    personalMail: student.personalMail || 'N/A',
+    collegeMail: student.collegeMail || student.email || 'N/A',
+    contactNo: student.contactNo || 'N/A',
+    address: student.address || 'N/A',
+    resumeLink: student.resumeLink || '',
+    preferredRoles: student.preferredRoles || 'N/A',
+    preferredShift: student.preferredShift || 'N/A',
+    travelPriority: student.travelPriority || 'N/A',
+    achievements: student.achievements || 'N/A'
+  }));
+
   reportsDiv.innerHTML = `
     <div style="margin-bottom: 2rem;">
-      <h3>Placement Statistics 2026</h3>
+      <h3>Placement & Reports</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
         <div class="stat-card">
           <h4 style="margin: 0; color: #4F7FFF; font-size: 2rem;">${placedStudents.length}</h4>
           <p style="margin: 0.5rem 0 0 0; color: #999;">Students Placed</p>
         </div>
         <div class="stat-card">
-          <h4 style="margin: 0; color: #21C1B6; font-size: 2rem;">₹${Math.max(...placedStudents.map(s => s.package))} LPA</h4>
+          <h4 style="margin: 0; color: #21C1B6; font-size: 2rem;">₹${highestPackage} LPA</h4>
           <p style="margin: 0.5rem 0 0 0; color: #999;">Highest Package</p>
         </div>
         <div class="stat-card">
-          <h4 style="margin: 0; color: #9B6DFF; font-size: 2rem;">₹${(placedStudents.reduce((sum, s) => sum + s.package, 0) / placedStudents.length).toFixed(1)} LPA</h4>
+          <h4 style="margin: 0; color: #9B6DFF; font-size: 2rem;">₹${averagePackage} LPA</h4>
           <p style="margin: 0.5rem 0 0 0; color: #999;">Average Package</p>
         </div>
       </div>
@@ -1631,6 +1651,7 @@ function renderReports() {
             <th>Internships</th>
             <th>Certifications</th>
             <th>CGPA</th>
+            <th>Achievements</th>
           </tr>
         </thead>
         <tbody>
@@ -1646,6 +1667,63 @@ function renderReports() {
               <td>${student.internships}</td>
               <td>${student.certifications}</td>
               <td>${student.gradePoints}</td>
+              <td>${student.achievements || 'N/A'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Admin Data (Single View)</h3>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Roll No</th>
+            <th>Register No</th>
+            <th>Dept</th>
+            <th>Section</th>
+            <th>Gender</th>
+            <th>Dayscholar/Hostel</th>
+            <th>10th %</th>
+            <th>12th %</th>
+            <th>Diploma %</th>
+            <th>CGPA</th>
+            <th>Personal Mail</th>
+            <th>Clg Mail</th>
+            <th>Contact No</th>
+            <th>Address</th>
+            <th>Resume Link</th>
+            <th>Gender Specific Roles</th>
+            <th>Shift Priority</th>
+            <th>Travel Priority</th>
+            <th>Achievements</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${adminRows.map((row) => `
+            <tr>
+              <td>${row.name}</td>
+              <td>${row.rollNo}</td>
+              <td>${row.registerNo}</td>
+              <td>${row.dept}</td>
+              <td>${row.section}</td>
+              <td>${row.gender}</td>
+              <td>${row.residencyType}</td>
+              <td>${row.tenth}</td>
+              <td>${row.twelfth}</td>
+              <td>${row.diploma}</td>
+              <td>${row.cgpa}</td>
+              <td>${row.personalMail}</td>
+              <td>${row.collegeMail}</td>
+              <td>${row.contactNo}</td>
+              <td>${row.address}</td>
+              <td>${row.resumeLink ? `<a href="${row.resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>` : 'N/A'}</td>
+              <td>${row.preferredRoles}</td>
+              <td>${row.preferredShift}</td>
+              <td>${row.travelPriority}</td>
+              <td>${row.achievements}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1738,7 +1816,21 @@ function renderProfile() {
             <div><strong>CGPA:</strong> <span>${currentUser.gradePoints || 'N/A'}</span></div>
             <div><strong>12th %:</strong> <span>${twelfthPercentage}</span></div>
             <div><strong>10th %:</strong> <span>${tenthPercentage}</span></div>
+            <div><strong>Diploma %:</strong> <span>${currentUser.diplomaPercentage ?? 'N/A'}</span></div>
+            <div><strong>Register No:</strong> <span>${currentUser.registerNo || 'N/A'}</span></div>
+            <div><strong>Section:</strong> <span>${currentUser.section || 'N/A'}</span></div>
+            <div><strong>Gender:</strong> <span>${currentUser.gender || 'N/A'}</span></div>
           </div>
+        </div>
+      </div>
+
+      <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
+        <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
+        <div class="profile-percentile-list">
+          <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${currentUser.preferredRoles || 'N/A'}</div>
+          <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${currentUser.preferredShift || 'N/A'}</div>
+          <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${currentUser.travelPriority || 'N/A'}</div>
+          <div class="profile-percentile-item"><strong>Achievements:</strong> ${currentUser.achievements || 'N/A'}</div>
         </div>
       </div>
 
@@ -1762,13 +1854,71 @@ function renderProfile() {
       }
     }
   } else if (isStaff) {
-    // Staff view - LeetCode batch functionality
+    const adminRows = (Array.isArray(students) ? students : []).map((student) => `
+      <tr>
+        <td>${student.name || 'N/A'}</td>
+        <td>${student.rollNo || 'N/A'}</td>
+        <td>${student.registerNo || 'N/A'}</td>
+        <td>${student.dept || 'N/A'}</td>
+        <td>${student.section || 'N/A'}</td>
+        <td>${student.gender || 'N/A'}</td>
+        <td>${student.residencyType || 'N/A'}</td>
+        <td>${student.tenthPercentage ?? 'N/A'}</td>
+        <td>${student.twelfthPercentage ?? 'N/A'}</td>
+        <td>${student.diplomaPercentage ?? 'N/A'}</td>
+        <td>${student.gradePoints ?? 'N/A'}</td>
+        <td>${student.personalMail || 'N/A'}</td>
+        <td>${student.collegeMail || student.email || 'N/A'}</td>
+        <td>${student.contactNo || 'N/A'}</td>
+        <td>${student.address || 'N/A'}</td>
+        <td>${student.resumeLink ? `<a href="${student.resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>` : 'N/A'}</td>
+        <td>${student.preferredRoles || 'N/A'}</td>
+        <td>${student.preferredShift || 'N/A'}</td>
+        <td>${student.travelPriority || 'N/A'}</td>
+        <td>${student.achievements || 'N/A'}</td>
+      </tr>
+    `).join('');
+
     profileContent.innerHTML = `
       <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
         <h3 style="margin-top: 0;">Manual LeetCode Stats Update (Staff Only)</h3>
         <p style="margin: 0.5rem 0 1rem 0; color: #999;">Note: Stats are automatically updated daily at 10 PM. Use this button to fetch and cache stats immediately.</p>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
           <button class="btn" id="leetcode-sync-btn" type="button">Sync LeetCode Stats Now</button>
+        </div>
+      </div>
+      <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+        <h3 style="margin-top: 0; margin-bottom: 0.9rem;">Admin Data (Minimal Single Page)</h3>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Roll No</th>
+                <th>Register No</th>
+                <th>Dept</th>
+                <th>Section</th>
+                <th>Gender</th>
+                <th>Dayscholar/Hostel</th>
+                <th>10th %</th>
+                <th>12th %</th>
+                <th>Diploma %</th>
+                <th>CGPA</th>
+                <th>Personal Mail</th>
+                <th>Clg Mail</th>
+                <th>Contact No</th>
+                <th>Address</th>
+                <th>Resume Link</th>
+                <th>Gender Specific Roles</th>
+                <th>Shift Priority</th>
+                <th>Travel Priority</th>
+                <th>Achievements</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${adminRows || '<tr><td colspan="20" style="text-align:center; color:#999;">No student data found</td></tr>'}
+            </tbody>
+          </table>
         </div>
       </div>
       <div id="leetcode-result"></div>
