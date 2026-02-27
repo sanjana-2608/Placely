@@ -700,27 +700,304 @@ function getDefaultAnalyticsSortedStudents() {
 }
 
 function renderAnalyticsInsights(container) {
-  const totalStudents = students.length;
-  const placementsCount = students.filter(s => getInterestCategory(s.interest) === 'Placements').length;
-  const higherStudiesCount = students.filter(s => getInterestCategory(s.interest) === 'Higher Studies').length;
-  const entrepreneurshipCount = students.filter(s => getInterestCategory(s.interest) === 'Entrepreneurship').length;
-  const avgCgpa = totalStudents ? (students.reduce((sum, s) => sum + Number(s.gradePoints || 0), 0) / totalStudents).toFixed(2) : '0.00';
-  const avgCoding = totalStudents ? Math.round(students.reduce((sum, s) => sum + Number(s.codingProblems || 0), 0) / totalStudents) : 0;
-  const maxPackage = recentlyPlaced.length ? Math.max(...recentlyPlaced.map(s => Number(s.package || 0))).toFixed(1) : '0.0';
-  const placementRate = totalStudents ? ((placementsCount / totalStudents) * 100).toFixed(1) : '0.0';
+  if (container) {
+    container.innerHTML = '';
+  }
+}
 
+let analyticsStudentDistributionChart = null;
+let analyticsDeptBarChart = null;
+let analyticsPlacementBarChart = null;
+
+function getYearDistributionBuckets() {
+  const map = new Map([
+    [1, 0],
+    [2, 0],
+    [3, 0],
+    [4, 0]
+  ]);
+
+  students.forEach((student) => {
+    const year = Number(student.year || 0);
+    if (map.has(year)) {
+      map.set(year, map.get(year) + 1);
+    }
+  });
+
+  return {
+    labels: ['First Year', 'Second Year', 'Third Year', 'Fourth Year'],
+    values: [map.get(1), map.get(2), map.get(3), map.get(4)]
+  };
+}
+
+function renderAnalyticsRightPanel(selectedYear) {
+  const bulletin = document.getElementById('analytics-year-bulletin');
+  const heading = document.getElementById('analytics-selected-heading');
+  const yearData = getYearDistributionBuckets();
+  const total = yearData.values.reduce((sum, value) => sum + Number(value || 0), 0);
+
+  if (bulletin) {
+    bulletin.innerHTML = `
+      <li><span>First Year</span><strong>${yearData.values[0]}</strong></li>
+      <li><span>Second Year</span><strong>${yearData.values[1]}</strong></li>
+      <li><span>Third Year</span><strong>${yearData.values[2]}</strong></li>
+      <li><span>Fourth Year</span><strong>${yearData.values[3]}</strong></li>
+      <li class="analytics-year-bulletin-total"><span>Total</span><strong>${total}</strong></li>
+    `;
+  }
+
+  const selectedStudents = Number.isInteger(selectedYear)
+    ? students.filter((student) => Number(student.year || 0) === selectedYear)
+    : [...students];
+
+  const selectedLabel = Number.isInteger(selectedYear)
+    ? yearData.labels[selectedYear - 1]
+    : 'All Years';
+
+  if (heading) {
+    heading.textContent = `${selectedLabel} Insights`;
+  }
+
+  const deptCounts = {};
+  selectedStudents.forEach((student) => {
+    const dept = String(student.dept || 'Unknown').trim() || 'Unknown';
+    deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+  });
+
+  const interestCounts = { Placements: 0, 'Higher Studies': 0, Entrepreneurship: 0 };
+  selectedStudents.forEach((student) => {
+    const category = getInterestCategory(student.interest);
+    if (interestCounts[category] !== undefined) {
+      interestCounts[category] += 1;
+    }
+  });
+
+  const deptLabels = Object.keys(deptCounts);
+  const deptValues = Object.values(deptCounts);
+  const deptColors = ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00', '#FFD600', '#21C1B6', '#FF3D71'];
+
+  const placementLabels = Object.keys(interestCounts);
+  const placementValues = Object.values(interestCounts);
+  const placementColors = ['#00E5FF', '#FFD600', '#7C4DFF'];
+
+  if (analyticsDeptBarChart) {
+    analyticsDeptBarChart.destroy();
+  }
+  if (analyticsPlacementBarChart) {
+    analyticsPlacementBarChart.destroy();
+  }
+
+  const deptCanvas = document.getElementById('analytics-dept-bar');
+  const placementCanvas = document.getElementById('analytics-placement-bar');
+  if (!deptCanvas || !placementCanvas) {
+    return;
+  }
+
+  const chartTheme = getChartThemeColors();
+
+  analyticsDeptBarChart = new Chart(deptCanvas, {
+    type: 'bar',
+    data: {
+      labels: ['Department Count'],
+      datasets: deptLabels.map((dept, index) => ({
+        label: dept,
+        data: [deptValues[index]],
+        backgroundColor: deptColors[index % deptColors.length],
+        borderWidth: 0,
+        barThickness: 24,
+        stack: 'dept'
+      }))
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: chartTheme.legendColor } },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              return `${context.dataset.label}: ${context.raw}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { color: chartTheme.axisTickColor, precision: 0 },
+          grid: { color: chartTheme.axisGridColor }
+        },
+        y: {
+          stacked: true,
+          ticks: { color: chartTheme.axisTickColor },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  analyticsPlacementBarChart = new Chart(placementCanvas, {
+    type: 'bar',
+    data: {
+      labels: ['Placement Distribution'],
+      datasets: placementLabels.map((label, index) => ({
+        label,
+        data: [placementValues[index]],
+        backgroundColor: placementColors[index % placementColors.length],
+        borderWidth: 0,
+        barThickness: 24,
+        stack: 'placement'
+      }))
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: chartTheme.legendColor } },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              return `${context.dataset.label}: ${context.raw}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { color: chartTheme.axisTickColor, precision: 0 },
+          grid: { color: chartTheme.axisGridColor }
+        },
+        y: {
+          stacked: true,
+          ticks: { color: chartTheme.axisTickColor },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function renderUnifiedAnalytics(container) {
+  container.style.display = 'block';
+  container.style.marginBottom = '2rem';
   container.innerHTML = `
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.9rem; margin-bottom: 1.25rem;">
-      <div class="stat-card"><h4 style="margin:0; color:#4F7FFF; font-size:1.8rem;">${totalStudents}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Total Students</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#21C1B6; font-size:1.8rem;">${placementsCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placements Track</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#9B6DFF; font-size:1.8rem;">${placementRate}%</h4><p style="margin:0.4rem 0 0 0; color:#999;">Placement Rate</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#FEC524; font-size:1.8rem;">${higherStudiesCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Higher Studies Track</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#C77DFF; font-size:1.8rem;">${entrepreneurshipCount}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Entrepreneurship Track</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#FF6B6B; font-size:1.8rem;">${avgCoding}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Avg Coding Problems</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#FFD54F; font-size:1.8rem;">₹${maxPackage} LPA</h4><p style="margin:0.4rem 0 0 0; color:#999;">Top Package</p></div>
-      <div class="stat-card"><h4 style="margin:0; color:#6BCBFF; font-size:1.8rem;">${avgCgpa}</h4><p style="margin:0.4rem 0 0 0; color:#999;">Average CGPA</p></div>
+    <div class="analytics-single-layout">
+      <div class="chart-card analytics-single-donut-card">
+        <h3 style="text-align: center; margin-top: 0;">Student Distribution</h3>
+        <div class="analytics-single-donut-wrap">
+          <canvas id="analytics-student-distribution" class="chart-canvas"></canvas>
+        </div>
+      </div>
+      <div class="chart-card analytics-single-right-card">
+        <h3 style="margin-top: 0;">Student Counts</h3>
+        <ul id="analytics-year-bulletin" class="analytics-year-bulletin"></ul>
+        <h4 id="analytics-selected-heading" style="margin: 1rem 0 0.6rem 0;">All Years Insights</h4>
+        <div class="analytics-horizontal-block">
+          <h5 style="margin: 0 0 0.45rem 0;">Department Distribution</h5>
+          <div class="analytics-bar-canvas-wrap"><canvas id="analytics-dept-bar"></canvas></div>
+        </div>
+        <div class="analytics-horizontal-block" style="margin-top: 0.85rem;">
+          <h5 style="margin: 0 0 0.45rem 0;">Placement Distribution</h5>
+          <div class="analytics-bar-canvas-wrap"><canvas id="analytics-placement-bar"></canvas></div>
+        </div>
+      </div>
     </div>
   `;
+
+  const canvas = document.getElementById('analytics-student-distribution');
+  if (!canvas) {
+    return;
+  }
+
+  const yearData = getYearDistributionBuckets();
+  let selectedIndex = null;
+  const colors = ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00'];
+
+  if (analyticsStudentDistributionChart) {
+    analyticsStudentDistributionChart.destroy();
+  }
+
+  const centerTextPlugin = {
+    id: 'analyticsCenterText',
+    afterDraw(chart) {
+      const dataset = chart.data.datasets[0] || { data: [] };
+      const total = dataset.data.reduce((sum, value) => sum + Number(value || 0), 0);
+      const value = selectedIndex === null ? total : Number(dataset.data[selectedIndex] || 0);
+      const label = selectedIndex === null ? 'Total Students' : chart.data.labels[selectedIndex];
+
+      const { ctx, chartArea } = chart;
+      if (!chartArea) {
+        return;
+      }
+      const x = (chartArea.left + chartArea.right) / 2;
+      const y = (chartArea.top + chartArea.bottom) / 2;
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = document.body.classList.contains('light-mode') ? '#1e293b' : '#f5f5f5';
+      ctx.font = '700 26px Segoe UI';
+      ctx.fillText(String(value), x, y - 4);
+      ctx.font = '500 12px Segoe UI';
+      ctx.fillStyle = document.body.classList.contains('light-mode') ? '#475569' : '#9ca3af';
+      ctx.fillText(label, x, y + 18);
+      ctx.restore();
+    }
+  };
+
+  analyticsStudentDistributionChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: yearData.labels,
+      datasets: [{
+        data: yearData.values,
+        backgroundColor: colors,
+        borderWidth: 0,
+        hoverOffset: 0,
+        offset(context) {
+          return context.dataIndex === selectedIndex ? 18 : 0;
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '64%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const allValues = context.dataset.data || [];
+              const total = allValues.reduce((sum, value) => sum + Number(value || 0), 0);
+              const value = Number(context.raw || 0);
+              const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+              return `${context.label}: ${value} (${percentage}%)`;
+            }
+          }
+        }
+      },
+      onClick(event, elements, chart) {
+        if (!elements.length) {
+          selectedIndex = null;
+          chart.update();
+          renderAnalyticsRightPanel(null);
+          return;
+        }
+        const index = elements[0].index;
+        selectedIndex = selectedIndex === index ? null : index;
+        chart.update();
+        renderAnalyticsRightPanel(selectedIndex === null ? null : (selectedIndex + 1));
+      }
+    },
+    plugins: [centerTextPlugin]
+  });
+
+  renderAnalyticsRightPanel(null);
 }
 
 function renderDashboard() {
@@ -735,7 +1012,7 @@ function renderDashboard() {
   
   if (isStaff) {
     title.textContent = '';
-    renderStaffAnalytics(chartsContainer);
+    renderUnifiedAnalytics(chartsContainer);
     dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div><div id="staff-reports" style="margin-top: 1.25rem;"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
@@ -744,7 +1021,7 @@ function renderDashboard() {
     renderStaffReports(document.getElementById('staff-reports'));
   } else {
     title.textContent = '';
-    renderStudentAnalytics(chartsContainer);
+    renderUnifiedAnalytics(chartsContainer);
     dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="student-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(false, currentUser && currentUser.id);
