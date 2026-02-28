@@ -87,6 +87,8 @@ let currentUser = null;
 let isStaff = false;
 let currentLoginTab = 'student';
 let dashboardFilteredStudents = [];
+let analyticsProfileFilteredIds = [];
+let analyticsProfileCurrentIndex = -1;
 let currentDashboardSortKey = 'codingProblems';
 const dashboardMetricOrder = ['codingProblems', 'year', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'interest'];
 const dashboardMetricLabels = {
@@ -1712,6 +1714,184 @@ function downloadBlob(content, filename, mimeType) {
   URL.revokeObjectURL(url);
 }
 
+function getStudentById(studentId) {
+  return students.find((student) => String(student.id) === String(studentId));
+}
+
+function ensureAnalyticsProfileModal() {
+  let modalOverlay = document.getElementById('analytics-profile-modal');
+  if (modalOverlay) {
+    return modalOverlay;
+  }
+
+  const modalMarkup = `
+    <div id="analytics-profile-modal" class="company-modal-overlay" aria-hidden="true">
+      <div class="company-modal-card analytics-profile-card" role="dialog" aria-modal="true" aria-label="Student profile">
+        <button type="button" class="company-modal-close" id="analytics-profile-close" aria-label="Close profile">×</button>
+        <div class="analytics-profile-nav">
+          <button type="button" id="analytics-profile-prev" class="analytics-profile-nav-btn" aria-label="Previous profile">←</button>
+          <div id="analytics-profile-counter" class="analytics-profile-counter"></div>
+          <button type="button" id="analytics-profile-next" class="analytics-profile-nav-btn" aria-label="Next profile">→</button>
+        </div>
+        <div id="analytics-profile-content"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalMarkup);
+
+  modalOverlay = document.getElementById('analytics-profile-modal');
+  const closeBtn = document.getElementById('analytics-profile-close');
+  const prevBtn = document.getElementById('analytics-profile-prev');
+  const nextBtn = document.getElementById('analytics-profile-next');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeAnalyticsProfileModal);
+  }
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => navigateAnalyticsProfile(-1));
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => navigateAnalyticsProfile(1));
+  }
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (event) => {
+      if (event.target === modalOverlay) {
+        closeAnalyticsProfileModal();
+      }
+    });
+  }
+
+  if (!document.body.dataset.analyticsProfileModalKeysBound) {
+    document.addEventListener('keydown', (event) => {
+      const activeModal = document.getElementById('analytics-profile-modal');
+      const isActive = !!(activeModal && activeModal.classList.contains('active'));
+      if (!isActive) {
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        closeAnalyticsProfileModal();
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        navigateAnalyticsProfile(-1);
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        navigateAnalyticsProfile(1);
+      }
+    });
+    document.body.dataset.analyticsProfileModalKeysBound = '1';
+  }
+
+  return modalOverlay;
+}
+
+function renderAnalyticsProfileContent(student) {
+  const profileContainer = document.getElementById('analytics-profile-content');
+  if (!profileContainer) {
+    return;
+  }
+
+  if (!student) {
+    profileContainer.innerHTML = '<p style="margin: 0; color: #999;">Unable to load profile details.</p>';
+    return;
+  }
+
+  profileContainer.innerHTML = `
+    <div class="company-modal-header" style="margin-bottom: 0.75rem;">
+      <div>
+        <h3 style="margin: 0 0 0.15rem 0;">${student.name || 'N/A'}</h3>
+        <p style="margin: 0; color: #999;">${student.dept || 'N/A'} • ${getYearLabel(student.year)}</p>
+      </div>
+    </div>
+    <div class="analytics-profile-grid">
+      <div><strong>Roll No:</strong> ${student.rollNo || 'N/A'}</div>
+      <div><strong>Register No:</strong> ${student.registerNo || 'N/A'}</div>
+      <div><strong>Section:</strong> ${student.section || 'N/A'}</div>
+      <div><strong>CGPA:</strong> ${student.gradePoints ?? 'N/A'}</div>
+      <div><strong>Coding Problems:</strong> ${student.codingProblems ?? 0}</div>
+      <div><strong>Internships:</strong> ${student.internships ?? 0}</div>
+      <div><strong>Certifications:</strong> ${student.certifications ?? 0}</div>
+      <div><strong>10th %:</strong> ${student.tenthPercentage ?? 'N/A'}</div>
+      <div><strong>12th %:</strong> ${student.twelfthPercentage ?? 'N/A'}</div>
+      <div><strong>Interest:</strong> ${student.interest || 'N/A'}</div>
+      <div style="grid-column: 1 / -1;"><strong>Email:</strong> ${student.email || 'N/A'}</div>
+    </div>
+  `;
+}
+
+function updateAnalyticsProfileModal() {
+  const total = analyticsProfileFilteredIds.length;
+  const counter = document.getElementById('analytics-profile-counter');
+  if (!total || analyticsProfileCurrentIndex < 0) {
+    if (counter) {
+      counter.textContent = '0 / 0';
+    }
+    renderAnalyticsProfileContent(null);
+    return;
+  }
+
+  const normalizedIndex = ((analyticsProfileCurrentIndex % total) + total) % total;
+  analyticsProfileCurrentIndex = normalizedIndex;
+  const studentId = analyticsProfileFilteredIds[normalizedIndex];
+  const student = getStudentById(studentId);
+  if (counter) {
+    counter.textContent = `${normalizedIndex + 1} / ${total}`;
+  }
+  renderAnalyticsProfileContent(student);
+}
+
+function openAnalyticsProfileModal(studentId) {
+  const modalOverlay = ensureAnalyticsProfileModal();
+  if (!modalOverlay) {
+    return;
+  }
+
+  if (!analyticsProfileFilteredIds.length) {
+    analyticsProfileFilteredIds = (dashboardFilteredStudents || []).map((student) => String(student.id)).filter(Boolean);
+  }
+
+  analyticsProfileCurrentIndex = analyticsProfileFilteredIds.indexOf(String(studentId));
+  if (analyticsProfileCurrentIndex < 0) {
+    analyticsProfileCurrentIndex = 0;
+  }
+
+  updateAnalyticsProfileModal();
+  modalOverlay.classList.add('active');
+  modalOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function navigateAnalyticsProfile(step) {
+  if (!analyticsProfileFilteredIds.length) {
+    return;
+  }
+  analyticsProfileCurrentIndex += step;
+  updateAnalyticsProfileModal();
+}
+
+function closeAnalyticsProfileModal() {
+  const modalOverlay = document.getElementById('analytics-profile-modal');
+  if (!modalOverlay) {
+    return;
+  }
+  modalOverlay.classList.remove('active');
+  modalOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function bindAnalyticsProfileNameClicks() {
+  document.querySelectorAll('.analytics-name-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      openAnalyticsProfileModal(button.dataset.studentId);
+    });
+  });
+}
+
 function getFilteredExportRows() {
   const metricValueMap = {
     codingProblems: (student) => student.codingProblems || 0,
@@ -1807,8 +1987,8 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     ${orderedColumns.map((key) => `<th>${columnDefs[key].header}</th>`).join('')}
     ${staffView ? '<th>Action</th>' : ''}
   </tr></thead><tbody>
-    ${data.map(s => `<tr${highlightId === s.id ? ' style="background:rgba(254, 197, 36, 0.15);border-left:3px solid #FEC524;"' : ''}>
-      <td>${s.name}</td>
+    ${data.map(s => `<tr${!staffView && highlightId === s.id ? ' style="background:rgba(254, 197, 36, 0.15);border-left:3px solid #FEC524;"' : ''}>
+      <td>${staffView ? `<button type="button" class="analytics-name-btn" data-student-id="${s.id}">${s.name}</button>` : s.name}</td>
       <td>${s.dept}</td>
       ${orderedColumns.map((key) => `<td>${columnDefs[key].cell(s)}</td>`).join('')}
       ${staffView ? `<td><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem;" id="btn-${s.id}" onclick="toggleEdit(${s.id})">Edit</button><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem; display: none; background: #E6A800;" id="save-${s.id}" onclick="saveEdit(${s.id})">Save</button></td>` : ''}
@@ -1816,6 +1996,23 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
   </tbody></table>`;
   if (staffView) {
     document.getElementById('staff-table').innerHTML = tableHtml;
+    analyticsProfileFilteredIds = (Array.isArray(data) ? data : []).map((student) => String(student.id)).filter(Boolean);
+    bindAnalyticsProfileNameClicks();
+
+    const modalOverlay = document.getElementById('analytics-profile-modal');
+    if (modalOverlay && modalOverlay.classList.contains('active')) {
+      const currentStudentId = analyticsProfileFilteredIds[analyticsProfileCurrentIndex];
+      if (!currentStudentId && analyticsProfileFilteredIds.length) {
+        analyticsProfileCurrentIndex = 0;
+      } else if (currentStudentId) {
+        analyticsProfileCurrentIndex = analyticsProfileFilteredIds.indexOf(currentStudentId);
+      }
+      if (analyticsProfileFilteredIds.length) {
+        updateAnalyticsProfileModal();
+      } else {
+        closeAnalyticsProfileModal();
+      }
+    }
   } else {
     document.getElementById('student-table').innerHTML = tableHtml;
   }

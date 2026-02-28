@@ -827,6 +827,68 @@ table th {
 table tr:hover {
     background: rgba(254, 197, 36, 0.08);
 }
+
+.analytics-name-btn {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+    text-decoration: underline;
+    text-decoration-color: rgba(254, 197, 36, 0.45);
+    text-underline-offset: 2px;
+}
+
+.analytics-name-btn:hover {
+    color: #FEC524;
+    text-decoration-color: #FEC524;
+}
+
+.analytics-profile-card {
+    width: min(820px, 96vw);
+}
+
+.analytics-profile-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+}
+
+.analytics-profile-nav-btn {
+    background: #121212;
+    color: #f5f5f5;
+    border: 1px solid rgba(254, 197, 36, 0.35);
+    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.analytics-profile-counter {
+    min-width: 88px;
+    text-align: center;
+    color: #d9d9d9;
+    font-size: 0.9rem;
+}
+
+.analytics-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.analytics-profile-grid div {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(254, 197, 36, 0.15);
+    border-radius: 8px;
+    padding: 0.55rem 0.6rem;
+    font-size: 0.9rem;
+    color: #dedede;
+}
 #sort-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -1890,6 +1952,15 @@ body.light-mode table th {
 body.light-mode table tr:hover {
     background: rgba(59, 130, 246, 0.03);
 }
+
+body.light-mode .analytics-name-btn {
+    text-decoration-color: rgba(59, 130, 246, 0.45);
+}
+
+body.light-mode .analytics-name-btn:hover {
+    color: #1d4ed8;
+    text-decoration-color: #1d4ed8;
+}
 body.light-mode h2, body.light-mode h3 {
     color: #1e3a8a;
 }
@@ -2157,6 +2228,22 @@ body.light-mode .company-apply-btn {
     background: #3b82f6;
     color: #ffffff;
     border-color: #3b82f6;
+}
+
+body.light-mode .analytics-profile-nav-btn {
+    background: #ffffff;
+    color: #334155;
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+body.light-mode .analytics-profile-counter {
+    color: #334155;
+}
+
+body.light-mode .analytics-profile-grid div {
+    background: rgba(59, 130, 246, 0.04);
+    border-color: rgba(59, 130, 246, 0.18);
+    color: #334155;
 }
 
 body.light-mode .company-apply-btn:hover {
