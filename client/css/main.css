@@ -868,9 +868,10 @@ table tr:hover {
 }
 
 .analytics-profile-card {
-    width: min(1120px, 97vw);
-    max-height: 92vh;
+    width: min(1380px, 98vw);
+    max-height: 95vh;
     overflow-y: auto;
+    border-radius: 8px;
 }
 
 .analytics-profile-nav {

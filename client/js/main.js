@@ -2134,9 +2134,63 @@ function ensureAnalyticsProfileModal() {
   return modalOverlay;
 }
 
+function getAnalyticsProfileSelectOptions(fieldKey, currentValue) {
+  const normalizedCurrent = String(currentValue ?? '').trim();
+  const dynamicFields = new Set(['dept', 'section']);
+
+  if (dynamicFields.has(fieldKey)) {
+    const uniqueValues = [...new Set(
+      (Array.isArray(students) ? students : [])
+        .map((student) => String(getDashboardFieldRawValue(student, fieldKey) ?? '').trim())
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+    if (normalizedCurrent && !uniqueValues.includes(normalizedCurrent)) {
+      uniqueValues.unshift(normalizedCurrent);
+    }
+
+    return uniqueValues;
+  }
+
+  const fixedOptions = {
+    year: ['1', '2', '3', '4'],
+    interest: dashboardInterestOptions,
+    placementStatus: ['Placed', 'Yet to be Placed'],
+    gender: ['Male', 'Female', 'Other'],
+    residencyType: ['Dayscholar', 'Hostel']
+  };
+
+  const options = fixedOptions[fieldKey];
+  if (!options) {
+    return null;
+  }
+
+  const normalizedOptions = options.map((option) => String(option));
+  if (normalizedCurrent && !normalizedOptions.includes(normalizedCurrent)) {
+    normalizedOptions.unshift(normalizedCurrent);
+  }
+  return normalizedOptions;
+}
+
 function buildAnalyticsProfileEditField(student, fieldKey, label) {
   const value = getDashboardFieldRawValue(student, fieldKey);
   const config = dashboardEditableFieldConfigs[fieldKey] || { type: 'text' };
+
+  const selectOptions = getAnalyticsProfileSelectOptions(fieldKey, value);
+  if (selectOptions) {
+    const options = selectOptions.map((option) => {
+      const optionValue = String(option);
+      return `
+        <option value="${escapeHtmlAttribute(optionValue)}" ${String(value ?? '') === optionValue ? 'selected' : ''}>${optionValue}</option>
+      `;
+    }).join('');
+    return `
+      <label class="analytics-profile-edit-item">
+        <span>${label}</span>
+        <select data-profile-field="${fieldKey}" class="dashboard-inline-edit-control">${options}</select>
+      </label>
+    `;
+  }
 
   if (config.type === 'select') {
     const options = (config.options || []).map((option) => `
