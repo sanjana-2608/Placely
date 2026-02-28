@@ -2428,14 +2428,14 @@ function renderLeetCodeStatsCard(data) {
           ${fillPaths}
         </svg>
         <div class="leetcode-radial-center">
-          <div class="leetcode-radial-total">${totalSolved}</div>
+          <div class="leetcode-radial-total">${totalSolved}<span>/${totalQuestions}</span></div>
           <div class="leetcode-radial-label">Questions Solved</div>
         </div>
       </div>
       <div class="leetcode-radial-legend">
-        <span class="easy">Easy <strong>${easySolved}</strong></span>
-        <span class="medium">Medium <strong>${mediumSolved}</strong></span>
-        <span class="hard">Hard <strong>${hardSolved}</strong></span>
+        <span class="easy">Easy <strong>${easySolved}/${Math.round(easyTotal)}</strong></span>
+        <span class="medium">Medium <strong>${mediumSolved}/${Math.round(mediumTotal)}</strong></span>
+        <span class="hard">Hard <strong>${hardSolved}/${Math.round(hardTotal)}</strong></span>
       </div>
     </div>
   `;

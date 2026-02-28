@@ -362,22 +362,22 @@ nav ul li a:hover {
 }
 
 .leetcode-radial-total {
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #f5f5f5;
     line-height: 1;
 }
 
 .leetcode-radial-total span {
-    font-size: 1rem;
+    font-size: 0.86rem;
     color: #bdbdbd;
     margin-left: 0.15rem;
 }
 
 .leetcode-radial-label {
-    margin-top: 0.55rem;
+    margin-top: 0.45rem;
     color: #d1d5db;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
 }
 
 .leetcode-radial-legend {
