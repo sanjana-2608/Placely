@@ -792,6 +792,10 @@ table tr:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.dashboard-filter-list--interest {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
 .dashboard-filter-check {
     display: flex;
     align-items: center;
@@ -824,6 +828,7 @@ table tr:hover {
 
 .dashboard-filter-check span {
     display: inline-block;
+    white-space: normal;
 }
 
 .dashboard-range-wrap {
@@ -840,6 +845,14 @@ table tr:hover {
 
 .dashboard-filter-group--inline-range .dashboard-number-range {
     flex: 1 1 0;
+}
+
+.dashboard-number-range label {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0;
+    height: 100%;
 }
 
 .dashboard-filter-group--metric-visibility {
@@ -2002,6 +2015,10 @@ body.light-mode .company-apply-btn:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .dashboard-filter-list--interest {
+        grid-template-columns: 1fr;
+    }
+
     .dashboard-filter-grid,
     .dashboard-metric-grid {
         grid-template-columns: 1fr;
@@ -2106,6 +2123,10 @@ body.light-mode .company-apply-btn:hover {
     }
 
     .dashboard-filter-list--metric-visibility {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-filter-list--interest {
         grid-template-columns: 1fr;
     }
 
