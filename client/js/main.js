@@ -1218,7 +1218,7 @@ function renderAnalyticsRightPanel(selectedYear) {
           position: 'nearest',
           xAlign: 'center',
           yAlign: 'bottom',
-          caretPadding: 18,
+          caretPadding: 38,
           callbacks: {
             label(context) {
               return `${context.dataset.label}: ${context.raw}`;
