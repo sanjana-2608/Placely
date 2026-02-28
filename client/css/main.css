@@ -868,7 +868,9 @@ table tr:hover {
 }
 
 .analytics-profile-card {
-    width: min(820px, 96vw);
+    width: min(1120px, 97vw);
+    max-height: 92vh;
+    overflow-y: auto;
 }
 
 .analytics-profile-nav {
@@ -897,10 +899,56 @@ table tr:hover {
     font-size: 0.9rem;
 }
 
+.analytics-profile-action-btn {
+    background: #0a0a0a;
+    color: #f5f5f5;
+    border: 1px solid rgba(254, 197, 36, 0.45);
+    border-radius: 6px;
+    padding: 0.38rem 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.analytics-profile-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.analytics-profile-edit-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: #d8d8d8;
+    font-size: 0.86rem;
+}
+
+.analytics-profile-edit-actions {
+    margin-top: 0.95rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#staff-table tbody tr.analytics-row {
+    cursor: pointer;
+}
+
 .analytics-profile-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.6rem;
+}
+
+@media (max-width: 960px) {
+    .analytics-profile-edit-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .analytics-profile-edit-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .analytics-profile-grid div {
@@ -2265,6 +2313,7 @@ body.light-mode .dashboard-filter-close {
 body.light-mode .dashboard-filter-btn,
 body.light-mode .dashboard-export-btn,
 body.light-mode .dashboard-filter-action-btn,
+body.light-mode .analytics-profile-action-btn,
 body.light-mode .dashboard-filter-header-sort select,
 body.light-mode .dashboard-sort-wrap select,
 body.light-mode .dashboard-range-wrap input[type="number"],
