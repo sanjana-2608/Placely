@@ -308,8 +308,12 @@ function isStaffDemoMode() {
 
 function updateRoleBasedNav() {
   const analyticsLink = document.querySelector("#navbar a[onclick*='showSection(\"dashboard-section\")'], #navbar a[onclick*=\"showSection('dashboard-section')\"]");
+  const profileLink = document.querySelector("#navbar a[onclick*='showSection(\"profile-section\")'], #navbar a[onclick*=\"showSection('profile-section')\"]");
   if (analyticsLink && analyticsLink.parentElement) {
     analyticsLink.parentElement.style.display = isStaff ? '' : 'none';
+  }
+  if (profileLink && profileLink.parentElement) {
+    profileLink.parentElement.style.display = isStaff ? 'none' : '';
   }
 }
 
@@ -489,6 +493,9 @@ function checkLoginStatus() {
 function showSection(sectionId) {
   if (sectionId === 'dashboard-section' && !isStaff) {
     sectionId = 'home-section';
+  }
+  if (sectionId === 'profile-section' && isStaff) {
+    sectionId = 'dashboard-section';
   }
   sectionIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   const el = document.getElementById(sectionId);
@@ -1734,6 +1741,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         <input type="search" id="dashboard-search-input" class="dashboard-toolbar-search" placeholder="Search students" value="${dashboardSearchQuery}">
       </div>
       <div class="dashboard-export-actions">
+        <button type="button" id="dashboard-fetch-leetcode" class="dashboard-export-btn">Fetch LeetCode</button>
         <button type="button" id="dashboard-export-csv" class="dashboard-export-btn">Export CSV</button>
         <button type="button" id="dashboard-export-excel" class="dashboard-export-btn">Export Excel</button>
       </div>
@@ -1875,6 +1883,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   const applyBtn = document.getElementById('dashboard-filter-apply');
   const resetBtn = document.getElementById('dashboard-filter-reset');
   const searchInput = document.getElementById('dashboard-search-input');
+  const fetchLeetCodeBtn = document.getElementById('dashboard-fetch-leetcode');
   const exportCsvBtn = document.getElementById('dashboard-export-csv');
   const exportExcelBtn = document.getElementById('dashboard-export-excel');
 
@@ -1923,6 +1932,29 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     searchInput.addEventListener('input', (event) => {
       dashboardSearchQuery = event.target.value || '';
       renderTable(filterDashboardRowsBySearch(dashboardFilteredStudents, dashboardSearchQuery), staffView, highlightId, currentDashboardSortKey);
+    });
+  }
+
+  if (fetchLeetCodeBtn) {
+    fetchLeetCodeBtn.addEventListener('click', async () => {
+      fetchLeetCodeBtn.disabled = true;
+      const originalLabel = fetchLeetCodeBtn.textContent;
+      fetchLeetCodeBtn.textContent = 'Fetching...';
+      try {
+        const response = await fetch('/api/sync-leetcode', { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Failed to fetch LeetCode stats.');
+        }
+        await refreshStudentsData();
+        applyDashboardFilters(staffView, highlightId);
+        alert(data.message || 'LeetCode stats fetch completed successfully.');
+      } catch (error) {
+        alert(error.message || 'Unable to fetch LeetCode stats right now.');
+      } finally {
+        fetchLeetCodeBtn.disabled = false;
+        fetchLeetCodeBtn.textContent = originalLabel || 'Fetch LeetCode';
+      }
     });
   }
 
