@@ -762,11 +762,11 @@ function renderAnalyticsRightPanel(selectedYear) {
 
   const deptLabels = Object.keys(deptCounts);
   const deptValues = Object.values(deptCounts);
-  const deptColors = ['#9AA7B8', '#8797AA', '#74879B', '#63778D', '#536980', '#455B73', '#384E67'];
+  const deptColors = ['#9FD8B6', '#86CFA8', '#6EC69A', '#57BD8D', '#43B380', '#34A874', '#2A9A69'];
 
   const placementLabels = Object.keys(interestCounts);
   const placementValues = Object.values(interestCounts);
-  const placementColors = ['#9AA7B8', '#74879B', '#536980'];
+  const placementColors = ['#9FD8B6', '#6EC69A', '#43B380'];
 
   if (analyticsDeptBarChart) {
     analyticsDeptBarChart.destroy();
@@ -902,7 +902,7 @@ function renderUnifiedAnalytics(container) {
 
   const yearData = getYearDistributionBuckets();
   let selectedIndex = null;
-  const colors = ['#9AA7B8', '#8797AA', '#74879B', '#63778D'];
+  const colors = ['#9FD8B6', '#86CFA8', '#6EC69A', '#57BD8D'];
 
   if (analyticsStudentDistributionChart) {
     analyticsStudentDistributionChart.destroy();
@@ -958,7 +958,7 @@ function renderUnifiedAnalytics(container) {
         mode: 'nearest',
         intersect: true
       },
-      cutout: '64%',
+      cutout: '58%',
       plugins: {
         legend: { display: false },
         tooltip: {
