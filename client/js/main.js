@@ -90,7 +90,32 @@ let dashboardFilteredStudents = [];
 let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let currentDashboardSortKey = 'codingProblems';
-const dashboardMetricOrder = ['codingProblems', 'year', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'interest'];
+const dashboardMetricOrder = [
+  'codingProblems',
+  'year',
+  'internships',
+  'certifications',
+  'gradePoints',
+  'tenthPercentage',
+  'twelfthPercentage',
+  'diplomaPercentage',
+  'placementStatus',
+  'interest',
+  'rollNo',
+  'registerNo',
+  'section',
+  'gender',
+  'residencyType',
+  'personalMail',
+  'collegeMail',
+  'contactNo',
+  'address',
+  'resumeLink',
+  'preferredRoles',
+  'preferredShift',
+  'travelPriority',
+  'achievements'
+];
 const dashboardMetricLabels = {
   codingProblems: 'Coding Problems',
   internships: 'Internships',
@@ -98,8 +123,24 @@ const dashboardMetricLabels = {
   gradePoints: 'CGPA',
   tenthPercentage: '10th %',
   twelfthPercentage: '12th %',
+  diplomaPercentage: 'Diploma %',
+  placementStatus: 'Placed/Yet to be Placed',
   year: 'Year',
-  interest: 'Interest'
+  interest: 'Interest',
+  rollNo: 'Roll No',
+  registerNo: 'Register No',
+  section: 'Section',
+  gender: 'Gender',
+  residencyType: 'Dayscholar/Hostel',
+  personalMail: 'Personal Mail',
+  collegeMail: 'Clg Mail',
+  contactNo: 'Contact No',
+  address: 'Address',
+  resumeLink: 'Resume Link',
+  preferredRoles: 'Gender Specific Roles',
+  preferredShift: 'Shift Priority',
+  travelPriority: 'Travel Priority',
+  achievements: 'Achievements'
 };
 let dashboardVisibleMetrics = new Set(dashboardMetricOrder);
 
@@ -139,6 +180,76 @@ function getYearLabel(value) {
 
 function isStaffDemoMode() {
   return isStaff && !document.getElementById('login-section');
+}
+
+function isLoginUiDisabled() {
+  return !document.getElementById('login-section');
+}
+
+function applyDemoViewMode(mode) {
+  const normalized = mode === 'student' ? 'student' : 'staff';
+  isStaff = normalized === 'staff';
+  if (isStaff) {
+    currentUser = null;
+  } else if (!currentUser && Array.isArray(students) && students.length) {
+    currentUser = students[0];
+  }
+  return normalized;
+}
+
+function ensureDemoModeToggle() {
+  const navList = document.querySelector('#navbar ul');
+  if (!navList || !isLoginUiDisabled()) {
+    return;
+  }
+
+  let container = document.getElementById('demo-mode-toggle-container');
+  if (!container) {
+    container = document.createElement('li');
+    container.id = 'demo-mode-toggle-container';
+    container.innerHTML = `
+      <label class="demo-mode-toggle-label" for="demo-mode-toggle">Mode</label>
+      <select id="demo-mode-toggle" class="demo-mode-toggle-select" aria-label="Select view mode">
+        <option value="staff">Staff</option>
+        <option value="student">Student</option>
+      </select>
+    `;
+
+    const darkModeLi = document.getElementById('darkmode-toggle')?.parentElement;
+    if (darkModeLi && darkModeLi.parentElement === navList) {
+      navList.insertBefore(container, darkModeLi);
+    } else {
+      navList.appendChild(container);
+    }
+
+    const modeSelect = document.getElementById('demo-mode-toggle');
+    if (modeSelect) {
+      modeSelect.addEventListener('change', () => {
+        const selectedMode = applyDemoViewMode(modeSelect.value);
+        localStorage.setItem('demoViewMode', selectedMode);
+        showSection('dashboard-section');
+      });
+    }
+  }
+
+  const modeSelect = document.getElementById('demo-mode-toggle');
+  if (modeSelect) {
+    modeSelect.value = isStaff ? 'staff' : 'student';
+  }
+}
+
+function initializeDemoModeIfNeeded() {
+  if (!isLoginUiDisabled()) {
+    return false;
+  }
+
+  const savedMode = localStorage.getItem('demoViewMode');
+  const resolvedMode = applyDemoViewMode(savedMode === 'student' ? 'student' : 'staff');
+  localStorage.setItem('demoViewMode', resolvedMode);
+  initializeApp();
+  ensureDemoModeToggle();
+  showSection('dashboard-section');
+  return true;
 }
 
 const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
@@ -357,17 +468,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light-mode'); document.getElementById('darkmode-toggle').textContent = '☀️'; }
 
-  if (!document.getElementById('login-section')) {
-    isStaff = true;
-    currentUser = null;
-    initializeApp();
-    showSection('dashboard-section');
-  }
+  const demoModeEnabled = initializeDemoModeIfNeeded();
   
   // Check for login callback or existing session
-  refreshStudentsData();
-  checkLoginStatus();
-  checkSession();
+  refreshStudentsData().then(() => {
+    if (demoModeEnabled) {
+      applyDemoViewMode(localStorage.getItem('demoViewMode') === 'student' ? 'student' : 'staff');
+      ensureDemoModeToggle();
+      renderDashboard();
+    }
+  });
+
+  if (!demoModeEnabled) {
+    checkLoginStatus();
+    checkSession();
+  }
 });
 
 // Dark/Light Mode Toggle
@@ -711,6 +826,20 @@ function getInterestCategory(interest) {
   if (normalized.includes('entrepreneur')) return 'Entrepreneurship';
   if (normalized.includes('placed') || normalized.includes('placement') || normalized.includes('interested')) return 'Placements';
   return 'Placements';
+}
+
+function getPlacementStatusLabel(student) {
+  const explicit = String(student?.placementStatus || '').trim().toLowerCase();
+  if (explicit) {
+    if (explicit.includes('placed')) return 'Placed';
+    if (explicit.includes('yet')) return 'Yet to be Placed';
+  }
+
+  const interestRaw = String(student?.interest || '').trim().toLowerCase();
+  if (interestRaw === 'placed') {
+    return 'Placed';
+  }
+  return 'Yet to be Placed';
 }
 
 function getInterestStateKey(category) {
@@ -1066,12 +1195,11 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
-    dash.innerHTML = `${isStaffDemoMode() ? '<div class="staff-demo-badge">Staff Demo Mode</div>' : ''}<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div><div id="staff-reports" style="margin-top: 1.25rem;"></div>`;
+    dash.innerHTML = `${isStaffDemoMode() ? '<div class="staff-demo-badge">Staff Demo Mode</div>' : ''}<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
     renderTable(defaultSortedStudents, true);
-    renderStaffReports(document.getElementById('staff-reports'));
   } else {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
@@ -1906,8 +2034,24 @@ function getFilteredExportRows() {
     gradePoints: (student) => student.gradePoints || '',
     tenthPercentage: (student) => student.tenthPercentage ?? '',
     twelfthPercentage: (student) => student.twelfthPercentage ?? '',
+    diplomaPercentage: (student) => student.diplomaPercentage ?? '',
+    placementStatus: (student) => getPlacementStatusLabel(student),
     year: (student) => getYearLabel(student.year),
-    interest: (student) => student.interest || ''
+    interest: (student) => student.interest || '',
+    rollNo: (student) => student.rollNo || '',
+    registerNo: (student) => student.registerNo || '',
+    section: (student) => student.section || '',
+    gender: (student) => student.gender || '',
+    residencyType: (student) => student.residencyType || '',
+    personalMail: (student) => student.personalMail || '',
+    collegeMail: (student) => student.collegeMail || student.email || '',
+    contactNo: (student) => student.contactNo || '',
+    address: (student) => student.address || '',
+    resumeLink: (student) => student.resumeLink || '',
+    preferredRoles: (student) => student.preferredRoles || '',
+    preferredShift: (student) => student.preferredShift || '',
+    travelPriority: (student) => student.travelPriority || '',
+    achievements: (student) => student.achievements || ''
   };
 
   const visibleMetricKeys = dashboardMetricOrder.filter((key) => dashboardVisibleMetrics.has(key));
@@ -1968,6 +2112,14 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
       header: '12th %',
       cell: (s) => `${s.twelfthPercentage ?? 'N/A'}`
     },
+    diplomaPercentage: {
+      header: 'Diploma %',
+      cell: (s) => `${s.diplomaPercentage ?? 'N/A'}`
+    },
+    placementStatus: {
+      header: 'Placed/Yet to be Placed',
+      cell: (s) => `${getPlacementStatusLabel(s)}`
+    },
     year: {
       header: 'Year',
       cell: (s) => `<span id="val-year-${s.id}">${getYearLabel(s.year)}</span>${staffView ? `<input type="number" id="input-year-${s.id}" min="1" max="4" value="${getYearNumber(s.year) || ''}" style="display:none;">` : ''}`
@@ -1975,6 +2127,62 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     interest: {
       header: 'Interest',
       cell: (s) => `<span id="val-interest-${s.id}">${s.interest}</span>${staffView ? `<input type="text" id="input-interest-${s.id}" value="${s.interest}" style="display:none;">` : ''}`
+    },
+    rollNo: {
+      header: 'Roll No',
+      cell: (s) => `${s.rollNo || 'N/A'}`
+    },
+    registerNo: {
+      header: 'Register No',
+      cell: (s) => `${s.registerNo || 'N/A'}`
+    },
+    section: {
+      header: 'Section',
+      cell: (s) => `${s.section || 'N/A'}`
+    },
+    gender: {
+      header: 'Gender',
+      cell: (s) => `${s.gender || 'N/A'}`
+    },
+    residencyType: {
+      header: 'Dayscholar/Hostel',
+      cell: (s) => `${s.residencyType || 'N/A'}`
+    },
+    personalMail: {
+      header: 'Personal Mail',
+      cell: (s) => `${s.personalMail || 'N/A'}`
+    },
+    collegeMail: {
+      header: 'Clg Mail',
+      cell: (s) => `${s.collegeMail || s.email || 'N/A'}`
+    },
+    contactNo: {
+      header: 'Contact No',
+      cell: (s) => `${s.contactNo || 'N/A'}`
+    },
+    address: {
+      header: 'Address',
+      cell: (s) => `${s.address || 'N/A'}`
+    },
+    resumeLink: {
+      header: 'Resume Link',
+      cell: (s) => s.resumeLink ? `<a href="${s.resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>` : 'N/A'
+    },
+    preferredRoles: {
+      header: 'Gender Specific Roles',
+      cell: (s) => `${s.preferredRoles || 'N/A'}`
+    },
+    preferredShift: {
+      header: 'Shift Priority',
+      cell: (s) => `${s.preferredShift || 'N/A'}`
+    },
+    travelPriority: {
+      header: 'Travel Priority',
+      cell: (s) => `${s.travelPriority || 'N/A'}`
+    },
+    achievements: {
+      header: 'Achievements',
+      cell: (s) => `${s.achievements || 'N/A'}`
     }
   };
 
@@ -2134,156 +2342,6 @@ function renderNotifications() {
         <p><strong>Placement Season 2026:</strong> Welcome to Placely! Track your placement journey with us.</p>
         <p style="color: #999; font-size: 0.9rem;">Jan 27, 2026</p>
       </div>
-    </div>
-  `;
-}
-
-function renderStaffReports(reportsDiv) {
-  if (!reportsDiv) {
-    return;
-  }
-
-  const placedStudents = [...staffPlacedStudents];
-  const averagePackage = placedStudents.length
-    ? (placedStudents.reduce((sum, student) => sum + Number(student.package || 0), 0) / placedStudents.length).toFixed(1)
-    : '0.0';
-  const highestPackage = placedStudents.length
-    ? Math.max(...placedStudents.map((student) => Number(student.package || 0))).toFixed(1)
-    : '0.0';
-  const adminRows = (Array.isArray(students) ? students : []).map((student) => ({
-    name: student.name || 'N/A',
-    rollNo: student.rollNo || 'N/A',
-    registerNo: student.registerNo || 'N/A',
-    dept: student.dept || 'N/A',
-    section: student.section || 'N/A',
-    gender: student.gender || 'N/A',
-    residencyType: student.residencyType || 'N/A',
-    tenth: student.tenthPercentage ?? 'N/A',
-    twelfth: student.twelfthPercentage ?? 'N/A',
-    diploma: student.diplomaPercentage ?? 'N/A',
-    cgpa: student.gradePoints ?? 'N/A',
-    personalMail: student.personalMail || 'N/A',
-    collegeMail: student.collegeMail || student.email || 'N/A',
-    contactNo: student.contactNo || 'N/A',
-    address: student.address || 'N/A',
-    resumeLink: student.resumeLink || '',
-    preferredRoles: student.preferredRoles || 'N/A',
-    preferredShift: student.preferredShift || 'N/A',
-    travelPriority: student.travelPriority || 'N/A',
-    achievements: student.achievements || 'N/A'
-  }));
-
-  reportsDiv.innerHTML = `
-    <div style="margin-bottom: 2rem;">
-      <h3>Placement & Reports</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
-        <div class="stat-card">
-          <h4 style="margin: 0; color: #4F7FFF; font-size: 2rem;">${placedStudents.length}</h4>
-          <p style="margin: 0.5rem 0 0 0; color: #999;">Students Placed</p>
-        </div>
-        <div class="stat-card">
-          <h4 style="margin: 0; color: #21C1B6; font-size: 2rem;">₹${highestPackage} LPA</h4>
-          <p style="margin: 0.5rem 0 0 0; color: #999;">Highest Package</p>
-        </div>
-        <div class="stat-card">
-          <h4 style="margin: 0; color: #9B6DFF; font-size: 2rem;">₹${averagePackage} LPA</h4>
-          <p style="margin: 0.5rem 0 0 0; color: #999;">Average Package</p>
-        </div>
-      </div>
-    </div>
-    
-    <h3>Placed Students Details</h3>
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Dept</th>
-            <th>Company</th>
-            <th>Position</th>
-            <th>Package (LPA)</th>
-            <th>Placement Date</th>
-            <th>Coding Problems</th>
-            <th>Internships</th>
-            <th>Certifications</th>
-            <th>CGPA</th>
-            <th>Achievements</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${placedStudents.map(student => `
-            <tr>
-              <td><strong>${student.name}</strong></td>
-              <td>${student.dept}</td>
-              <td>${student.company}</td>
-              <td>${student.position}</td>
-              <td style="color: #21C1B6; font-weight: bold;">₹${student.package}</td>
-              <td>${student.date}</td>
-              <td>${student.codingProblems}</td>
-              <td>${student.internships}</td>
-              <td>${student.certifications}</td>
-              <td>${student.gradePoints}</td>
-              <td>${student.achievements || 'N/A'}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <h3 style="margin-top: 2rem;">Admin Data (Single View)</h3>
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Roll No</th>
-            <th>Register No</th>
-            <th>Dept</th>
-            <th>Section</th>
-            <th>Gender</th>
-            <th>Dayscholar/Hostel</th>
-            <th>10th %</th>
-            <th>12th %</th>
-            <th>Diploma %</th>
-            <th>CGPA</th>
-            <th>Personal Mail</th>
-            <th>Clg Mail</th>
-            <th>Contact No</th>
-            <th>Address</th>
-            <th>Resume Link</th>
-            <th>Gender Specific Roles</th>
-            <th>Shift Priority</th>
-            <th>Travel Priority</th>
-            <th>Achievements</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${adminRows.map((row) => `
-            <tr>
-              <td>${row.name}</td>
-              <td>${row.rollNo}</td>
-              <td>${row.registerNo}</td>
-              <td>${row.dept}</td>
-              <td>${row.section}</td>
-              <td>${row.gender}</td>
-              <td>${row.residencyType}</td>
-              <td>${row.tenth}</td>
-              <td>${row.twelfth}</td>
-              <td>${row.diploma}</td>
-              <td>${row.cgpa}</td>
-              <td>${row.personalMail}</td>
-              <td>${row.collegeMail}</td>
-              <td>${row.contactNo}</td>
-              <td>${row.address}</td>
-              <td>${row.resumeLink ? `<a href="${row.resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>` : 'N/A'}</td>
-              <td>${row.preferredRoles}</td>
-              <td>${row.preferredShift}</td>
-              <td>${row.travelPriority}</td>
-              <td>${row.achievements}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
     </div>
   `;
 }
