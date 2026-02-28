@@ -183,6 +183,13 @@ function isStaffDemoMode() {
   return isStaff && !document.getElementById('login-section');
 }
 
+function updateRoleBasedNav() {
+  const analyticsLink = document.querySelector("#navbar a[onclick*='showSection(\"dashboard-section\")'], #navbar a[onclick*=\"showSection('dashboard-section')\"]");
+  if (analyticsLink && analyticsLink.parentElement) {
+    analyticsLink.parentElement.style.display = isStaff ? '' : 'none';
+  }
+}
+
 function isLoginUiDisabled() {
   return !document.getElementById('login-section');
 }
@@ -228,7 +235,8 @@ function ensureDemoModeToggle() {
       modeSelect.addEventListener('change', () => {
         const selectedMode = applyDemoViewMode(modeSelect.value);
         localStorage.setItem('demoViewMode', selectedMode);
-        showSection('dashboard-section');
+        updateRoleBasedNav();
+        showSection(isStaff ? 'dashboard-section' : 'home-section');
       });
     }
   }
@@ -356,6 +364,9 @@ function checkLoginStatus() {
 }
 
 function showSection(sectionId) {
+  if (sectionId === 'dashboard-section' && !isStaff) {
+    sectionId = 'home-section';
+  }
   sectionIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   const el = document.getElementById(sectionId);
   if (el) el.classList.add('active');
@@ -418,6 +429,7 @@ function initializeApp() {
   const navbar = document.getElementById('navbar');
   if (loginSection) loginSection.style.display = 'none';
   if (navbar) navbar.style.display = 'flex';
+  updateRoleBasedNav();
 }
 
 function logout() {
@@ -432,6 +444,7 @@ function logout() {
   } else {
     if (navbar) navbar.style.display = 'flex';
   }
+  updateRoleBasedNav();
 
   const studentEmail = document.getElementById('student-email');
   const studentPassword = document.getElementById('student-password');
@@ -1231,7 +1244,7 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
-    dash.innerHTML = `${isStaffDemoMode() ? '<div class="staff-demo-badge">Staff Demo Mode</div>' : ''}<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="dashboard-placement-status-boxes" class="placement-status-boxes"></div><div id="staff-table"></div>`;
+    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="dashboard-placement-status-boxes" class="placement-status-boxes"></div><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
@@ -1239,12 +1252,12 @@ function renderDashboard() {
     renderPlacementStatusQuickFilters(true);
   } else {
     title.textContent = '';
-    renderUnifiedAnalytics(chartsContainer);
-    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="student-table"></div>`;
-    renderAnalyticsInsights(document.getElementById('analytics-insights'));
-    initializeDashboardFilters(false, currentUser && currentUser.id);
-    dashboardFilteredStudents = [...defaultSortedStudents];
-    renderTable(defaultSortedStudents, false, currentUser && currentUser.id);
+    if (chartsContainer) {
+      chartsContainer.innerHTML = '';
+    }
+    if (dash) {
+      dash.innerHTML = '';
+    }
   }
 }
 
