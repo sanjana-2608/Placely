@@ -309,11 +309,19 @@ function isStaffDemoMode() {
 function updateRoleBasedNav() {
   const analyticsLink = document.querySelector("#navbar a[onclick*='showSection(\"dashboard-section\")'], #navbar a[onclick*=\"showSection('dashboard-section')\"]");
   const profileLink = document.querySelector("#navbar a[onclick*='showSection(\"profile-section\")'], #navbar a[onclick*=\"showSection('profile-section')\"]");
+  const profileSection = document.getElementById('profile-section');
+  const profileContent = document.getElementById('profile-content');
   if (analyticsLink && analyticsLink.parentElement) {
     analyticsLink.parentElement.style.display = isStaff ? '' : 'none';
   }
   if (profileLink && profileLink.parentElement) {
     profileLink.parentElement.style.display = isStaff ? 'none' : '';
+  }
+  if (profileSection) {
+    profileSection.style.display = isStaff ? 'none' : '';
+  }
+  if (isStaff && profileContent) {
+    profileContent.innerHTML = '';
   }
 }
 
@@ -2919,80 +2927,8 @@ function renderProfile() {
       }
     }
   } else if (isStaff) {
-    const adminRows = (Array.isArray(students) ? students : []).map((student) => `
-      <tr>
-        <td>${student.name || 'N/A'}</td>
-        <td>${student.rollNo || 'N/A'}</td>
-        <td>${student.registerNo || 'N/A'}</td>
-        <td>${student.dept || 'N/A'}</td>
-        <td>${student.section || 'N/A'}</td>
-        <td>${student.gender || 'N/A'}</td>
-        <td>${student.residencyType || 'N/A'}</td>
-        <td>${student.tenthPercentage ?? 'N/A'}</td>
-        <td>${student.twelfthPercentage ?? 'N/A'}</td>
-        <td>${student.diplomaPercentage ?? 'N/A'}</td>
-        <td>${student.gradePoints ?? 'N/A'}</td>
-        <td>${student.personalMail || 'N/A'}</td>
-        <td>${student.collegeMail || student.email || 'N/A'}</td>
-        <td>${student.contactNo || 'N/A'}</td>
-        <td>${student.address || 'N/A'}</td>
-        <td>${student.resumeLink ? `<a href="${student.resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>` : 'N/A'}</td>
-        <td>${student.preferredRoles || 'N/A'}</td>
-        <td>${student.preferredShift || 'N/A'}</td>
-        <td>${student.travelPriority || 'N/A'}</td>
-        <td>${student.achievements || 'N/A'}</td>
-      </tr>
-    `).join('');
-
-    profileContent.innerHTML = `
-      <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
-        <h3 style="margin-top: 0;">Manual LeetCode Stats Update (Staff Only)</h3>
-        <p style="margin: 0.5rem 0 1rem 0; color: #999;">Note: Stats are automatically updated daily at 10 PM. Use this button to fetch and cache stats immediately.</p>
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <button class="btn" id="leetcode-sync-btn" type="button">Sync LeetCode Stats Now</button>
-        </div>
-      </div>
-      <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
-        <h3 style="margin-top: 0; margin-bottom: 0.9rem;">Admin Data (Minimal Single Page)</h3>
-        <div style="overflow-x: auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Roll No</th>
-                <th>Register No</th>
-                <th>Dept</th>
-                <th>Section</th>
-                <th>Gender</th>
-                <th>Dayscholar/Hostel</th>
-                <th>10th %</th>
-                <th>12th %</th>
-                <th>Diploma %</th>
-                <th>CGPA</th>
-                <th>Personal Mail</th>
-                <th>Clg Mail</th>
-                <th>Contact No</th>
-                <th>Address</th>
-                <th>Resume Link</th>
-                <th>Gender Specific Roles</th>
-                <th>Shift Priority</th>
-                <th>Travel Priority</th>
-                <th>Achievements</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${adminRows || '<tr><td colspan="20" style="text-align:center; color:#999;">No student data found</td></tr>'}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div id="leetcode-result"></div>
-    `;
-    
-    const syncBtn = document.getElementById('leetcode-sync-btn');
-    if (syncBtn) {
-      syncBtn.addEventListener('click', triggerLeetCodeSync);
-    }
+    profileContent.innerHTML = '';
+    return;
   } else {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
     return;
