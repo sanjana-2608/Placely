@@ -1,5 +1,6 @@
 // Runtime data
 let students = [];
+let liveInternships = [];
 
 const recentlyPlaced = [
   { name: "Priya Sharma", package: 18.5, company: "Google", position: "Software Engineer", graduationYear: 2024, date: "2026-01-25" },
@@ -187,6 +188,14 @@ function escapeHtmlAttribute(value) {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function sanitizeExternalUrl(value) {
+  const url = String(value || '').trim();
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+  return '#';
 }
 
 function getDashboardFieldRawValue(student, fieldKey) {
@@ -696,6 +705,12 @@ function renderCompaniesList(container) {
         `).join('')}
       </div>
     </div>
+    <div class="companies-section" style="margin-top: 1rem;">
+      <h3 style="margin-top: 0;">Upcoming Internships (Second Year Onwards) 🎓</h3>
+      <div id="internships-scroll" class="companies-scroll">
+        <div class="company-card"><p style="margin: 0; color: #999;">Loading live internships...</p></div>
+      </div>
+    </div>
   `;
   container.innerHTML = companiesHtml;
 
@@ -709,6 +724,71 @@ function renderCompaniesList(container) {
       }
     });
   });
+
+  const internshipsContainer = container.querySelector('#internships-scroll');
+  if (internshipsContainer) {
+    renderLiveInternships(internshipsContainer);
+  }
+}
+
+async function fetchUpcomingInternshipsData() {
+  const response = await fetch('/api/upcoming-internships');
+  if (!response.ok) {
+    throw new Error('Failed to fetch live internships.');
+  }
+  const payload = await response.json();
+  return Array.isArray(payload?.data) ? payload.data : [];
+}
+
+async function renderLiveInternships(container) {
+  if (!container) {
+    return;
+  }
+
+  const userYear = Number(getYearNumber(currentUser?.year || 0));
+  if (!isStaff && currentUser && userYear > 0 && userYear < 2) {
+    container.innerHTML = `
+      <div class="company-card">
+        <p style="margin: 0 0 0.4rem 0;"><strong>Available from Second Year</strong></p>
+        <p style="margin: 0; color: #999;">Internship opportunities become visible from second year onwards.</p>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    liveInternships = await fetchUpcomingInternshipsData();
+    if (!liveInternships.length) {
+      container.innerHTML = '<div class="company-card"><p style="margin:0; color:#999;">No live internship posts found right now. Please check again shortly.</p></div>';
+      return;
+    }
+
+    container.innerHTML = liveInternships.map((internship) => {
+      const postedText = internship.postedDate ? internship.postedDate : 'Recently posted';
+      const safeTitle = escapeHtmlAttribute(internship.title || 'Internship Opportunity');
+      const safeSource = escapeHtmlAttribute(internship.source || 'Live Source');
+      const safeCompany = escapeHtmlAttribute(internship.company || 'N/A');
+      const safeLocation = escapeHtmlAttribute(internship.location || 'Not specified');
+      const safeEligibility = escapeHtmlAttribute(internship.eligibility || 'Second Year Onwards');
+      const safePostedText = escapeHtmlAttribute(postedText);
+      const safeUrl = sanitizeExternalUrl(internship.url);
+      return `
+        <div class="company-card">
+          <div class="company-header">
+            <h4 style="margin: 0 0 0.45rem 0;">${safeTitle}</h4>
+            <span class="company-date">${safeSource}</span>
+          </div>
+          <p style="margin: 0.3rem 0;"><strong>Company:</strong> ${safeCompany}</p>
+          <p style="margin: 0.3rem 0;"><strong>Location:</strong> ${safeLocation}</p>
+          <p style="margin: 0.3rem 0;"><strong>Eligibility:</strong> ${safeEligibility}</p>
+          <p style="margin: 0.3rem 0;"><strong>Posted:</strong> ${safePostedText}</p>
+          <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:0.45rem; color:#FEC524; font-weight:600; text-decoration:none;">View Internship ↗</a>
+        </div>
+      `;
+    }).join('');
+  } catch (error) {
+    container.innerHTML = '<div class="company-card"><p style="margin:0; color:#999;">Unable to load live internships right now.</p></div>';
+  }
 }
 
 function renderHome() {

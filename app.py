@@ -2,8 +2,10 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from datetime import datetime, timezone
 import json
 import os
+import re
 import time
 import requests as http_requests
+from urllib.parse import urljoin
 from apscheduler.schedulers.background import BackgroundScheduler
 from typing import Any
 
@@ -192,6 +194,12 @@ placed_students = [
 ]
 
 staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
+
+INTERNSHIP_CACHE_TTL_SECONDS = 900
+_LIVE_INTERNSHIPS_CACHE = {
+    'fetched_at': 0.0,
+    'data': []
+}
 
 STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'internships',
@@ -423,6 +431,182 @@ def _acceptance_rate(accepted, total):
     if not total:
         return 0.0
     return round((accepted / total) * 100, 2)
+
+
+def _normalize_posted_date(value):
+    if value is None or value == '':
+        return ''
+
+    try:
+        if isinstance(value, (int, float)):
+            return datetime.utcfromtimestamp(float(value)).date().isoformat()
+
+        text = str(value).strip()
+        if not text:
+            return ''
+
+        normalized = text.replace('Z', '+00:00')
+        return datetime.fromisoformat(normalized).date().isoformat()
+    except Exception:
+        return ''
+
+
+def _build_internship_item(title, company, url, source, location='', posted_date=''):
+    clean_title = str(title or '').strip()
+    clean_company = str(company or '').strip() or 'Unknown Company'
+    clean_url = str(url or '').strip()
+    clean_source = str(source or '').strip() or 'Unknown Source'
+
+    if not clean_title or not clean_url:
+        return None
+
+    return {
+        'title': clean_title,
+        'company': clean_company,
+        'location': str(location or '').strip() or 'Not specified',
+        'postedDate': str(posted_date or '').strip(),
+        'source': clean_source,
+        'url': clean_url,
+        'eligibility': 'Second Year Onwards'
+    }
+
+
+def _fetch_remotive_internships(limit=12):
+    internships = []
+    try:
+        response = http_requests.get(
+            'https://remotive.com/api/remote-jobs',
+            params={'search': 'intern'},
+            timeout=10
+        )
+        response.raise_for_status()
+        jobs = (response.json() or {}).get('jobs') or []
+
+        for job in jobs:
+            title = str(job.get('title') or '')
+            category = str(job.get('category') or '')
+            if 'intern' not in title.lower() and 'intern' not in category.lower():
+                continue
+
+            item = _build_internship_item(
+                title=title,
+                company=job.get('company_name'),
+                url=job.get('url'),
+                source='Remotive',
+                location=job.get('candidate_required_location') or 'Remote',
+                posted_date=_normalize_posted_date(job.get('publication_date'))
+            )
+            if item:
+                internships.append(item)
+            if len(internships) >= limit:
+                break
+    except Exception as exc:
+        print(f"Remotive internship fetch failed: {exc}")
+
+    return internships
+
+
+def _fetch_arbeitnow_internships(limit=12):
+    internships = []
+    try:
+        response = http_requests.get('https://www.arbeitnow.com/api/job-board-api', timeout=10)
+        response.raise_for_status()
+        jobs = (response.json() or {}).get('data') or []
+
+        for job in jobs:
+            title = str(job.get('title') or '')
+            tags = ' '.join(job.get('tags') or [])
+            if 'intern' not in title.lower() and 'intern' not in tags.lower():
+                continue
+
+            item = _build_internship_item(
+                title=title,
+                company=job.get('company_name'),
+                url=job.get('url'),
+                source='Arbeitnow',
+                location=job.get('location') or ('Remote' if job.get('remote') else 'Not specified'),
+                posted_date=_normalize_posted_date(job.get('created_at'))
+            )
+            if item:
+                internships.append(item)
+            if len(internships) >= limit:
+                break
+    except Exception as exc:
+        print(f"Arbeitnow internship fetch failed: {exc}")
+
+    return internships
+
+
+def _fetch_the_job_company_internships(limit=12):
+    internships = []
+    candidate_urls = [
+        'https://www.thejobcompany.in/jobs',
+        'https://www.thejobcompany.in/'
+    ]
+    headers = {
+        'User-Agent': 'Placely/1.0 (+internship-fetch)'
+    }
+
+    for source_url in candidate_urls:
+        try:
+            response = http_requests.get(source_url, headers=headers, timeout=8)
+            response.raise_for_status()
+            html = response.text or ''
+            anchors = re.findall(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html, re.IGNORECASE | re.DOTALL)
+
+            for href, raw_text in anchors:
+                raw_title = re.sub(r'<[^>]+>', ' ', raw_text)
+                title = ' '.join(raw_title.split())
+                href_text = str(href or '')
+                if 'intern' not in title.lower() and 'intern' not in href_text.lower():
+                    continue
+
+                full_url = urljoin(source_url, href_text)
+                item = _build_internship_item(
+                    title=title,
+                    company='Multiple Companies',
+                    url=full_url,
+                    source='The Job Company',
+                    location='India',
+                    posted_date=''
+                )
+                if item:
+                    internships.append(item)
+                if len(internships) >= limit:
+                    return internships
+        except Exception as exc:
+            print(f"The Job Company internship fetch failed for {source_url}: {exc}")
+
+    return internships
+
+
+def get_live_upcoming_internships(limit=12):
+    now = time.time()
+    cached_data = _LIVE_INTERNSHIPS_CACHE.get('data') or []
+    cached_at = float(_LIVE_INTERNSHIPS_CACHE.get('fetched_at') or 0.0)
+    if cached_data and (now - cached_at) < INTERNSHIP_CACHE_TTL_SECONDS:
+        return cached_data[:limit]
+
+    combined = []
+    combined.extend(_fetch_the_job_company_internships(limit=limit))
+    combined.extend(_fetch_remotive_internships(limit=limit))
+    combined.extend(_fetch_arbeitnow_internships(limit=limit))
+
+    deduped = []
+    seen = set()
+    for item in combined:
+        key = (str(item.get('url') or '').strip().lower(), str(item.get('title') or '').strip().lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+
+    deduped.sort(key=lambda row: str(row.get('postedDate') or ''), reverse=True)
+    final_data = deduped[:limit]
+
+    _LIVE_INTERNSHIPS_CACHE['fetched_at'] = now
+    _LIVE_INTERNSHIPS_CACHE['data'] = final_data
+    return final_data
 
 
 def fetch_leetcode_profile(username):
@@ -1057,6 +1241,17 @@ def get_recently_placed():
 @app.route('/api/upcoming-companies')
 def get_upcoming_companies():
     return jsonify(upcoming_companies)
+
+
+@app.route('/api/upcoming-internships')
+def get_upcoming_internships():
+    internships = get_live_upcoming_internships(limit=12)
+    return jsonify({
+        'success': True,
+        'data': internships,
+        'eligibleFromYear': 2,
+        'updatedAt': datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+    })
 
 @app.route('/api/placed-students')
 def get_placed_students():
