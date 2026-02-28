@@ -204,6 +204,7 @@ _LIVE_INTERNSHIPS_CACHE = {
 STUDENT_LEETCODE_TABLE = 'student_leetcode_profiles'
 STUDENT_ACADEMIC_TABLE = 'student_academic_metrics'
 STUDENT_PROFILE_TABLE = 'student_profile_preferences'
+STUDENT_LINKED_TABLE = 'linked'
 
 LEETCODE_FIELD_MAP = {
     'leetcodeUsername': 'leetcode_username',
@@ -240,8 +241,11 @@ PROFILE_FIELD_MAP = {
     'preferredShift': 'preferred_shift',
     'travelPriority': 'travel_priority',
     'achievements': 'achievements',
-    'linkedinName': 'profile_name',
-    'linkedinUrl': 'profile_url',
+}
+
+LINKED_FIELD_MAP = {
+    'linkedinName': 'linkedin_username',
+    'linkedinUrl': 'linkedin_profile_url',
 }
 
 SIDE_TABLE_CONTEXT_DB_FIELDS = ('name', 'dept', 'year')
@@ -262,6 +266,7 @@ SIDE_TABLE_DEFINITIONS = [
     (STUDENT_LEETCODE_TABLE, LEETCODE_FIELD_MAP),
     (STUDENT_ACADEMIC_TABLE, ACADEMIC_FIELD_MAP),
     (STUDENT_PROFILE_TABLE, PROFILE_FIELD_MAP),
+    (STUDENT_LINKED_TABLE, LINKED_FIELD_MAP),
 ]
 
 STUDENT_ALLOWED_FIELDS = {
@@ -310,9 +315,9 @@ def _db_to_student(row):
         'preferredShift': row.get('preferred_shift') or '',
         'travelPriority': row.get('travel_priority') or '',
         'achievements': row.get('achievements') or '',
-        'linkedinName': row.get('profile_name') or row.get('linkedin_name') or '',
+        'linkedinName': row.get('linkedin_username') or row.get('profile_name') or row.get('linkedin_name') or '',
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
-        'linkedinUrl': row.get('profile_url') or row.get('linkedin_url') or '',
+        'linkedinUrl': row.get('linkedin_profile_url') or row.get('profile_url') or row.get('linkedin_url') or '',
         'linkedinHeadline': row.get('linkedin_bio') or '',
         'leetcodeRanking': row.get('leetcode_ranking'),
         'leetcodeSolvedAll': row.get('leetcode_solved_all', 0),
@@ -475,8 +480,9 @@ def update_student_data(student_id, payload):
     leetcode_payload = {key: value for key, value in allowed_payload.items() if key in LEETCODE_FIELD_MAP}
     academic_payload = {key: value for key, value in allowed_payload.items() if key in ACADEMIC_FIELD_MAP}
     profile_payload = {key: value for key, value in allowed_payload.items() if key in PROFILE_FIELD_MAP}
+    linked_payload = {key: value for key, value in allowed_payload.items() if key in LINKED_FIELD_MAP}
 
-    if not base_payload and not leetcode_payload and not academic_payload and not profile_payload:
+    if not base_payload and not leetcode_payload and not academic_payload and not profile_payload and not linked_payload:
         return None
 
     try:
@@ -507,6 +513,7 @@ def update_student_data(student_id, payload):
         _upsert_side_table(STUDENT_LEETCODE_TABLE, leetcode_payload, LEETCODE_FIELD_MAP)
         _upsert_side_table(STUDENT_ACADEMIC_TABLE, academic_payload, ACADEMIC_FIELD_MAP)
         _upsert_side_table(STUDENT_PROFILE_TABLE, profile_payload, PROFILE_FIELD_MAP)
+        _upsert_side_table(STUDENT_LINKED_TABLE, linked_payload, LINKED_FIELD_MAP)
 
         return get_student_by_register_no(student_id)
     except Exception as exc:
@@ -1043,14 +1050,14 @@ def save_linkedin_data(student_id, linkedin_data):
 
         profile_payload = {
             'register_no': student_id,
-            'profile_name': linkedin_data.get('name', ''),
-            'profile_url': linkedin_data.get('profile_url', ''),
+            'linkedin_username': linkedin_data.get('name', ''),
+            'linkedin_profile_url': linkedin_data.get('profile_url', ''),
             'name': base_row.get('name'),
             'dept': base_row.get('dept'),
             'year': base_row.get('year')
         }
 
-        supabase.table(STUDENT_PROFILE_TABLE).upsert(profile_payload, on_conflict='register_no').execute()
+        supabase.table(STUDENT_LINKED_TABLE).upsert(profile_payload, on_conflict='register_no').execute()
 
         picture_value = linkedin_data.get('picture', '')
         if picture_value:
