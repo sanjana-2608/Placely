@@ -201,6 +201,66 @@ _LIVE_INTERNSHIPS_CACHE = {
     'data': []
 }
 
+STUDENT_LEETCODE_TABLE = 'student_leetcode_profiles'
+STUDENT_ACADEMIC_TABLE = 'student_academic_metrics'
+STUDENT_PROFILE_TABLE = 'student_profile_preferences'
+
+LEETCODE_FIELD_MAP = {
+    'leetcodeUsername': 'leetcode_username',
+    'leetcodeRanking': 'leetcode_ranking',
+    'leetcodeSolvedAll': 'leetcode_solved_all',
+    'leetcodeSolvedEasy': 'leetcode_solved_easy',
+    'leetcodeSolvedMedium': 'leetcode_solved_medium',
+    'leetcodeSolvedHard': 'leetcode_solved_hard',
+    'leetcodeAcceptanceAll': 'leetcode_acceptance_all',
+    'leetcodeAcceptanceEasy': 'leetcode_acceptance_easy',
+    'leetcodeAcceptanceMedium': 'leetcode_acceptance_medium',
+    'leetcodeAcceptanceHard': 'leetcode_acceptance_hard',
+    'leetcodeLastSyncedAt': 'leetcode_last_synced_at',
+}
+
+ACADEMIC_FIELD_MAP = {
+    'internships': 'internships',
+    'certifications': 'certifications',
+    'gradePoints': 'grade_points',
+    'tenthPercentage': 'tenth_percentage',
+    'twelfthPercentage': 'twelfth_percentage',
+    'diplomaPercentage': 'diploma_percentage',
+}
+
+PROFILE_FIELD_MAP = {
+    'interest': 'interest',
+    'placementStatus': 'placement_status',
+    'personalMail': 'personal_mail',
+    'collegeMail': 'college_mail',
+    'contactNo': 'contact_no',
+    'address': 'address',
+    'resumeLink': 'resume_link',
+    'preferredRoles': 'preferred_roles',
+    'preferredShift': 'preferred_shift',
+    'travelPriority': 'travel_priority',
+    'achievements': 'achievements',
+    'linkedinHeadline': 'linkedin_headline',
+}
+
+STUDENTS_BASE_FIELD_MAP = {
+    'name': 'name',
+    'email': 'email',
+    'year': 'year',
+    'dept': 'dept',
+    'rollNo': 'roll_no',
+    'registerNo': 'register_no',
+    'section': 'section',
+    'gender': 'gender',
+    'residencyType': 'residency_type',
+}
+
+SIDE_TABLE_DEFINITIONS = [
+    (STUDENT_LEETCODE_TABLE, LEETCODE_FIELD_MAP),
+    (STUDENT_ACADEMIC_TABLE, ACADEMIC_FIELD_MAP),
+    (STUDENT_PROFILE_TABLE, PROFILE_FIELD_MAP),
+]
+
 STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'internships',
     'certifications', 'gradePoints', 'year', 'interest', 'placementStatus', 'dept',
@@ -264,53 +324,78 @@ def _db_to_student(row):
     }
 
 
-def _student_to_db(payload):
+def _student_to_db(payload, field_map=None):
     mapped = {}
-    field_map = {
-        'name': 'name',
-        'email': 'email',
-        'leetcodeUsername': 'leetcode_username',
-        'internships': 'internships',
-        'certifications': 'certifications',
-        'gradePoints': 'grade_points',
-        'year': 'year',
-        'interest': 'interest',
-        'placementStatus': 'placement_status',
-        'dept': 'dept',
-        'rollNo': 'roll_no',
-        'registerNo': 'register_no',
-        'section': 'section',
-        'gender': 'gender',
-        'residencyType': 'residency_type',
-        'tenthPercentage': 'tenth_percentage',
-        'twelfthPercentage': 'twelfth_percentage',
-        'diplomaPercentage': 'diploma_percentage',
-        'personalMail': 'personal_mail',
-        'collegeMail': 'college_mail',
-        'contactNo': 'contact_no',
-        'address': 'address',
-        'resumeLink': 'resume_link',
-        'preferredRoles': 'preferred_roles',
-        'preferredShift': 'preferred_shift',
-        'travelPriority': 'travel_priority',
-        'achievements': 'achievements',
-        'linkedinHeadline': 'linkedin_headline',
-        'leetcodeRanking': 'leetcode_ranking',
-        'leetcodeSolvedAll': 'leetcode_solved_all',
-        'leetcodeSolvedEasy': 'leetcode_solved_easy',
-        'leetcodeSolvedMedium': 'leetcode_solved_medium',
-        'leetcodeSolvedHard': 'leetcode_solved_hard',
-        'leetcodeAcceptanceAll': 'leetcode_acceptance_all',
-        'leetcodeAcceptanceEasy': 'leetcode_acceptance_easy',
-        'leetcodeAcceptanceMedium': 'leetcode_acceptance_medium',
-        'leetcodeAcceptanceHard': 'leetcode_acceptance_hard',
-        'leetcodeLastSyncedAt': 'leetcode_last_synced_at'
-    }
+    active_field_map = field_map or STUDENTS_BASE_FIELD_MAP
     for key, value in payload.items():
-        db_key = field_map.get(key)
+        db_key = active_field_map.get(key)
         if db_key:
             mapped[db_key] = value
     return mapped
+
+
+def _safe_select_side_table_rows(table_name):
+    if not supabase:
+        return []
+    try:
+        response = supabase.table(table_name).select('*').execute()
+        return response.data or []
+    except Exception as exc:
+        print(f"Supabase side table fetch failed ({table_name}): {exc}")
+        return []
+
+
+def _rows_by_register_no(rows):
+    mapped = {}
+    for row in rows or []:
+        register_no = row.get('register_no')
+        if register_no is not None:
+            mapped[register_no] = row
+    return mapped
+
+
+def _merge_student_row_with_side_tables(base_row, side_table_maps):
+    merged = dict(base_row or {})
+    register_no = merged.get('register_no')
+    if register_no is None:
+        return merged
+
+    for table_name, _field_map in SIDE_TABLE_DEFINITIONS:
+        side_row = (side_table_maps.get(table_name) or {}).get(register_no)
+        if side_row:
+            merged.update(side_row)
+
+    return merged
+
+
+def _get_student_side_table_maps():
+    maps = {}
+    for table_name, _field_map in SIDE_TABLE_DEFINITIONS:
+        rows = _safe_select_side_table_rows(table_name)
+        maps[table_name] = _rows_by_register_no(rows)
+    return maps
+
+
+def get_student_by_register_no(register_no):
+    if not register_no:
+        return None
+
+    if not supabase:
+        return next((s for s in students if str(s.get('registerNo') or s.get('id')) == str(register_no)), None)
+
+    try:
+        response = supabase.table('students').select('*').eq('register_no', register_no).limit(1).execute()
+        rows = response.data or []
+        if not rows:
+            return None
+
+        base_row = rows[0]
+        side_maps = _get_student_side_table_maps()
+        merged_row = _merge_student_row_with_side_tables(base_row, side_maps)
+        return _db_to_student(merged_row)
+    except Exception as exc:
+        print(f"Supabase get_student_by_register_no failed: {exc}")
+        return None
 
 
 def _normalize_year_number(value):
@@ -341,7 +426,9 @@ def get_students_data():
     try:
         response = supabase.table('students').select('*').order('register_no').execute()
         rows = response.data or []
-        return [_db_to_student(row) for row in rows]
+        side_maps = _get_student_side_table_maps()
+        merged_rows = [_merge_student_row_with_side_tables(row, side_maps) for row in rows]
+        return [_db_to_student(row) for row in merged_rows]
     except Exception as exc:
         print(f"Supabase get_students_data failed: {exc}")
         return students
@@ -356,7 +443,9 @@ def get_student_by_email(email):
         rows = response.data or []
         if not rows:
             return None
-        return _db_to_student(rows[0])
+        side_maps = _get_student_side_table_maps()
+        merged_row = _merge_student_row_with_side_tables(rows[0], side_maps)
+        return _db_to_student(merged_row)
     except Exception as exc:
         print(f"Supabase get_student_by_email failed: {exc}")
         return next((s for s in students if s['email'].lower() == normalized_email), None)
@@ -377,16 +466,31 @@ def update_student_data(student_id, payload):
         student.update(allowed_payload)
         return student
 
-    db_payload = _student_to_db(allowed_payload)
-    if not db_payload:
+    base_payload = {key: value for key, value in allowed_payload.items() if key in STUDENTS_BASE_FIELD_MAP}
+    leetcode_payload = {key: value for key, value in allowed_payload.items() if key in LEETCODE_FIELD_MAP}
+    academic_payload = {key: value for key, value in allowed_payload.items() if key in ACADEMIC_FIELD_MAP}
+    profile_payload = {key: value for key, value in allowed_payload.items() if key in PROFILE_FIELD_MAP}
+
+    if not base_payload and not leetcode_payload and not academic_payload and not profile_payload:
         return None
 
     try:
-        response = supabase.table('students').update(db_payload).eq('register_no', student_id).execute()
-        rows = response.data or []
-        if not rows:
-            return None
-        return _db_to_student(rows[0])
+        if base_payload:
+            db_payload = _student_to_db(base_payload, STUDENTS_BASE_FIELD_MAP)
+            supabase.table('students').update(db_payload).eq('register_no', student_id).execute()
+
+        def _upsert_side_table(table_name, side_payload, field_map):
+            if not side_payload:
+                return
+            db_side_payload = _student_to_db(side_payload, field_map)
+            db_side_payload['register_no'] = student_id
+            supabase.table(table_name).upsert(db_side_payload, on_conflict='register_no').execute()
+
+        _upsert_side_table(STUDENT_LEETCODE_TABLE, leetcode_payload, LEETCODE_FIELD_MAP)
+        _upsert_side_table(STUDENT_ACADEMIC_TABLE, academic_payload, ACADEMIC_FIELD_MAP)
+        _upsert_side_table(STUDENT_PROFILE_TABLE, profile_payload, PROFILE_FIELD_MAP)
+
+        return get_student_by_register_no(student_id)
     except Exception as exc:
         print(f"Supabase update_student_data failed: {exc}")
         return None
