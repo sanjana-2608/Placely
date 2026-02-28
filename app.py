@@ -240,8 +240,11 @@ PROFILE_FIELD_MAP = {
     'preferredShift': 'preferred_shift',
     'travelPriority': 'travel_priority',
     'achievements': 'achievements',
-    'linkedinHeadline': 'linkedin_headline',
+    'linkedinName': 'profile_name',
+    'linkedinUrl': 'profile_url',
 }
+
+SIDE_TABLE_CONTEXT_DB_FIELDS = ('name', 'dept', 'year')
 
 STUDENTS_BASE_FIELD_MAP = {
     'name': 'name',
@@ -269,7 +272,7 @@ STUDENT_ALLOWED_FIELDS = {
     'diplomaPercentage', 'personalMail', 'collegeMail', 'contactNo',
     'address', 'resumeLink', 'preferredRoles', 'preferredShift',
     'travelPriority', 'achievements',
-    'linkedinHeadline',
+    'linkedinName', 'linkedinUrl',
     'leetcodeRanking', 'leetcodeSolvedAll', 'leetcodeSolvedEasy', 'leetcodeSolvedMedium',
     'leetcodeSolvedHard', 'leetcodeAcceptanceAll', 'leetcodeAcceptanceEasy',
     'leetcodeAcceptanceMedium', 'leetcodeAcceptanceHard', 'leetcodeLastSyncedAt'
@@ -307,10 +310,10 @@ def _db_to_student(row):
         'preferredShift': row.get('preferred_shift') or '',
         'travelPriority': row.get('travel_priority') or '',
         'achievements': row.get('achievements') or '',
-        'linkedinName': row.get('linkedin_name') or '',
+        'linkedinName': row.get('profile_name') or row.get('linkedin_name') or '',
         'linkedinPhotoUrl': row.get('linkedin_photo_url') or '',
-        'linkedinUrl': row.get('linkedin_url') or '',
-        'linkedinHeadline': row.get('linkedin_headline') or row.get('linkedin_bio') or '',
+        'linkedinUrl': row.get('profile_url') or row.get('linkedin_url') or '',
+        'linkedinHeadline': row.get('linkedin_bio') or '',
         'leetcodeRanking': row.get('leetcode_ranking'),
         'leetcodeSolvedAll': row.get('leetcode_solved_all', 0),
         'leetcodeSolvedEasy': row.get('leetcode_solved_easy'),
@@ -363,7 +366,9 @@ def _merge_student_row_with_side_tables(base_row, side_table_maps):
     for table_name, _field_map in SIDE_TABLE_DEFINITIONS:
         side_row = (side_table_maps.get(table_name) or {}).get(register_no)
         if side_row:
-            merged.update(side_row)
+            for key, value in side_row.items():
+                if value is not None:
+                    merged[key] = value
 
     return merged
 
@@ -479,11 +484,24 @@ def update_student_data(student_id, payload):
             db_payload = _student_to_db(base_payload, STUDENTS_BASE_FIELD_MAP)
             supabase.table('students').update(db_payload).eq('register_no', student_id).execute()
 
+        context_response = (
+            supabase
+            .table('students')
+            .select('name,dept,year')
+            .eq('register_no', student_id)
+            .limit(1)
+            .execute()
+        )
+        context_row = (context_response.data or [{}])[0]
+        context_payload = {field: context_row.get(field) for field in SIDE_TABLE_CONTEXT_DB_FIELDS if field in context_row}
+        context_changed = any(field in base_payload for field in ('name', 'dept', 'year'))
+
         def _upsert_side_table(table_name, side_payload, field_map):
-            if not side_payload:
+            if not side_payload and not context_changed:
                 return
             db_side_payload = _student_to_db(side_payload, field_map)
             db_side_payload['register_no'] = student_id
+            db_side_payload.update(context_payload)
             supabase.table(table_name).upsert(db_side_payload, on_conflict='register_no').execute()
 
         _upsert_side_table(STUDENT_LEETCODE_TABLE, leetcode_payload, LEETCODE_FIELD_MAP)
@@ -1012,47 +1030,35 @@ def save_linkedin_data(student_id, linkedin_data):
         print("Supabase unavailable or no LinkedIn data")
         return False
 
-    db_client = supabase
-
-    def _is_students_column_available(column_name):
-        cached = _STUDENTS_COLUMN_AVAILABILITY.get(column_name)
-        if cached is not None:
-            return cached
-        try:
-            db_client.table('students').select(column_name).limit(1).execute()
-            _STUDENTS_COLUMN_AVAILABILITY[column_name] = True
-            return True
-        except Exception as exc:
-            error_message = str(exc).lower()
-            is_missing_column = 'column' in error_message and 'does not exist' in error_message
-            if not is_missing_column:
-                print(f"Column probe failed for {column_name}: {exc}")
-            _STUDENTS_COLUMN_AVAILABILITY[column_name] = False
-            return False
-    
     try:
-        update_data = {}
+        base_row_response = (
+            supabase
+            .table('students')
+            .select('name,dept,year')
+            .eq('register_no', student_id)
+            .limit(1)
+            .execute()
+        )
+        base_row = (base_row_response.data or [{}])[0]
 
-        if _is_students_column_available('linkedin_name'):
-            update_data['linkedin_name'] = linkedin_data.get('name', '')
+        profile_payload = {
+            'register_no': student_id,
+            'profile_name': linkedin_data.get('name', ''),
+            'profile_url': linkedin_data.get('profile_url', ''),
+            'name': base_row.get('name'),
+            'dept': base_row.get('dept'),
+            'year': base_row.get('year')
+        }
 
-        if _is_students_column_available('linkedin_photo_url'):
-            update_data['linkedin_photo_url'] = linkedin_data.get('picture', '')
+        supabase.table(STUDENT_PROFILE_TABLE).upsert(profile_payload, on_conflict='register_no').execute()
 
-        if _is_students_column_available('linkedin_url'):
-            update_data['linkedin_url'] = linkedin_data.get('profile_url', '')
+        picture_value = linkedin_data.get('picture', '')
+        if picture_value:
+            try:
+                supabase.table('students').update({'linkedin_photo_url': picture_value}).eq('register_no', student_id).execute()
+            except Exception as exc:
+                print(f"linkedin_photo_url update skipped: {exc}")
 
-        if _is_students_column_available('linkedin_headline'):
-            update_data['linkedin_headline'] = linkedin_data.get('headline', '')
-        elif _is_students_column_available('linkedin_bio'):
-            update_data['linkedin_bio'] = linkedin_data.get('headline', '')
-
-        if not update_data:
-            print("No compatible LinkedIn columns found in students table")
-            return False
-        
-        print(f"Saving LinkedIn data: {update_data}")
-        response = db_client.table('students').update(update_data).eq('register_no', student_id).execute()
         print(f"LinkedIn data saved successfully for student {student_id}")
         return True
     except Exception as e:
