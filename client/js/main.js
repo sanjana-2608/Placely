@@ -1470,7 +1470,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
 
         <div class="dashboard-filter-group dashboard-filter-group--interest">
           <h4>Placement Interest</h4>
-          <div class="dashboard-filter-list">
+          <div class="dashboard-filter-list dashboard-filter-list--interest">
             ${makeCheckboxes('dashboard-interest', interests)}
           </div>
         </div>
@@ -1534,7 +1534,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         </div>
       </div>
       <div class="dashboard-filter-group dashboard-filter-group--metric-visibility">
-        <h4>Visible Metrics (Table & Export)</h4>
+        <h4>Visible Metrics</h4>
         <div class="dashboard-filter-list dashboard-filter-list--metric-visibility">
           ${makeMetricCheckboxes()}
         </div>
@@ -2346,35 +2346,30 @@ function renderLeetCodeStatsCard(data) {
   const easySolved = Number(data.solved?.easy || 0);
   const mediumSolved = Number(data.solved?.medium || 0);
   const hardSolved = Number(data.solved?.hard || 0);
-  const totalSolved = Number(data.solved?.all || (easySolved + mediumSolved + hardSolved));
+  const totalSolved = Math.max(Number(data.solved?.all || (easySolved + mediumSolved + hardSolved)), 0);
 
-  const easyTotal = 927;
-  const mediumTotal = 2014;
-  const hardTotal = 910;
-  const totalQuestions = easyTotal + mediumTotal + hardTotal;
-
-  const segmentTotal = Math.max(easySolved + mediumSolved + hardSolved, 1);
+  const segmentTotal = Math.max(easySolved + hardSolved + mediumSolved, 1);
   const easyPct = (easySolved / segmentTotal) * 100;
-  const mediumPct = (mediumSolved / segmentTotal) * 100;
   const hardPct = (hardSolved / segmentTotal) * 100;
+  const mediumPct = (mediumSolved / segmentTotal) * 100;
   const easyEnd = easyPct;
-  const mediumEnd = easyPct + mediumPct;
+  const hardEnd = easyEnd + hardPct;
 
   return `
     <div class="leetcode-pie-card">
       <div class="leetcode-pie-layout">
         <div class="leetcode-pie-wrap">
-          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #fbbf24 ${easyEnd}% ${mediumEnd}%, #ef4444 ${mediumEnd}% ${Math.min(mediumEnd + hardPct, 100)}%, rgba(255,255,255,0.08) ${Math.min(mediumEnd + hardPct, 100)}% 100%);">
+          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #ef4444 ${easyEnd}% ${hardEnd}%, #fbbf24 ${hardEnd}% ${Math.min(hardEnd + mediumPct, 100)}%);">
             <div class="leetcode-pie-center">
-              <div class="leetcode-pie-total">${totalSolved}<span>/${totalQuestions}</span></div>
-              <div class="leetcode-pie-label">Solved</div>
+              <div class="leetcode-pie-total">${totalSolved}</div>
+              <div class="leetcode-pie-label">Total Solved</div>
             </div>
           </div>
         </div>
         <div class="leetcode-pie-breakdown">
-          <div><span class="easy">Easy</span> <strong>${easySolved}/${easyTotal}</strong></div>
-          <div><span class="medium">Med.</span> <strong>${mediumSolved}/${mediumTotal}</strong></div>
-          <div><span class="hard">Hard</span> <strong>${hardSolved}/${hardTotal}</strong></div>
+          <div><span class="easy">Easy</span> <strong>${easySolved}</strong></div>
+          <div><span class="hard">Hard</span> <strong>${hardSolved}</strong></div>
+          <div><span class="medium">Medium</span> <strong>${mediumSolved}</strong></div>
         </div>
       </div>
     </div>
