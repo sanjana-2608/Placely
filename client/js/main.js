@@ -87,6 +87,7 @@ let currentUser = null;
 let isStaff = false;
 let currentLoginTab = 'student';
 let dashboardFilteredStudents = [];
+let dashboardSearchQuery = '';
 let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let currentDashboardSortKey = 'codingProblems';
@@ -1211,7 +1212,7 @@ function renderDashboard() {
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
-    renderTable(defaultSortedStudents, true);
+    renderTable(filterDashboardRowsBySearch(defaultSortedStudents, dashboardSearchQuery), true);
   } else {
     title.textContent = '';
     if (chartsContainer) {
@@ -1608,6 +1609,9 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   container.innerHTML = `
     <div class="dashboard-filter-toolbar">
       <button type="button" id="dashboard-filter-toggle" class="dashboard-filter-btn">Filters</button>
+      <div class="dashboard-toolbar-search-wrap">
+        <input type="search" id="dashboard-search-input" class="dashboard-toolbar-search" placeholder="Search students" value="${dashboardSearchQuery}">
+      </div>
       <div class="dashboard-export-actions">
         <button type="button" id="dashboard-export-csv" class="dashboard-export-btn">Export CSV</button>
         <button type="button" id="dashboard-export-excel" class="dashboard-export-btn">Export Excel</button>
@@ -1749,6 +1753,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   const dialog = panel ? panel.querySelector('.dashboard-filter-dialog') : null;
   const applyBtn = document.getElementById('dashboard-filter-apply');
   const resetBtn = document.getElementById('dashboard-filter-reset');
+  const searchInput = document.getElementById('dashboard-search-input');
   const exportCsvBtn = document.getElementById('dashboard-export-csv');
   const exportExcelBtn = document.getElementById('dashboard-export-excel');
 
@@ -1793,6 +1798,13 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     resetBtn.addEventListener('click', () => initializeDashboardFilters(staffView, highlightId));
   }
 
+  if (searchInput) {
+    searchInput.addEventListener('input', (event) => {
+      dashboardSearchQuery = event.target.value || '';
+      renderTable(filterDashboardRowsBySearch(dashboardFilteredStudents, dashboardSearchQuery), staffView, highlightId, currentDashboardSortKey);
+    });
+  }
+
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener('click', exportFilteredDataAsCsv);
   }
@@ -1800,6 +1812,37 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   if (exportExcelBtn) {
     exportExcelBtn.addEventListener('click', exportFilteredDataAsExcel);
   }
+}
+
+function filterDashboardRowsBySearch(rows, query) {
+  const normalizedQuery = String(query || '').trim().toLowerCase();
+  if (!normalizedQuery) {
+    return Array.isArray(rows) ? [...rows] : [];
+  }
+
+  return (Array.isArray(rows) ? rows : []).filter((student) => {
+    const searchableText = [
+      student.name,
+      student.dept,
+      getYearLabel(student.year),
+      student.interest,
+      student.rollNo,
+      student.registerNo,
+      student.gradePoints,
+      student.codingProblems,
+      student.certifications,
+      student.internships,
+      student.collegeMail || student.email,
+      student.personalMail,
+      student.contactNo,
+      student.resumeLink,
+      getPlacementStatusLabel(student)
+    ]
+      .map((value) => String(value ?? '').toLowerCase())
+      .join(' ');
+
+    return searchableText.includes(normalizedQuery);
+  });
 }
 
 function applyDashboardFilters(staffView, highlightId = null) {
@@ -1868,7 +1911,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
 
   dashboardFilteredStudents = filtered;
   currentDashboardSortKey = sortKey;
-  renderTable(filtered, staffView, highlightId, sortKey);
+  renderTable(filterDashboardRowsBySearch(filtered, dashboardSearchQuery), staffView, highlightId, sortKey);
 }
 
 function downloadBlob(content, filename, mimeType) {
@@ -2091,7 +2134,8 @@ function getFilteredExportRows() {
   };
 
   const visibleMetricKeys = dashboardMetricOrder.filter((key) => dashboardVisibleMetrics.has(key));
-  return (dashboardFilteredStudents && dashboardFilteredStudents.length ? dashboardFilteredStudents : students).map((student) => {
+  const exportRows = filterDashboardRowsBySearch(dashboardFilteredStudents, dashboardSearchQuery);
+  return exportRows.map((student) => {
     const row = {
       Name: student.name || ''
     };
