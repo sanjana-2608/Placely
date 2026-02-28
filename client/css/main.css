@@ -1180,7 +1180,16 @@ table tr:hover {
 }
 
 .dashboard-filter-list--metric-visibility {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 1.2rem;
+}
+
+.dashboard-filter-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 170px;
 }
 
 .dashboard-number-range {
@@ -2367,7 +2376,11 @@ body.light-mode .company-apply-btn:hover {
     }
 
     .dashboard-filter-list--metric-visibility {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.9rem;
+    }
+
+    .dashboard-filter-column {
+        min-width: 150px;
     }
 
     .dashboard-filter-list--interest {
@@ -2483,7 +2496,13 @@ body.light-mode .company-apply-btn:hover {
     }
 
     .dashboard-filter-list--metric-visibility {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .dashboard-filter-column {
+        min-width: 0;
     }
 
     .dashboard-filter-list--interest {

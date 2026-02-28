@@ -1584,12 +1584,24 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     </label>
   `).join('');
 
-  const makeMetricCheckboxes = () => dashboardMetricOrder.map((key) => `
-    <label class="dashboard-filter-check">
-      <input type="checkbox" name="dashboard-visible-metric" value="${key}" ${dashboardVisibleMetrics.has(key) ? 'checked' : ''}>
-      <span>${dashboardMetricLabels[key]}</span>
-    </label>
-  `).join('');
+  const makeMetricCheckboxes = () => {
+    const metricCheckboxes = dashboardMetricOrder.map((key) => `
+      <label class="dashboard-filter-check">
+        <input type="checkbox" name="dashboard-visible-metric" value="${key}" ${dashboardVisibleMetrics.has(key) ? 'checked' : ''}>
+        <span>${dashboardMetricLabels[key]}</span>
+      </label>
+    `);
+    const columnSize = 6;
+    const metricColumns = [];
+    for (let index = 0; index < metricCheckboxes.length; index += columnSize) {
+      metricColumns.push(`
+        <div class="dashboard-filter-column">
+          ${metricCheckboxes.slice(index, index + columnSize).join('')}
+        </div>
+      `);
+    }
+    return metricColumns.join('');
+  };
 
   const formatYearLabel = (year) => getYearLabel(year);
 
