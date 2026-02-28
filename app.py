@@ -184,17 +184,17 @@ upcoming_companies = [
 ]
 
 placed_students = [
-    {"name": "Priya Sharma", "dept": "CSE", "package": 18.5, "company": "Google", "position": "Software Engineer", "graduationYear": 2024, "date": "2026-01-25", "codingProblems": 150, "internships": 1, "certifications": 4, "gradePoints": 8.3},
-    {"name": "Aarav Kumar", "dept": "CSE", "package": 16.8, "company": "Microsoft", "position": "SDE-2", "graduationYear": 2024, "date": "2026-01-20", "codingProblems": 120, "internships": 2, "certifications": 3, "gradePoints": 8.7},
-    {"name": "Sneha Reddy", "dept": "IT", "package": 15.2, "company": "Amazon", "position": "Associate Engineer", "graduationYear": 2025, "date": "2026-01-18", "codingProblems": 80, "internships": 1, "certifications": 2, "gradePoints": 9.1},
-    {"name": "Rahul Singh", "dept": "ECE", "package": 14.5, "company": "Infosys", "position": "Systems Engineer", "graduationYear": 2024, "date": "2026-01-15", "codingProblems": 200, "internships": 0, "certifications": 1, "gradePoints": 7.9},
-    {"name": "Vikram Patel", "dept": "ME", "package": 12.0, "company": "TCS", "position": "Digital Engineer", "graduationYear": 2025, "date": "2026-01-10", "codingProblems": 60, "internships": 2, "certifications": 2, "gradePoints": 8.9}
+    {"name": "Priya Sharma", "dept": "CSE", "package": 18.5, "company": "Google", "position": "Software Engineer", "graduationYear": 2024, "date": "2026-01-25", "leetcodeSolvedAll": 150, "internships": 1, "certifications": 4, "gradePoints": 8.3},
+    {"name": "Aarav Kumar", "dept": "CSE", "package": 16.8, "company": "Microsoft", "position": "SDE-2", "graduationYear": 2024, "date": "2026-01-20", "leetcodeSolvedAll": 120, "internships": 2, "certifications": 3, "gradePoints": 8.7},
+    {"name": "Sneha Reddy", "dept": "IT", "package": 15.2, "company": "Amazon", "position": "Associate Engineer", "graduationYear": 2025, "date": "2026-01-18", "leetcodeSolvedAll": 80, "internships": 1, "certifications": 2, "gradePoints": 9.1},
+    {"name": "Rahul Singh", "dept": "ECE", "package": 14.5, "company": "Infosys", "position": "Systems Engineer", "graduationYear": 2024, "date": "2026-01-15", "leetcodeSolvedAll": 200, "internships": 0, "certifications": 1, "gradePoints": 7.9},
+    {"name": "Vikram Patel", "dept": "ME", "package": 12.0, "company": "TCS", "position": "Digital Engineer", "graduationYear": 2025, "date": "2026-01-10", "leetcodeSolvedAll": 60, "internships": 2, "certifications": 2, "gradePoints": 8.9}
 ]
 
 staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
 
 STUDENT_ALLOWED_FIELDS = {
-    'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
+    'name', 'email', 'leetcodeUsername', 'internships',
     'certifications', 'gradePoints', 'year', 'interest', 'placementStatus', 'dept',
     'tenthPercentage', 'twelfthPercentage',
     'rollNo', 'registerNo', 'section', 'gender', 'residencyType',
@@ -215,7 +215,6 @@ def _db_to_student(row):
         'name': row.get('name'),
         'email': row.get('email'),
         'leetcodeUsername': row.get('leetcode_username') or '',
-        'codingProblems': row.get('coding_problems', 0),
         'internships': row.get('internships', 0),
         'certifications': row.get('certifications', 0),
         'gradePoints': row.get('grade_points', 0),
@@ -245,7 +244,7 @@ def _db_to_student(row):
         'linkedinUrl': row.get('linkedin_url') or '',
         'linkedinHeadline': row.get('linkedin_headline') or row.get('linkedin_bio') or '',
         'leetcodeRanking': row.get('leetcode_ranking'),
-        'leetcodeSolvedAll': row.get('leetcode_solved_all'),
+        'leetcodeSolvedAll': row.get('leetcode_solved_all', 0),
         'leetcodeSolvedEasy': row.get('leetcode_solved_easy'),
         'leetcodeSolvedMedium': row.get('leetcode_solved_medium'),
         'leetcodeSolvedHard': row.get('leetcode_solved_hard'),
@@ -263,7 +262,6 @@ def _student_to_db(payload):
         'name': 'name',
         'email': 'email',
         'leetcodeUsername': 'leetcode_username',
-        'codingProblems': 'coding_problems',
         'internships': 'internships',
         'certifications': 'certifications',
         'gradePoints': 'grade_points',
@@ -1133,7 +1131,6 @@ def scheduled_fetch_leetcode_stats():
                     synced_at_utc = datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
                     # Update student with cached LeetCode stats
                     update_student_data(student['id'], {
-                        'codingProblems': profile['solved']['all'],
                         'leetcodeRanking': profile.get('ranking'),
                         'leetcodeSolvedAll': profile['solved'].get('all', 0),
                         'leetcodeSolvedEasy': profile['solved'].get('easy', 0),

@@ -83,12 +83,12 @@ let dashboardSearchQuery = '';
 let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let analyticsProfileEditMode = false;
-let currentDashboardSortKey = 'codingProblems';
+let currentDashboardSortKey = 'leetcodeSolvedAll';
 const dashboardMetricOrder = [
   'dept',
   'year',
   'gradePoints',
-  'codingProblems',
+  'leetcodeSolvedAll',
   'interest',
   'placementStatus',
   'resumeLink',
@@ -111,7 +111,7 @@ const dashboardMetricOrder = [
 ];
 const dashboardMetricLabels = {
   dept: 'Dept',
-  codingProblems: 'Coding Problems',
+  leetcodeSolvedAll: 'LeetCode Solved',
   internships: 'Internships',
   certifications: 'Certificates',
   gradePoints: 'CGPA',
@@ -145,7 +145,7 @@ const dashboardEditableFieldConfigs = {
   dept: { type: 'text' },
   year: { type: 'number', min: 1, max: 4, step: 1 },
   gradePoints: { type: 'number', min: 0, max: 10, step: 0.1 },
-  codingProblems: { type: 'number', min: 0, step: 1 },
+  leetcodeSolvedAll: { type: 'number', min: 0, step: 1 },
   internships: { type: 'number', min: 0, step: 1 },
   certifications: { type: 'number', min: 0, step: 1 },
   interest: { type: 'select', options: dashboardInterestOptions },
@@ -173,7 +173,7 @@ const dashboardEditableFieldConfigs = {
 
 const analyticsProfileEditableFields = [
   'name', 'dept', 'year', 'interest', 'placementStatus',
-  'codingProblems', 'gradePoints', 'internships', 'certifications',
+  'leetcodeSolvedAll', 'gradePoints', 'internships', 'certifications',
   'rollNo', 'registerNo', 'section', 'gender', 'residencyType',
   'tenthPercentage', 'twelfthPercentage', 'diplomaPercentage',
   'collegeMail', 'personalMail', 'email', 'contactNo', 'address',
@@ -193,7 +193,7 @@ function getDashboardFieldRawValue(student, fieldKey) {
   const fieldMap = {
     name: student.name,
     dept: student.dept,
-    codingProblems: student.codingProblems,
+    leetcodeSolvedAll: student.leetcodeSolvedAll,
     internships: student.internships,
     certifications: student.certifications,
     gradePoints: student.gradePoints,
@@ -794,7 +794,7 @@ function getTopPercentile(sortedList, studentRecord) {
 
 function getDynamicScoreMeta(studentsData) {
   return {
-    maxCodingProblems: Math.max(...studentsData.map((student) => Number(student.codingProblems || 0)), 0),
+    maxCodingProblems: Math.max(...studentsData.map((student) => Number(student.leetcodeSolvedAll || 0)), 0),
     maxOfficialCertificates: Math.max(...studentsData.map((student) => Number(student.certifications || 0)), 0),
     maxInternships: Math.max(...studentsData.map((student) => Number(student.internships || 0)), 0)
   };
@@ -803,7 +803,7 @@ function getDynamicScoreMeta(studentsData) {
 function getDynamicPlacementScore(student, scoreMeta) {
   const clampUnit = (value) => Math.max(0, Math.min(1, Number(value) || 0));
   const cgpa = Number(student.gradePoints || 0);
-  const codingProblems = Number(student.codingProblems || 0);
+  const codingProblems = Number(student.leetcodeSolvedAll || 0);
   const officialCertificates = Number(student.certifications || 0);
   const internships = Number(student.internships || 0);
 
@@ -1017,7 +1017,7 @@ function getDefaultAnalyticsSortedStudents() {
       return packageDiff;
     }
 
-    const codingDiff = Number(b.codingProblems || 0) - Number(a.codingProblems || 0);
+    const codingDiff = Number(b.leetcodeSolvedAll || 0) - Number(a.leetcodeSolvedAll || 0);
     if (codingDiff !== 0) {
       return codingDiff;
     }
@@ -1380,7 +1380,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     };
   };
 
-  const codingRange = getRange(source.map((student) => student.codingProblems), 0, 1000);
+  const codingRange = getRange(source.map((student) => student.leetcodeSolvedAll), 0, 1000);
   const cgpaRange = getRange(source.map((student) => student.gradePoints), 0, 10);
   const tenthRange = getRange(source.map((student) => student.tenthPercentage), 0, 100);
   const twelfthRange = getRange(source.map((student) => student.twelfthPercentage), 0, 100);
@@ -1433,7 +1433,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
             <div class="dashboard-filter-header-sort-row">
               <label for="dashboard-sort-key">Sort by</label>
               <select id="dashboard-sort-key">
-                <option value="codingProblems">Coding Problems</option>
+                <option value="leetcodeSolvedAll">LeetCode Solved</option>
                 <option value="gradePoints">CGPA</option>
                 <option value="tenthPercentage">10th %</option>
                 <option value="twelfthPercentage">12th %</option>
@@ -1661,7 +1661,7 @@ function filterDashboardRowsBySearch(rows, query) {
       student.rollNo,
       student.registerNo,
       student.gradePoints,
-      student.codingProblems,
+      student.leetcodeSolvedAll,
       student.certifications,
       student.internships,
       student.collegeMail || student.email,
@@ -1695,7 +1695,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
   const tenthMax = Number(document.getElementById('tenth-max')?.value || 100);
   const twelfthMin = Number(document.getElementById('twelfth-min')?.value || 0);
   const twelfthMax = Number(document.getElementById('twelfth-max')?.value || 100);
-  const sortKey = document.getElementById('dashboard-sort-key')?.value || 'codingProblems';
+  const sortKey = document.getElementById('dashboard-sort-key')?.value || 'leetcodeSolvedAll';
   const sortDir = document.getElementById('dashboard-sort-dir')?.value || 'desc';
 
   dashboardVisibleMetrics = new Set(selectedVisibleMetrics);
@@ -1708,7 +1708,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
 
   let filtered = [...students].filter((student) => {
     const year = getYearNumber(student.year);
-    const coding = Number(student.codingProblems || 0);
+    const coding = Number(student.leetcodeSolvedAll || 0);
     const cgpa = Number(student.gradePoints || 0);
     const tenth = toNumberOrNull(student.tenthPercentage);
     const twelfth = toNumberOrNull(student.twelfthPercentage);
@@ -1726,7 +1726,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
     return yearOk && deptOk && interestOk && codingOk && cgpaOk && tenthOk && twelfthOk && placementStatusOk;
   });
 
-  const numericSortKeys = new Set(['codingProblems', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'internships', 'certifications', 'year']);
+  const numericSortKeys = new Set(['leetcodeSolvedAll', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'internships', 'certifications', 'year']);
   filtered.sort((a, b) => {
     let compare = 0;
     if (numericSortKeys.has(sortKey)) {
@@ -1950,7 +1950,7 @@ function renderAnalyticsProfileContent(student) {
 
   const profileFields = [
     ['name', 'Name'], ['dept', 'Department'], ['year', 'Year'], ['interest', 'Interest'], ['placementStatus', 'Placement Status'],
-    ['codingProblems', 'Coding Problems'], ['gradePoints', 'CGPA'], ['internships', 'Internships'], ['certifications', 'Certifications'],
+    ['leetcodeSolvedAll', 'LeetCode Solved'], ['gradePoints', 'CGPA'], ['internships', 'Internships'], ['certifications', 'Certifications'],
     ['rollNo', 'Roll No'], ['registerNo', 'Register No'], ['section', 'Section'], ['gender', 'Gender'], ['residencyType', 'Dayscholar/Hostel'],
     ['tenthPercentage', '10th %'], ['twelfthPercentage', '12th %'], ['diplomaPercentage', 'Diploma %'],
     ['collegeMail', 'Clg Mail'], ['personalMail', 'Personal Mail'], ['email', 'Email'], ['contactNo', 'Contact No'], ['address', 'Address'],
@@ -1990,7 +1990,7 @@ function renderAnalyticsProfileContent(student) {
 
   const studentsData = Array.isArray(students) ? [...students] : [];
   const cgpaRanked = [...studentsData].sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
-  const codingRanked = [...studentsData].sort((a, b) => Number(b.codingProblems || 0) - Number(a.codingProblems || 0));
+  const codingRanked = [...studentsData].sort((a, b) => Number(b.leetcodeSolvedAll || 0) - Number(a.leetcodeSolvedAll || 0));
   const scoreMeta = getDynamicScoreMeta(studentsData);
   const overallRanked = [...studentsData].sort((a, b) => getDynamicPlacementScore(b, scoreMeta) - getDynamicPlacementScore(a, scoreMeta));
   const cgpaTopPercent = getTopPercentile(cgpaRanked, student);
@@ -2222,7 +2222,7 @@ function bindAnalyticsProfileRowClicks() {
 function getFilteredExportRows() {
   const metricValueMap = {
     dept: (student) => student.dept || '',
-    codingProblems: (student) => student.codingProblems || 0,
+    leetcodeSolvedAll: (student) => student.leetcodeSolvedAll || 0,
     internships: (student) => student.internships || 0,
     certifications: (student) => student.certifications || 0,
     gradePoints: (student) => student.gradePoints || '',
@@ -2321,9 +2321,9 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
       header: 'Dept',
       cell: (s) => renderEditableCell(s, 'dept', getDashboardFieldDisplayValue(s, 'dept', staffView))
     },
-    codingProblems: {
-      header: 'Coding Problems',
-      cell: (s) => renderEditableCell(s, 'codingProblems', getDashboardFieldDisplayValue(s, 'codingProblems', staffView))
+    leetcodeSolvedAll: {
+      header: 'LeetCode Solved',
+      cell: (s) => renderEditableCell(s, 'leetcodeSolvedAll', getDashboardFieldDisplayValue(s, 'leetcodeSolvedAll', staffView))
     },
     internships: {
       header: 'Internships',
@@ -2488,7 +2488,7 @@ function renderProfile() {
     const tenthPercentage = currentUser.tenthPercentage ?? 'N/A';
     const studentsData = Array.isArray(students) ? [...students] : [];
     const cgpaRanked = [...studentsData].sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
-    const codingRanked = [...studentsData].sort((a, b) => Number(b.codingProblems || 0) - Number(a.codingProblems || 0));
+    const codingRanked = [...studentsData].sort((a, b) => Number(b.leetcodeSolvedAll || 0) - Number(a.leetcodeSolvedAll || 0));
     const scoreMeta = getDynamicScoreMeta(studentsData);
     const overallRanked = [...studentsData].sort((a, b) => getDynamicPlacementScore(b, scoreMeta) - getDynamicPlacementScore(a, scoreMeta));
     const cgpaTopPercent = getTopPercentile(cgpaRanked, currentUser);
@@ -2706,12 +2706,12 @@ function renderLeaderboard() {
   }
 
   const codingRank = [...studentsData]
-    .sort((a, b) => Number(b.codingProblems || 0) - Number(a.codingProblems || 0));
+    .sort((a, b) => Number(b.leetcodeSolvedAll || 0) - Number(a.leetcodeSolvedAll || 0));
 
   const cgpaRank = [...studentsData]
     .sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
 
-  const maxCodingProblems = Math.max(...studentsData.map((student) => Number(student.codingProblems || 0)), 0);
+  const maxCodingProblems = Math.max(...studentsData.map((student) => Number(student.leetcodeSolvedAll || 0)), 0);
   const maxOfficialCertificates = Math.max(...studentsData.map((student) => Number(student.certifications || 0)), 0);
   const maxInternships = Math.max(...studentsData.map((student) => Number(student.internships || 0)), 0);
 
@@ -2719,7 +2719,7 @@ function renderLeaderboard() {
 
   const getDynamicScore = (student) => {
     const cgpa = Number(student.gradePoints || 0);
-    const codingProblems = Number(student.codingProblems || 0);
+    const codingProblems = Number(student.leetcodeSolvedAll || 0);
     const officialCertificates = Number(student.certifications || 0);
     const internships = Number(student.internships || 0);
 
@@ -2760,7 +2760,7 @@ function renderLeaderboard() {
             </tr>
           </thead>
           <tbody>
-            ${renderRows(codingRank, (student) => Number(student.codingProblems || 0))}
+            ${renderRows(codingRank, (student) => Number(student.leetcodeSolvedAll || 0))}
           </tbody>
         </table>
       </div>
