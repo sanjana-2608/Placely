@@ -126,7 +126,7 @@ const dashboardMetricLabels = {
   tenthPercentage: '10th %',
   twelfthPercentage: '12th %',
   diplomaPercentage: 'Diploma %',
-  placementStatus: 'Placed/Yet to be Placed',
+  placementStatus: 'Placement Status',
   year: 'Year',
   interest: 'Interest',
   rollNo: 'Roll No',
@@ -2588,7 +2588,7 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
       cell: (s) => renderEditableCell(s, 'diplomaPercentage', getDashboardFieldDisplayValue(s, 'diplomaPercentage', staffView))
     },
     placementStatus: {
-      header: 'Placed/Yet to be Placed',
+      header: 'Placement Status',
       cell: (s) => `${getPlacementStatusLabel(s)}`
     },
     year: {
