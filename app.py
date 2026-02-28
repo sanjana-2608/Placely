@@ -195,7 +195,7 @@ staff_credentials = {"email": "staff@college.edu", "password": "staff123"}
 
 STUDENT_ALLOWED_FIELDS = {
     'name', 'email', 'leetcodeUsername', 'codingProblems', 'internships',
-    'certifications', 'gradePoints', 'year', 'interest', 'dept',
+    'certifications', 'gradePoints', 'year', 'interest', 'placementStatus', 'dept',
     'tenthPercentage', 'twelfthPercentage',
     'rollNo', 'registerNo', 'section', 'gender', 'residencyType',
     'diplomaPercentage', 'personalMail', 'collegeMail', 'contactNo',
@@ -221,6 +221,7 @@ def _db_to_student(row):
         'gradePoints': row.get('grade_points', 0),
         'year': row.get('year', 0),
         'interest': row.get('interest') or '',
+        'placementStatus': row.get('placement_status') or '',
         'dept': row.get('dept') or '',
         'rollNo': row.get('roll_no') or '',
         'registerNo': register_no or '',
@@ -268,6 +269,7 @@ def _student_to_db(payload):
         'gradePoints': 'grade_points',
         'year': 'year',
         'interest': 'interest',
+        'placementStatus': 'placement_status',
         'dept': 'dept',
         'rollNo': 'roll_no',
         'registerNo': 'register_no',
