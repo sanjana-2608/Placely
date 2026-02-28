@@ -90,7 +90,6 @@ let dashboardFilteredStudents = [];
 let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let currentDashboardSortKey = 'codingProblems';
-let currentPlacementStatusQuickFilter = 'all';
 const dashboardMetricOrder = [
   'codingProblems',
   'year',
@@ -856,41 +855,6 @@ function getPlacementStatusLabel(student) {
   return 'Yet to be Placed';
 }
 
-function renderPlacementStatusQuickFilters(staffView, highlightId = null) {
-  const container = document.getElementById('dashboard-placement-status-boxes');
-  if (!container || !staffView) {
-    return;
-  }
-
-  const source = Array.isArray(students) ? students : [];
-  const placedCount = source.filter((student) => getPlacementStatusLabel(student) === 'Placed').length;
-  const yetToBePlacedCount = source.filter((student) => getPlacementStatusLabel(student) === 'Yet to be Placed').length;
-
-  const boxHtml = (status, label, count) => {
-    const active = currentPlacementStatusQuickFilter === status;
-    return `
-      <button type="button" class="placement-status-box ${active ? 'active' : ''}" data-placement-status="${status}">
-        <span class="placement-status-box-label">${label}</span>
-        <strong class="placement-status-box-count">${count}</strong>
-      </button>
-    `;
-  };
-
-  container.innerHTML = `
-    ${boxHtml('Placed', 'Placed', placedCount)}
-    ${boxHtml('Yet to be Placed', 'Yet to be Placed', yetToBePlacedCount)}
-  `;
-
-  container.querySelectorAll('.placement-status-box').forEach((button) => {
-    button.addEventListener('click', () => {
-      const nextStatus = button.dataset.placementStatus || 'all';
-      currentPlacementStatusQuickFilter = nextStatus;
-      renderPlacementStatusQuickFilters(staffView, highlightId);
-      applyDashboardFilters(staffView, highlightId);
-    });
-  });
-}
-
 function getInterestStateKey(category) {
   if (category === 'Higher Studies') return 'higher-studies';
   if (category === 'Entrepreneurship') return 'entrepreneurship';
@@ -1244,12 +1208,11 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
-    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="dashboard-placement-status-boxes" class="placement-status-boxes"></div><div id="staff-table"></div>`;
+    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
     renderTable(defaultSortedStudents, true);
-    renderPlacementStatusQuickFilters(true);
   } else {
     title.textContent = '';
     if (chartsContainer) {
@@ -1595,6 +1558,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   const years = [...new Set(source.map((student) => getYearNumber(student.year)).filter(Boolean))].sort((a, b) => a - b);
   const departments = [...new Set(source.map((student) => String(student.dept || '').trim()).filter(Boolean))].sort();
   const interests = [...new Set(source.map((student) => getInterestCategory(student.interest)).filter(Boolean))].sort();
+  const placementStatuses = ['Placed', 'Yet to be Placed'];
 
   const getRange = (values, fallbackMin, fallbackMax) => {
     const numericValues = values
@@ -1686,6 +1650,13 @@ function initializeDashboardFilters(staffView, highlightId = null) {
           <h4>Placement Interest</h4>
           <div class="dashboard-filter-list dashboard-filter-list--interest">
             ${makeCheckboxes('dashboard-interest', interests)}
+          </div>
+        </div>
+
+        <div class="dashboard-filter-group dashboard-filter-group--placement-status">
+          <h4>Placement Status</h4>
+          <div class="dashboard-filter-list dashboard-filter-list--placement-status">
+            ${makeCheckboxes('dashboard-placement-status', placementStatuses, (status) => status === 'Placed' ? 'Placed Students' : 'Yet to be Placed Students')}
           </div>
         </div>
       </div>
@@ -1827,6 +1798,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
   const selectedYears = getCheckedValues('dashboard-year', true);
   const selectedDepts = getCheckedValues('dashboard-dept');
   const selectedInterests = getCheckedValues('dashboard-interest');
+  const selectedPlacementStatuses = getCheckedValues('dashboard-placement-status');
   const selectedVisibleMetrics = getCheckedValues('dashboard-visible-metric');
 
   const codingMin = Number(document.getElementById('coding-min')?.value || 0);
@@ -1863,9 +1835,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
     const tenthOk = tenth === null ? true : inRange(tenth, Math.min(tenthMin, tenthMax), Math.max(tenthMin, tenthMax));
     const twelfthOk = twelfth === null ? true : inRange(twelfth, Math.min(twelfthMin, twelfthMax), Math.max(twelfthMin, twelfthMax));
     const statusLabel = getPlacementStatusLabel(student);
-    const placementStatusOk = currentPlacementStatusQuickFilter === 'all'
-      ? true
-      : statusLabel === currentPlacementStatusQuickFilter;
+    const placementStatusOk = selectedPlacementStatuses.length ? selectedPlacementStatuses.includes(statusLabel) : true;
 
     return yearOk && deptOk && interestOk && codingOk && cgpaOk && tenthOk && twelfthOk && placementStatusOk;
   });
@@ -1888,7 +1858,6 @@ function applyDashboardFilters(staffView, highlightId = null) {
   dashboardFilteredStudents = filtered;
   currentDashboardSortKey = sortKey;
   renderTable(filtered, staffView, highlightId, sortKey);
-  renderPlacementStatusQuickFilters(staffView, highlightId);
 }
 
 function downloadBlob(content, filename, mimeType) {
