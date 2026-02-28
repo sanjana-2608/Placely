@@ -2382,13 +2382,17 @@ function renderLeetCodeStatsCard(data) {
   const hardSolved = Number(data.solved?.hard || 0);
   const totalSolved = Math.max(Number(data.solved?.all || (easySolved + mediumSolved + hardSolved)), 0);
 
-  const segmentTotal = Math.max(easySolved + mediumSolved + hardSolved, 1);
-  const easyPct = (easySolved / segmentTotal) * 100;
-  const mediumPct = (mediumSolved / segmentTotal) * 100;
-  const hardPct = (hardSolved / segmentTotal) * 100;
-  const easyEnd = easyPct;
-  const mediumEnd = easyEnd + mediumPct;
-  const hardEnd = mediumEnd + hardPct;
+  const easyPct = Math.max(0, Math.min(Number(data.acceptanceRates?.easy || 0), 100));
+  const mediumPct = Math.max(0, Math.min(Number(data.acceptanceRates?.medium || 0), 100));
+  const hardPct = Math.max(0, Math.min(Number(data.acceptanceRates?.hard || 0), 100));
+
+  const sector = 100 / 3;
+  const easyStart = 0;
+  const easyEnd = easyStart + (sector * easyPct) / 100;
+  const mediumStart = sector;
+  const mediumEnd = mediumStart + (sector * mediumPct) / 100;
+  const hardStart = sector * 2;
+  const hardEnd = hardStart + (sector * hardPct) / 100;
 
   const formatPct = (value) => `${Math.round(value)}%`;
 
@@ -2396,7 +2400,7 @@ function renderLeetCodeStatsCard(data) {
     <div class="leetcode-pie-card">
       <div class="leetcode-pie-layout">
         <div class="leetcode-pie-wrap">
-          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #fbbf24 ${easyEnd}% ${mediumEnd}%, #ef4444 ${mediumEnd}% ${Math.min(hardEnd, 100)}%);">
+          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd ${easyStart}% ${easyEnd}%, #3a3a3a ${easyEnd}% ${mediumStart}%, #fbbf24 ${mediumStart}% ${mediumEnd}%, #3a3a3a ${mediumEnd}% ${hardStart}%, #ef4444 ${hardStart}% ${Math.min(hardEnd, 100)}%, #3a3a3a ${Math.min(hardEnd, 100)}% 100%);">
             <div class="leetcode-pie-center">
               <div class="leetcode-pie-total">${totalSolved}</div>
               <div class="leetcode-pie-label">Total Solved</div>
