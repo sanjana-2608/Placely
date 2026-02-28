@@ -1281,6 +1281,25 @@ function renderAnalyticsRightPanel(selectedYear) {
     }
   });
 
+  if (analyticsSelectedDepartment) {
+    const selectedDatasetIndex = deptLabels.indexOf(analyticsSelectedDepartment);
+    if (selectedDatasetIndex >= 0) {
+      const selectedBar = analyticsDeptBarChart.getDatasetMeta(selectedDatasetIndex)?.data?.[0];
+      if (selectedBar) {
+        const tooltipAnchor = {
+          x: Number(selectedBar.x || 0),
+          y: Number(selectedBar.y || 0) - (Number(selectedBar.height || 0) / 2) - 10
+        };
+        const activeElement = [{ datasetIndex: selectedDatasetIndex, index: 0 }];
+        analyticsDeptBarChart.setActiveElements(activeElement);
+        if (analyticsDeptBarChart.tooltip?.setActiveElements) {
+          analyticsDeptBarChart.tooltip.setActiveElements(activeElement, tooltipAnchor);
+        }
+        analyticsDeptBarChart.update();
+      }
+    }
+  }
+
   analyticsPlacementBarChart = new Chart(placementCanvas, {
     type: 'bar',
     data: {
