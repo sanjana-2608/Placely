@@ -2433,9 +2433,9 @@ function renderLeetCodeStatsCard(data) {
         </div>
       </div>
       <div class="leetcode-radial-legend">
-        <span class="easy">Easy</span>
-        <span class="medium">Medium</span>
-        <span class="hard">Hard</span>
+        <span class="easy">Easy <strong>${easySolved}</strong></span>
+        <span class="medium">Medium <strong>${mediumSolved}</strong></span>
+        <span class="hard">Hard <strong>${hardSolved}</strong></span>
       </div>
     </div>
   `;

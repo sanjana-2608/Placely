@@ -394,6 +394,12 @@ nav ul li a:hover {
     gap: 0.3rem;
 }
 
+.leetcode-radial-legend span strong {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f5f5f5;
+}
+
 .leetcode-radial-legend span::before {
     content: '';
     width: 7px;
