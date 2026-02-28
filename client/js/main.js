@@ -2382,18 +2382,21 @@ function renderLeetCodeStatsCard(data) {
   const hardSolved = Number(data.solved?.hard || 0);
   const totalSolved = Math.max(Number(data.solved?.all || (easySolved + mediumSolved + hardSolved)), 0);
 
-  const segmentTotal = Math.max(easySolved + hardSolved + mediumSolved, 1);
+  const segmentTotal = Math.max(easySolved + mediumSolved + hardSolved, 1);
   const easyPct = (easySolved / segmentTotal) * 100;
-  const hardPct = (hardSolved / segmentTotal) * 100;
   const mediumPct = (mediumSolved / segmentTotal) * 100;
+  const hardPct = (hardSolved / segmentTotal) * 100;
   const easyEnd = easyPct;
-  const hardEnd = easyEnd + hardPct;
+  const mediumEnd = easyEnd + mediumPct;
+  const hardEnd = mediumEnd + hardPct;
+
+  const formatPct = (value) => `${Math.round(value)}%`;
 
   return `
     <div class="leetcode-pie-card">
       <div class="leetcode-pie-layout">
         <div class="leetcode-pie-wrap">
-          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #ef4444 ${easyEnd}% ${hardEnd}%, #fbbf24 ${hardEnd}% ${Math.min(hardEnd + mediumPct, 100)}%);">
+          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd 0% ${easyEnd}%, #fbbf24 ${easyEnd}% ${mediumEnd}%, #ef4444 ${mediumEnd}% ${Math.min(hardEnd, 100)}%);">
             <div class="leetcode-pie-center">
               <div class="leetcode-pie-total">${totalSolved}</div>
               <div class="leetcode-pie-label">Total Solved</div>
@@ -2401,9 +2404,21 @@ function renderLeetCodeStatsCard(data) {
           </div>
         </div>
         <div class="leetcode-pie-breakdown">
-          <div><span class="easy">Easy</span> <strong>${easySolved}</strong></div>
-          <div><span class="hard">Hard</span> <strong>${hardSolved}</strong></div>
-          <div><span class="medium">Medium</span> <strong>${mediumSolved}</strong></div>
+          <div class="leetcode-progress-item">
+            <div class="leetcode-progress-head"><span class="easy">Easy</span><strong>${easySolved}</strong></div>
+            <div class="leetcode-progress-track"><span class="leetcode-progress-fill easy" style="width: ${easyPct}%;"></span></div>
+            <div class="leetcode-progress-value">${formatPct(easyPct)}</div>
+          </div>
+          <div class="leetcode-progress-item">
+            <div class="leetcode-progress-head"><span class="medium">Medium</span><strong>${mediumSolved}</strong></div>
+            <div class="leetcode-progress-track"><span class="leetcode-progress-fill medium" style="width: ${mediumPct}%;"></span></div>
+            <div class="leetcode-progress-value">${formatPct(mediumPct)}</div>
+          </div>
+          <div class="leetcode-progress-item">
+            <div class="leetcode-progress-head"><span class="hard">Hard</span><strong>${hardSolved}</strong></div>
+            <div class="leetcode-progress-track"><span class="leetcode-progress-fill hard" style="width: ${hardPct}%;"></span></div>
+            <div class="leetcode-progress-value">${formatPct(hardPct)}</div>
+          </div>
         </div>
       </div>
     </div>

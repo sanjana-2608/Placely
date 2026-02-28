@@ -407,6 +407,51 @@ nav ul li a:hover {
     font-size: 0.9rem;
 }
 
+.leetcode-progress-item {
+    width: 100%;
+}
+
+.leetcode-progress-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.25rem;
+}
+
+.leetcode-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.leetcode-progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.leetcode-progress-fill.easy {
+    background: #21d4fd;
+}
+
+.leetcode-progress-fill.medium {
+    background: #fbbf24;
+}
+
+.leetcode-progress-fill.hard {
+    background: #ef4444;
+}
+
+.leetcode-progress-value {
+    margin-top: 0.2rem;
+    color: #9ca3af;
+    font-size: 0.78rem;
+}
+
 .leetcode-pie-breakdown .easy {
     color: #21d4fd;
 }
