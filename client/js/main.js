@@ -1783,7 +1783,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         </div>
 
         <div class="dashboard-filter-group dashboard-filter-group--interest">
-          <h4>Placement Interest</h4>
+          <h4>Interest</h4>
           <div class="dashboard-filter-list dashboard-filter-list--interest">
             ${makeCheckboxes('dashboard-interest', interests)}
           </div>
