@@ -1793,11 +1793,8 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
   };
 
   const baseOrder = [...dashboardMetricOrder];
-  const selectedColumn = columnDefs[sortKey] ? sortKey : 'codingProblems';
   const visibleColumns = baseOrder.filter((key) => dashboardVisibleMetrics.has(key));
-  const orderedColumns = visibleColumns.includes(selectedColumn)
-    ? [selectedColumn, ...visibleColumns.filter((key) => key !== selectedColumn)]
-    : visibleColumns;
+  const orderedColumns = visibleColumns;
 
   const tableHtml = `<table><thead><tr>
     <th>Name</th>
