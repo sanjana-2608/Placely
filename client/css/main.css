@@ -2520,3 +2520,54 @@ body.light-mode .company-apply-btn:hover {
         flex: 0 0 240px;
     }
 }
+
+.placement-status-boxes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0.25rem 0 1rem 0;
+}
+
+.placement-status-box {
+    border: 1px solid rgba(254, 197, 36, 0.28);
+    background: rgba(255, 255, 255, 0.02);
+    color: #f5f5f5;
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.placement-status-box.active {
+    border-color: #FEC524;
+    background: rgba(254, 197, 36, 0.14);
+}
+
+.placement-status-box-label {
+    display: block;
+    font-size: 0.9rem;
+    color: #d8d8d8;
+}
+
+.placement-status-box-count {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 1.2rem;
+    color: #f5f5f5;
+}
+
+body.light-mode .placement-status-box {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.03);
+    color: #1f2937;
+}
+
+body.light-mode .placement-status-box.active {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.12);
+}
+
+body.light-mode .placement-status-box-label,
+body.light-mode .placement-status-box-count {
+    color: #1f2937;
+}

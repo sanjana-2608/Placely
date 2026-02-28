@@ -90,6 +90,7 @@ let dashboardFilteredStudents = [];
 let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let currentDashboardSortKey = 'codingProblems';
+let currentPlacementStatusQuickFilter = 'all';
 const dashboardMetricOrder = [
   'codingProblems',
   'year',
@@ -842,6 +843,41 @@ function getPlacementStatusLabel(student) {
   return 'Yet to be Placed';
 }
 
+function renderPlacementStatusQuickFilters(staffView, highlightId = null) {
+  const container = document.getElementById('dashboard-placement-status-boxes');
+  if (!container || !staffView) {
+    return;
+  }
+
+  const source = Array.isArray(students) ? students : [];
+  const placedCount = source.filter((student) => getPlacementStatusLabel(student) === 'Placed').length;
+  const yetToBePlacedCount = source.filter((student) => getPlacementStatusLabel(student) === 'Yet to be Placed').length;
+
+  const boxHtml = (status, label, count) => {
+    const active = currentPlacementStatusQuickFilter === status;
+    return `
+      <button type="button" class="placement-status-box ${active ? 'active' : ''}" data-placement-status="${status}">
+        <span class="placement-status-box-label">${label}</span>
+        <strong class="placement-status-box-count">${count}</strong>
+      </button>
+    `;
+  };
+
+  container.innerHTML = `
+    ${boxHtml('Placed', 'Placed', placedCount)}
+    ${boxHtml('Yet to be Placed', 'Yet to be Placed', yetToBePlacedCount)}
+  `;
+
+  container.querySelectorAll('.placement-status-box').forEach((button) => {
+    button.addEventListener('click', () => {
+      const nextStatus = button.dataset.placementStatus || 'all';
+      currentPlacementStatusQuickFilter = nextStatus;
+      renderPlacementStatusQuickFilters(staffView, highlightId);
+      applyDashboardFilters(staffView, highlightId);
+    });
+  });
+}
+
 function getInterestStateKey(category) {
   if (category === 'Higher Studies') return 'higher-studies';
   if (category === 'Entrepreneurship') return 'entrepreneurship';
@@ -1195,11 +1231,12 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
-    dash.innerHTML = `${isStaffDemoMode() ? '<div class="staff-demo-badge">Staff Demo Mode</div>' : ''}<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div>`;
+    dash.innerHTML = `${isStaffDemoMode() ? '<div class="staff-demo-badge">Staff Demo Mode</div>' : ''}<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="dashboard-placement-status-boxes" class="placement-status-boxes"></div><div id="staff-table"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
     renderTable(defaultSortedStudents, true);
+    renderPlacementStatusQuickFilters(true);
   } else {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
@@ -1812,8 +1849,12 @@ function applyDashboardFilters(staffView, highlightId = null) {
     const cgpaOk = inRange(cgpa, Math.min(cgpaMin, cgpaMax), Math.max(cgpaMin, cgpaMax));
     const tenthOk = tenth === null ? true : inRange(tenth, Math.min(tenthMin, tenthMax), Math.max(tenthMin, tenthMax));
     const twelfthOk = twelfth === null ? true : inRange(twelfth, Math.min(twelfthMin, twelfthMax), Math.max(twelfthMin, twelfthMax));
+    const statusLabel = getPlacementStatusLabel(student);
+    const placementStatusOk = currentPlacementStatusQuickFilter === 'all'
+      ? true
+      : statusLabel === currentPlacementStatusQuickFilter;
 
-    return yearOk && deptOk && interestOk && codingOk && cgpaOk && tenthOk && twelfthOk;
+    return yearOk && deptOk && interestOk && codingOk && cgpaOk && tenthOk && twelfthOk && placementStatusOk;
   });
 
   const numericSortKeys = new Set(['codingProblems', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'internships', 'certifications', 'year']);
@@ -1834,6 +1875,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
   dashboardFilteredStudents = filtered;
   currentDashboardSortKey = sortKey;
   renderTable(filtered, staffView, highlightId, sortKey);
+  renderPlacementStatusQuickFilters(staffView, highlightId);
 }
 
 function downloadBlob(content, filename, mimeType) {
