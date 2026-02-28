@@ -345,6 +345,9 @@ nav ul li a:hover {
 .leetcode-pie-wrap {
     display: flex;
     justify-content: center;
+    position: relative;
+    width: 190px;
+    height: 190px;
 }
 
 .leetcode-pie-ring {
@@ -357,6 +360,21 @@ nav ul li a:hover {
     position: relative;
 }
 
+.leetcode-pie-dividers {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        rgba(255, 255, 255, 0.28) 0deg 1deg,
+        transparent 1deg 119deg,
+        rgba(255, 255, 255, 0.28) 119deg 121deg,
+        transparent 121deg 239deg,
+        rgba(255, 255, 255, 0.28) 239deg 241deg,
+        transparent 241deg 360deg
+    );
+    z-index: 1;
+}
+
 .leetcode-pie-ring::after {
     content: '';
     position: absolute;
@@ -367,8 +385,61 @@ nav ul li a:hover {
 
 .leetcode-pie-center {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     text-align: center;
+}
+
+.leetcode-pie-markers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.leetcode-pie-marker {
+    position: absolute;
+    font-size: 0.7rem;
+    color: #d1d5db;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.leetcode-pie-marker::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.leetcode-pie-marker--easy {
+    top: 6px;
+    right: 12px;
+}
+
+.leetcode-pie-marker--easy::before {
+    background: #21d4fd;
+}
+
+.leetcode-pie-marker--medium {
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+}
+
+.leetcode-pie-marker--medium::before {
+    background: #fbbf24;
+}
+
+.leetcode-pie-marker--hard {
+    top: 6px;
+    left: 12px;
+}
+
+.leetcode-pie-marker--hard::before {
+    background: #ef4444;
 }
 
 .leetcode-pie-total {

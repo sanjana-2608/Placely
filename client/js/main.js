@@ -2401,10 +2401,16 @@ function renderLeetCodeStatsCard(data) {
       <div class="leetcode-pie-layout">
         <div class="leetcode-pie-wrap">
           <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd ${easyStart}% ${easyEnd}%, #3a3a3a ${easyEnd}% ${mediumStart}%, #fbbf24 ${mediumStart}% ${mediumEnd}%, #3a3a3a ${mediumEnd}% ${hardStart}%, #ef4444 ${hardStart}% ${Math.min(hardEnd, 100)}%, #3a3a3a ${Math.min(hardEnd, 100)}% 100%);">
+            <div class="leetcode-pie-dividers"></div>
             <div class="leetcode-pie-center">
               <div class="leetcode-pie-total">${totalSolved}</div>
               <div class="leetcode-pie-label">Total Solved</div>
             </div>
+          </div>
+          <div class="leetcode-pie-markers">
+            <span class="leetcode-pie-marker leetcode-pie-marker--easy">Easy</span>
+            <span class="leetcode-pie-marker leetcode-pie-marker--medium">Medium</span>
+            <span class="leetcode-pie-marker leetcode-pie-marker--hard">Hard</span>
           </div>
         </div>
         <div class="leetcode-pie-breakdown">
