@@ -354,8 +354,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light-mode'); document.getElementById('darkmode-toggle').textContent = '☀️'; }
 
   if (!document.getElementById('login-section')) {
+    isStaff = true;
+    currentUser = null;
     initializeApp();
-    showSection('home-section');
+    showSection('dashboard-section');
   }
   
   // Check for login callback or existing session
