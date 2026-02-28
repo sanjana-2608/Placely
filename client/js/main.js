@@ -88,7 +88,7 @@ let isStaff = false;
 let currentLoginTab = 'student';
 let dashboardFilteredStudents = [];
 let currentDashboardSortKey = 'codingProblems';
-const dashboardMetricOrder = ['codingProblems', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'year', 'interest'];
+const dashboardMetricOrder = ['codingProblems', 'year', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'interest'];
 const dashboardMetricLabels = {
   codingProblems: 'Coding Problems',
   internships: 'Internships',
@@ -100,6 +100,40 @@ const dashboardMetricLabels = {
   interest: 'Interest'
 };
 let dashboardVisibleMetrics = new Set(dashboardMetricOrder);
+
+function getYearNumber(value) {
+  const numericValue = Number(value);
+  if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 4) {
+    return numericValue;
+  }
+
+  const normalized = String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const map = {
+    '1': 1,
+    'first': 1,
+    'first year': 1,
+    '2': 2,
+    'second': 2,
+    'second year': 2,
+    '3': 3,
+    'third': 3,
+    'third year': 3,
+    '4': 4,
+    'fourth': 4,
+    'fourth year': 4
+  };
+
+  return map[normalized] || 0;
+}
+
+function getYearLabel(value) {
+  const yearNumber = getYearNumber(value);
+  if (yearNumber === 1) return 'First';
+  if (yearNumber === 2) return 'Second';
+  if (yearNumber === 3) return 'Third';
+  if (yearNumber === 4) return 'Fourth';
+  return String(value || 'N/A');
+}
 
 const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
 
@@ -730,14 +764,14 @@ function getYearDistributionBuckets() {
   ]);
 
   students.forEach((student) => {
-    const year = Number(student.year || 0);
+    const year = getYearNumber(student.year);
     if (map.has(year)) {
       map.set(year, map.get(year) + 1);
     }
   });
 
   return {
-    labels: ['First Year', 'Second Year', 'Third Year', 'Fourth Year'],
+    labels: ['First', 'Second', 'Third', 'Fourth'],
     values: [map.get(1), map.get(2), map.get(3), map.get(4)]
   };
 }
@@ -747,7 +781,7 @@ function renderAnalyticsRightPanel(selectedYear) {
   const yearData = getYearDistributionBuckets();
 
   const selectedStudents = Number.isInteger(selectedYear)
-    ? students.filter((student) => Number(student.year || 0) === selectedYear)
+    ? students.filter((student) => getYearNumber(student.year) === selectedYear)
     : [...students];
 
   const selectedLabel = Number.isInteger(selectedYear)
@@ -1186,7 +1220,7 @@ function renderStudentAnalytics(container) {
     
     const yearCounts = {};
     students.forEach(s => {
-      const yr = 'Year ' + s.year;
+      const yr = getYearLabel(s.year);
       yearCounts[yr] = (yearCounts[yr] || 0) + 1;
     });
     
@@ -1329,8 +1363,8 @@ function renderStaffAnalytics(container) {
   });
   
   setTimeout(() => {
-    const year3Students = students.filter(s => s.year === 3);
-    const year4Students = students.filter(s => s.year === 4);
+    const year3Students = students.filter(s => getYearNumber(s.year) === 3);
+    const year4Students = students.filter(s => getYearNumber(s.year) === 4);
     
     const criteria = ['Placed', 'Interested', 'Uninterested', 'Higher Studies'];
     
@@ -1372,7 +1406,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   }
 
   const source = Array.isArray(students) ? [...students] : [];
-  const years = [...new Set(source.map((student) => Number(student.year || 0)).filter(Boolean))].sort((a, b) => a - b);
+  const years = [...new Set(source.map((student) => getYearNumber(student.year)).filter(Boolean))].sort((a, b) => a - b);
   const departments = [...new Set(source.map((student) => String(student.dept || '').trim()).filter(Boolean))].sort();
   const interests = [...new Set(source.map((student) => getInterestCategory(student.interest)).filter(Boolean))].sort();
 
@@ -1408,13 +1442,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     </label>
   `).join('');
 
-  const formatYearLabel = (year) => {
-    if (Number(year) === 1) return 'First Year';
-    if (Number(year) === 2) return 'Second Year';
-    if (Number(year) === 3) return 'Third Year';
-    if (Number(year) === 4) return 'Fourth Year';
-    return `Year ${year}`;
-  };
+  const formatYearLabel = (year) => getYearLabel(year);
 
   container.innerHTML = `
     <div class="dashboard-filter-toolbar">
@@ -1635,7 +1663,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
   };
 
   let filtered = [...students].filter((student) => {
-    const year = Number(student.year || 0);
+    const year = getYearNumber(student.year);
     const coding = Number(student.codingProblems || 0);
     const cgpa = Number(student.gradePoints || 0);
     const tenth = toNumberOrNull(student.tenthPercentage);
@@ -1656,7 +1684,11 @@ function applyDashboardFilters(staffView, highlightId = null) {
   filtered.sort((a, b) => {
     let compare = 0;
     if (numericSortKeys.has(sortKey)) {
-      compare = Number(a[sortKey] || 0) - Number(b[sortKey] || 0);
+      if (sortKey === 'year') {
+        compare = getYearNumber(a.year) - getYearNumber(b.year);
+      } else {
+        compare = Number(a[sortKey] || 0) - Number(b[sortKey] || 0);
+      }
     } else {
       compare = String(a[sortKey] || '').localeCompare(String(b[sortKey] || ''));
     }
@@ -1688,7 +1720,7 @@ function getFilteredExportRows() {
     gradePoints: (student) => student.gradePoints || '',
     tenthPercentage: (student) => student.tenthPercentage ?? '',
     twelfthPercentage: (student) => student.twelfthPercentage ?? '',
-    year: (student) => student.year || '',
+    year: (student) => getYearLabel(student.year),
     interest: (student) => student.interest || ''
   };
 
@@ -1752,7 +1784,7 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     },
     year: {
       header: 'Year',
-      cell: (s) => `<span id="val-year-${s.id}">${s.year}</span>${staffView ? `<input type="number" id="input-year-${s.id}" value="${s.year}" style="display:none;">` : ''}`
+      cell: (s) => `<span id="val-year-${s.id}">${getYearLabel(s.year)}</span>${staffView ? `<input type="number" id="input-year-${s.id}" min="1" max="4" value="${getYearNumber(s.year) || ''}" style="display:none;">` : ''}`
     },
     interest: {
       header: 'Interest',
@@ -1800,7 +1832,7 @@ function toggleEdit(studentId) {
     const input = document.getElementById(`input-${field}-${studentId}`);
     if (!isEditing) {
       // Enter edit mode
-      input.value = span.textContent;
+      input.value = field === 'year' ? String(getYearNumber(student.year) || '') : span.textContent;
       span.style.display = 'none';
       input.style.display = 'inline-block';
       input.style.background = '#0a0a0a';
@@ -1873,7 +1905,7 @@ function saveEdit(studentId) {
       span.textContent = interest;
       if (select) select.style.display = 'none';
     } else {
-      span.textContent = field === 'problems' ? problems : field === 'internships' ? internships : field === 'certs' ? certs : field === 'grade' ? grade : year;
+      span.textContent = field === 'problems' ? problems : field === 'internships' ? internships : field === 'certs' ? certs : field === 'grade' ? grade : getYearLabel(year);
     }
     span.style.display = 'inline';
     if (input) input.style.display = 'none';

@@ -305,6 +305,28 @@ def _student_to_db(payload):
     return mapped
 
 
+def _normalize_year_number(value):
+    try:
+        numeric_value = int(value)
+        if 1 <= numeric_value <= 4:
+            return numeric_value
+    except (TypeError, ValueError):
+        pass
+
+    normalized = str(value or '').strip().lower()
+    mapping = {
+        'first': 1,
+        'first year': 1,
+        'second': 2,
+        'second year': 2,
+        'third': 3,
+        'third year': 3,
+        'fourth': 4,
+        'fourth year': 4,
+    }
+    return mapping.get(normalized, 0)
+
+
 def get_students_data():
     if not supabase:
         return students
@@ -1043,7 +1065,7 @@ def get_placed_students():
 @app.route('/api/analytics/year/<int:year>')
 def get_year_analytics(year):
     students_data = get_students_data()
-    year_students = [s for s in students_data if s['year'] == year]
+    year_students = [s for s in students_data if _normalize_year_number(s.get('year')) == year]
     criteria = ['Placed', 'Interested', 'Uninterested', 'Higher Studies']
     counts = {c: sum(1 for s in year_students if s['interest'] == c) for c in criteria}
     return jsonify({'year': year, 'data': counts})
