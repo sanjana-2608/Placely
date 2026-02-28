@@ -739,15 +739,34 @@ table tr:hover {
 
 .dashboard-filter-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.9rem;
 }
 
-.dashboard-metric-stack {
-    display: flex;
-    flex-direction: column;
+.dashboard-filter-group--year {
+    grid-column: span 1;
+}
+
+.dashboard-filter-group--departments {
+    grid-column: span 2;
+}
+
+.dashboard-filter-group--interest {
+    grid-column: span 1;
+}
+
+.dashboard-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.75rem;
     margin-top: 0.75rem;
+}
+
+.dashboard-filter-group--coding,
+.dashboard-filter-group--cgpa,
+.dashboard-filter-group--tenth,
+.dashboard-filter-group--twelfth {
+    grid-column: span 2;
 }
 
 .dashboard-filter-group {
@@ -767,6 +786,10 @@ table tr:hover {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 0.45rem;
+}
+
+.dashboard-filter-list--departments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .dashboard-filter-check {
@@ -791,6 +814,15 @@ table tr:hover {
     flex-direction: column;
     gap: 0.3rem;
     font-size: 0.82rem;
+}
+
+.dashboard-filter-group--inline-range .dashboard-range-wrap {
+    flex-direction: row;
+    gap: 0.6rem;
+}
+
+.dashboard-filter-group--inline-range .dashboard-number-range {
+    flex: 1 1 0;
 }
 
 .dashboard-number-range {
@@ -1941,6 +1973,26 @@ body.light-mode .company-apply-btn:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .dashboard-filter-grid,
+    .dashboard-metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-filter-group--year,
+    .dashboard-filter-group--departments,
+    .dashboard-filter-group--interest,
+    .dashboard-filter-group--coding,
+    .dashboard-filter-group--cgpa,
+    .dashboard-filter-group--tenth,
+    .dashboard-filter-group--twelfth {
+        grid-column: span 1;
+    }
+
+    .dashboard-filter-group--inline-range .dashboard-range-wrap {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
     .dashboard-filter-actions {
         justify-content: stretch;
     }
@@ -2017,6 +2069,10 @@ body.light-mode .company-apply-btn:hover {
     }
 
     .dashboard-filter-list {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-filter-list--departments {
         grid-template-columns: 1fr;
     }
 

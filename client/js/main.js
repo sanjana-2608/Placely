@@ -1435,21 +1435,21 @@ function initializeDashboardFilters(staffView, highlightId = null) {
           <button type="button" id="dashboard-filter-close" class="dashboard-filter-close" aria-label="Close filters">×</button>
         </div>
       <div class="dashboard-filter-grid">
-        <div class="dashboard-filter-group">
-          <h4>Years</h4>
+        <div class="dashboard-filter-group dashboard-filter-group--year">
+          <h4>Year</h4>
           <div class="dashboard-filter-list">
             ${makeCheckboxes('dashboard-year', years, formatYearLabel)}
           </div>
         </div>
 
-        <div class="dashboard-filter-group">
+        <div class="dashboard-filter-group dashboard-filter-group--departments">
           <h4>Departments</h4>
-          <div class="dashboard-filter-list">
+          <div class="dashboard-filter-list dashboard-filter-list--departments">
             ${makeCheckboxes('dashboard-dept', departments)}
           </div>
         </div>
 
-        <div class="dashboard-filter-group">
+        <div class="dashboard-filter-group dashboard-filter-group--interest">
           <h4>Placement Interest</h4>
           <div class="dashboard-filter-list">
             ${makeCheckboxes('dashboard-interest', interests)}
@@ -1457,8 +1457,8 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         </div>
       </div>
 
-      <div class="dashboard-metric-stack">
-        <div class="dashboard-filter-group">
+      <div class="dashboard-metric-grid">
+        <div class="dashboard-filter-group dashboard-filter-group--coding dashboard-filter-group--inline-range">
           <h4>Coding Problems</h4>
           <div class="dashboard-range-wrap">
             <div class="dashboard-number-range">
@@ -1472,7 +1472,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
           </div>
         </div>
 
-        <div class="dashboard-filter-group">
+        <div class="dashboard-filter-group dashboard-filter-group--cgpa dashboard-filter-group--inline-range">
           <h4>CGPA</h4>
           <div class="dashboard-range-wrap">
             <div class="dashboard-number-range">
@@ -1486,7 +1486,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
           </div>
         </div>
 
-        <div class="dashboard-filter-group">
+        <div class="dashboard-filter-group dashboard-filter-group--tenth dashboard-filter-group--inline-range">
           <h4>10th %</h4>
           <div class="dashboard-range-wrap">
             <div class="dashboard-number-range">
@@ -1500,7 +1500,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
           </div>
         </div>
 
-        <div class="dashboard-filter-group">
+        <div class="dashboard-filter-group dashboard-filter-group--twelfth dashboard-filter-group--inline-range">
           <h4>12th %</h4>
           <div class="dashboard-range-wrap">
             <div class="dashboard-number-range">
