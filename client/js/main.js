@@ -2347,19 +2347,118 @@ async function saveAnalyticsProfileEdit(studentId) {
 }
 
 function renderStudentProfileEditForm(profileContent, student) {
+  const buildInlineControl = (fieldKey) => {
+    const value = getDashboardFieldRawValue(student, fieldKey);
+    const config = dashboardEditableFieldConfigs[fieldKey] || { type: 'text' };
+    const selectOptions = getAnalyticsProfileSelectOptions(fieldKey, value);
+
+    if (selectOptions) {
+      const options = selectOptions.map((option) => {
+        const optionValue = String(option);
+        return `<option value="${escapeHtmlAttribute(optionValue)}" ${String(value ?? '') === optionValue ? 'selected' : ''}>${optionValue}</option>`;
+      }).join('');
+      return `<select data-student-profile-field="${fieldKey}" class="dashboard-inline-edit-control" style="width: 100%;">${options}</select>`;
+    }
+
+    const attributes = [
+      `type="${config.type || 'text'}"`,
+      `data-student-profile-field="${fieldKey}"`,
+      'class="dashboard-inline-edit-control"',
+      `value="${escapeHtmlAttribute(value)}"`,
+      'style="width: 100%;"'
+    ];
+    if (config.min !== undefined) {
+      attributes.push(`min="${config.min}"`);
+    }
+    if (config.max !== undefined) {
+      attributes.push(`max="${config.max}"`);
+    }
+    if (config.step !== undefined) {
+      attributes.push(`step="${config.step}"`);
+    }
+
+    return `<input ${attributes.join(' ')}>`;
+  };
+
+  const displayName = student.name || 'N/A';
+  const displayPhoto = student.linkedinPhotoUrl || '';
+
   profileContent.innerHTML = `
-    <div class="company-modal-header" style="margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
-      <div>
-        <h3 style="margin: 0 0 0.2rem 0;">Edit Your Profile</h3>
-        <p style="margin: 0; color: #999;">Update details and save to your profile.</p>
+    <div class="company-modal-header" style="margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+      <div style="display: flex; gap: 0.6rem; align-items: center;">
+        <button type="button" id="student-profile-save" class="dashboard-filter-action-btn">Save</button>
+        <button type="button" id="student-profile-cancel" class="analytics-profile-action-btn">Cancel</button>
       </div>
-      <button type="button" id="student-profile-cancel" class="analytics-profile-action-btn">Cancel</button>
+      <p style="margin: 0; color: #999;">Edit directly on this profile page.</p>
     </div>
-    <div class="analytics-profile-edit-grid">
-      ${profileEditFieldEntries.map(([key, label]) => buildAnalyticsProfileEditField(student, key, label).replace(/data-profile-field=/g, 'data-student-profile-field=')).join('')}
+
+    <div class="profile-summary-grid" style="margin-bottom: 1rem;">
+      <div class="card profile-summary-card profile-summary-card--identity">
+        <div class="profile-summary-header" style="flex-direction: column; align-items: center; text-align: center; gap: 1rem;">
+          ${displayPhoto
+            ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium" style="width: 120px; height: 120px; border-radius: 50%;">`
+            : `<div class="profile-avatar-fallback profile-avatar-medium" style="width: 120px; height: 120px;">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
+          <div class="profile-identity-block" style="width: 100%; display: grid; gap: 0.5rem;">
+            ${buildInlineControl('name')}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              ${buildInlineControl('dept')}
+              ${buildInlineControl('year')}
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333; display: grid; gap: 0.5rem;">
+          ${buildInlineControl('email')}
+          ${buildInlineControl('interest')}
+          <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
+            ${student.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
+          </button>
+        </div>
+      </div>
+
+      <div class="card profile-summary-card profile-summary-card--leetcode">
+        <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+          <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
+          <div style="text-align: right; font-size: 0.85rem; color: #999;">
+            Rank ${student.leetcodeRanking ? '#' + Number(student.leetcodeRanking).toLocaleString() : 'N/A'}
+          </div>
+        </div>
+        <div style="margin-bottom: 0.6rem;">${buildInlineControl('leetcodeUsername')}</div>
+        <div id="leetcode-stats-container"></div>
+      </div>
+
+      <div class="card profile-summary-card profile-summary-card--academics">
+        <h4 class="profile-box-title">Academics</h4>
+        <div class="profile-academics-list" style="display: grid; gap: 0.5rem;">
+          ${buildInlineControl('gradePoints')}
+          ${buildInlineControl('twelfthPercentage')}
+          ${buildInlineControl('tenthPercentage')}
+          ${buildInlineControl('diplomaPercentage')}
+          ${buildInlineControl('registerNo')}
+          ${buildInlineControl('section')}
+          ${buildInlineControl('gender')}
+          ${buildInlineControl('rollNo')}
+        </div>
+      </div>
     </div>
-    <div class="analytics-profile-edit-actions">
-      <button type="button" id="student-profile-save" class="dashboard-filter-action-btn">Save</button>
+
+    <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
+      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
+      <div class="profile-percentile-list" style="display: grid; gap: 0.5rem;">
+        ${buildInlineControl('preferredRoles')}
+        ${buildInlineControl('preferredShift')}
+        ${buildInlineControl('travelPriority')}
+        ${buildInlineControl('achievements')}
+        ${buildInlineControl('placementStatus')}
+        ${buildInlineControl('residencyType')}
+        ${buildInlineControl('collegeMail')}
+        ${buildInlineControl('personalMail')}
+        ${buildInlineControl('contactNo')}
+        ${buildInlineControl('address')}
+        ${buildInlineControl('resumeLink')}
+        ${buildInlineControl('internships')}
+        ${buildInlineControl('certifications')}
+        ${buildInlineControl('leetcodeSolvedAll')}
+      </div>
     </div>
   `;
 
@@ -2374,6 +2473,15 @@ function renderStudentProfileEditForm(profileContent, student) {
       studentProfileEditMode = false;
       renderProfile();
     });
+  }
+
+  if (student.leetcodeUsername) {
+    fetchAndDisplayLeetCodeStats(student.leetcodeUsername, 'leetcode-stats-container');
+  } else {
+    const leetcodeContainer = document.getElementById('leetcode-stats-container');
+    if (leetcodeContainer) {
+      leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
+    }
   }
 }
 
