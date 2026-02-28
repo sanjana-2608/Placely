@@ -94,7 +94,7 @@ Placely/
 
 ### Analytics
 - Year-wise placement distribution (3rd & 4th year)
-- Placement status breakdown (Placed, Interested, Uninterested, Higher Studies)
+- Placement status breakdown (Placements, Higher Studies, Entrepreneurship)
 - Interactive pie charts
 - Sorting options by multiple criteria
 

@@ -1068,8 +1068,16 @@ def get_placed_students():
 def get_year_analytics(year):
     students_data = get_students_data()
     year_students = [s for s in students_data if _normalize_year_number(s.get('year')) == year]
-    criteria = ['Placed', 'Interested', 'Uninterested', 'Higher Studies']
-    counts = {c: sum(1 for s in year_students if s['interest'] == c) for c in criteria}
+    criteria = ['Placements', 'Higher Studies', 'Entrepreneurship']
+    counts = {c: 0 for c in criteria}
+    for student in year_students:
+        normalized_interest = str(student.get('interest') or '').strip().lower()
+        if normalized_interest == 'higher studies':
+            counts['Higher Studies'] += 1
+        elif normalized_interest == 'entrepreneurship':
+            counts['Entrepreneurship'] += 1
+        else:
+            counts['Placements'] += 1
     return jsonify({'year': year, 'data': counts})
 
 

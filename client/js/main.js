@@ -146,7 +146,7 @@ const dashboardMetricLabels = {
 };
 let dashboardVisibleMetrics = new Set(dashboardMetricOrder);
 
-const dashboardInterestOptions = ['Interested', 'Not interested', 'Going for Higher studies', 'Interested in becoming an entrepreneur'];
+const dashboardInterestOptions = ['Placements', 'Higher Studies', 'Entrepreneurship'];
 const dashboardEditableFieldOrder = ['name', ...dashboardMetricOrder];
 const dashboardEditableFieldConfigs = {
   name: { type: 'text' },
@@ -959,9 +959,9 @@ function closeCompanyDetailsModal() {
 
 function getInterestCategory(interest) {
   const normalized = String(interest || '').trim().toLowerCase();
-  if (normalized.includes('higher')) return 'Higher Studies';
-  if (normalized.includes('entrepreneur')) return 'Entrepreneurship';
-  if (normalized.includes('placed') || normalized.includes('placement') || normalized.includes('interested')) return 'Placements';
+  if (normalized === 'higher studies') return 'Higher Studies';
+  if (normalized === 'entrepreneurship') return 'Entrepreneurship';
+  if (normalized === 'placements') return 'Placements';
   return 'Placements';
 }
 
@@ -1540,10 +1540,7 @@ function renderStudentAnalytics(container) {
     const avgInternships = students.reduce((sum, s) => sum + Number(s.internships || 0), 0) / totalStudents;
     const avgCerts = students.reduce((sum, s) => sum + Number(s.certifications || 0), 0) / totalStudents;
     const avgCgpa = students.reduce((sum, s) => sum + Number(s.gradePoints || 0), 0) / totalStudents;
-    const intentRate = (students.filter(s => {
-      const val = String(s.interest || '').trim().toLowerCase();
-      return val === 'interested' || val === 'placed';
-    }).length / totalStudents) * 100;
+    const intentRate = (students.filter((s) => getInterestCategory(s.interest) === 'Placements').length / totalStudents) * 100;
 
     new Chart(document.getElementById('chart-readiness'), {
       type: 'radar',
@@ -1639,15 +1636,15 @@ function renderStaffAnalytics(container) {
     const year3Students = students.filter(s => getYearNumber(s.year) === 3);
     const year4Students = students.filter(s => getYearNumber(s.year) === 4);
     
-    const criteria = ['Placed', 'Interested', 'Uninterested', 'Higher Studies'];
+    const criteria = ['Placements', 'Higher Studies', 'Entrepreneurship'];
     
     const countStudentsByCriteria = (data) => {
       const counts = {};
       criteria.forEach(c => counts[c] = 0);
-      data.forEach(s => {
-        const interest = s.interest;
-        if (criteria.includes(interest)) {
-          counts[interest]++;
+      data.forEach((s) => {
+        const interestCategory = getInterestCategory(s.interest);
+        if (criteria.includes(interestCategory)) {
+          counts[interestCategory]++;
         }
       });
       return counts;
@@ -1660,14 +1657,14 @@ function renderStaffAnalytics(container) {
       chartId: 'chart-year3',
       labels: criteria,
       values: criteria.map(c => year3Counts[c]),
-      colors: ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00']
+      colors: ['#00E5FF', '#FF6B00', '#7C4DFF']
     });
     
     renderStyledAnalyticsPieChart({
       chartId: 'chart-year4',
       labels: criteria,
       values: criteria.map(c => year4Counts[c]),
-      colors: ['#00E5FF', '#FF6B00', '#7C4DFF', '#AEEA00']
+      colors: ['#00E5FF', '#FF6B00', '#7C4DFF']
     });
   }, 0);
 }
