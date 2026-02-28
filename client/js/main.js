@@ -978,11 +978,6 @@ function getPlacementStatusLabel(student) {
     if (explicit.includes('yet')) return 'Yet to be Placed';
     if (explicit.includes('placed')) return 'Placed';
   }
-
-  const interestRaw = String(student?.interest || '').trim().toLowerCase();
-  if (interestRaw === 'placed') {
-    return 'Placed';
-  }
   return 'Yet to be Placed';
 }
 
@@ -1035,6 +1030,7 @@ function renderAnalyticsInsights(container) {
 let analyticsStudentDistributionChart = null;
 let analyticsDeptBarChart = null;
 let analyticsPlacementBarChart = null;
+let analyticsSelectedDepartment = null;
 
 function getYearDistributionBuckets() {
   const map = new Map([
@@ -1079,21 +1075,29 @@ function renderAnalyticsRightPanel(selectedYear) {
     deptCounts[dept] = (deptCounts[dept] || 0) + 1;
   });
 
-  const interestCounts = { Placements: 0, 'Higher Studies': 0, Entrepreneurship: 0 };
-  selectedStudents.forEach((student) => {
-    const category = getInterestCategory(student.interest);
-    if (interestCounts[category] !== undefined) {
-      interestCounts[category] += 1;
-    }
-  });
-
   const deptLabels = Object.keys(deptCounts);
   const deptValues = Object.values(deptCounts);
   const deptColors = ['#D9FBE8', '#9EE6C2', '#63CF9D', '#2CB777', '#15965F', '#0E754A', '#085638'];
 
-  const placementLabels = Object.keys(interestCounts);
-  const placementValues = Object.values(interestCounts);
-  const placementColors = ['#9EE6C2', '#2CB777', '#0E754A'];
+  if (analyticsSelectedDepartment && !deptLabels.includes(analyticsSelectedDepartment)) {
+    analyticsSelectedDepartment = null;
+  }
+
+  const statusSourceStudents = analyticsSelectedDepartment
+    ? selectedStudents.filter((student) => String(student.dept || 'Unknown').trim() === analyticsSelectedDepartment)
+    : selectedStudents;
+
+  const placementStatusCounts = { Placed: 0, 'Yet to be Placed': 0 };
+  statusSourceStudents.forEach((student) => {
+    const status = getPlacementStatusLabel(student);
+    if (placementStatusCounts[status] !== undefined) {
+      placementStatusCounts[status] += 1;
+    }
+  });
+
+  const placementLabels = Object.keys(placementStatusCounts);
+  const placementValues = Object.values(placementStatusCounts);
+  const placementColors = ['#2CB777', '#0E754A'];
 
   if (analyticsDeptBarChart) {
     analyticsDeptBarChart.destroy();
@@ -1118,8 +1122,9 @@ function renderAnalyticsRightPanel(selectedYear) {
         label: dept,
         data: [deptValues[index]],
         backgroundColor: deptColors[index % deptColors.length],
-        borderWidth: 0,
-        barThickness: 24,
+        borderColor: analyticsSelectedDepartment === dept ? '#FEC524' : 'transparent',
+        borderWidth: analyticsSelectedDepartment === dept ? 2 : 0,
+        barThickness: analyticsSelectedDepartment === dept ? 28 : 24,
         stack: 'dept'
       }))
     },
@@ -1149,6 +1154,27 @@ function renderAnalyticsRightPanel(selectedYear) {
           ticks: { color: chartTheme.axisTickColor },
           grid: { display: false }
         }
+      },
+      onClick(event, elements, chart) {
+        const clickedElements = chart.getElementsAtEventForMode(
+          event,
+          'nearest',
+          { intersect: true },
+          true
+        );
+
+        if (!clickedElements.length) {
+          if (analyticsSelectedDepartment !== null) {
+            analyticsSelectedDepartment = null;
+            renderAnalyticsRightPanel(selectedYear);
+          }
+          return;
+        }
+
+        const datasetIndex = clickedElements[0].datasetIndex;
+        const clickedDept = deptLabels[datasetIndex];
+        analyticsSelectedDepartment = analyticsSelectedDepartment === clickedDept ? null : clickedDept;
+        renderAnalyticsRightPanel(selectedYear);
       }
     }
   });
@@ -1156,7 +1182,7 @@ function renderAnalyticsRightPanel(selectedYear) {
   analyticsPlacementBarChart = new Chart(placementCanvas, {
     type: 'bar',
     data: {
-      labels: ['Placement Distribution'],
+      labels: ['Placement Status'],
       datasets: placementLabels.map((label, index) => ({
         label,
         data: [placementValues[index]],
@@ -1200,6 +1226,7 @@ function renderAnalyticsRightPanel(selectedYear) {
 function renderUnifiedAnalytics(container) {
   container.style.display = 'block';
   container.style.marginBottom = '2rem';
+  analyticsSelectedDepartment = null;
   container.innerHTML = `
     <div class="analytics-single-layout">
       <div class="chart-card analytics-single-donut-card">
@@ -1215,7 +1242,7 @@ function renderUnifiedAnalytics(container) {
           <div class="analytics-bar-canvas-wrap"><canvas id="analytics-dept-bar"></canvas></div>
         </div>
         <div class="analytics-horizontal-block" style="margin-top: 0.85rem;">
-          <h5 style="margin: 0 0 0.45rem 0;">Placement Distribution</h5>
+          <h5 style="margin: 0 0 0.45rem 0;">Placement Status</h5>
           <div class="analytics-bar-canvas-wrap"><canvas id="analytics-placement-bar"></canvas></div>
         </div>
       </div>
@@ -1310,12 +1337,14 @@ function renderUnifiedAnalytics(container) {
 
         if (!clickedElements.length) {
           selectedIndex = null;
+          analyticsSelectedDepartment = null;
           chart.update();
           renderAnalyticsRightPanel(null);
           return;
         }
         const index = clickedElements[0].index;
         selectedIndex = selectedIndex === index ? null : index;
+        analyticsSelectedDepartment = null;
         chart.update();
         renderAnalyticsRightPanel(selectedIndex === null ? null : (selectedIndex + 1));
       }
