@@ -1067,6 +1067,10 @@ table tr:hover {
     grid-column: span 1;
 }
 
+.dashboard-filter-group--placement-status {
+    grid-column: span 2;
+}
+
 .dashboard-metric-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1106,6 +1110,10 @@ table tr:hover {
 
 .dashboard-filter-list--interest {
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.dashboard-filter-list--placement-status {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
 }
 
 .dashboard-filter-check {
@@ -2366,6 +2374,10 @@ body.light-mode .company-apply-btn:hover {
         grid-template-columns: 1fr;
     }
 
+    .dashboard-filter-list--placement-status {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .dashboard-filter-grid,
     .dashboard-metric-grid {
         grid-template-columns: 1fr;
@@ -2374,6 +2386,7 @@ body.light-mode .company-apply-btn:hover {
     .dashboard-filter-group--year,
     .dashboard-filter-group--departments,
     .dashboard-filter-group--interest,
+    .dashboard-filter-group--placement-status,
     .dashboard-filter-group--coding,
     .dashboard-filter-group--cgpa,
     .dashboard-filter-group--tenth,
