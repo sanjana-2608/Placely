@@ -2382,54 +2382,62 @@ function renderLeetCodeStatsCard(data) {
   const hardSolved = Number(data.solved?.hard || 0);
   const totalSolved = Math.max(Number(data.solved?.all || (easySolved + mediumSolved + hardSolved)), 0);
 
-  const easyPct = Math.max(0, Math.min(Number(data.acceptanceRates?.easy || 0), 100));
-  const mediumPct = Math.max(0, Math.min(Number(data.acceptanceRates?.medium || 0), 100));
-  const hardPct = Math.max(0, Math.min(Number(data.acceptanceRates?.hard || 0), 100));
+  const totalQuestions = Math.max(Number(data.totalQuestions?.all || 3851), 1);
+  const defaultDifficultyTotal = totalQuestions / 3;
+  const easyTotal = Math.max(Number(data.totalQuestions?.easy || defaultDifficultyTotal), 1);
+  const mediumTotal = Math.max(Number(data.totalQuestions?.medium || defaultDifficultyTotal), 1);
+  const hardTotal = Math.max(Number(data.totalQuestions?.hard || defaultDifficultyTotal), 1);
+  const attempting = Math.max(Number(data.attempting || 0), 0);
 
-  const sector = 100 / 3;
-  const easyStart = 0;
-  const easyEnd = easyStart + (sector * easyPct) / 100;
-  const mediumStart = sector;
-  const mediumEnd = mediumStart + (sector * mediumPct) / 100;
-  const hardStart = sector * 2;
-  const hardEnd = hardStart + (sector * hardPct) / 100;
+  const easyProgress = Math.max(0, Math.min(easySolved / easyTotal, 1));
+  const mediumProgress = Math.max(0, Math.min(mediumSolved / mediumTotal, 1));
+  const hardProgress = Math.max(0, Math.min(hardSolved / hardTotal, 1));
 
-  const formatPct = (value) => `${Math.round(value)}%`;
+  const polar = (cx, cy, r, angleDeg) => {
+    const rad = ((angleDeg - 90) * Math.PI) / 180;
+    return {
+      x: cx + (r * Math.cos(rad)),
+      y: cy + (r * Math.sin(rad))
+    };
+  };
+
+  const arcPath = (cx, cy, r, startDeg, endDeg) => {
+    const start = polar(cx, cy, r, startDeg);
+    const end = polar(cx, cy, r, endDeg);
+    const largeArcFlag = endDeg - startDeg <= 180 ? 0 : 1;
+    return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+  };
+
+  const segments = [
+    { key: 'easy', color: '#22d3ee', start: 210, end: 310, progress: easyProgress },
+    { key: 'medium', color: '#fbbf24', start: 330, end: 430, progress: mediumProgress },
+    { key: 'hard', color: '#ef4444', start: 90, end: 190, progress: hardProgress }
+  ];
+
+  const trackPaths = segments.map((segment) => `<path d="${arcPath(100, 100, 74, segment.start, segment.end)}" class="leetcode-radial-track" />`).join('');
+  const fillPaths = segments.map((segment) => {
+    const span = segment.end - segment.start;
+    const fillEnd = segment.start + (span * segment.progress);
+    return `<path d="${arcPath(100, 100, 74, segment.start, fillEnd)}" class="leetcode-radial-fill leetcode-radial-fill--${segment.key}" style="stroke:${segment.color};" />`;
+  }).join('');
 
   return `
     <div class="leetcode-pie-card">
-      <div class="leetcode-pie-layout">
-        <div class="leetcode-pie-wrap">
-          <div class="leetcode-pie-ring" style="background: conic-gradient(#21d4fd ${easyStart}% ${easyEnd}%, #3a3a3a ${easyEnd}% ${mediumStart}%, #fbbf24 ${mediumStart}% ${mediumEnd}%, #3a3a3a ${mediumEnd}% ${hardStart}%, #ef4444 ${hardStart}% ${Math.min(hardEnd, 100)}%, #3a3a3a ${Math.min(hardEnd, 100)}% 100%);">
-            <div class="leetcode-pie-dividers"></div>
-            <div class="leetcode-pie-center">
-              <div class="leetcode-pie-total">${totalSolved}</div>
-              <div class="leetcode-pie-label">Total Solved</div>
-            </div>
-          </div>
-          <div class="leetcode-pie-markers">
-            <span class="leetcode-pie-marker leetcode-pie-marker--easy">Easy</span>
-            <span class="leetcode-pie-marker leetcode-pie-marker--medium">Medium</span>
-            <span class="leetcode-pie-marker leetcode-pie-marker--hard">Hard</span>
-          </div>
+      <div class="leetcode-radial-wrap">
+        <svg class="leetcode-radial-svg" viewBox="0 0 200 200" role="img" aria-label="LeetCode radial progress">
+          ${trackPaths}
+          ${fillPaths}
+        </svg>
+        <div class="leetcode-radial-center">
+          <div class="leetcode-radial-total">${totalSolved}<span>/${totalQuestions}</span></div>
+          <div class="leetcode-radial-label">✓ Solved</div>
+          <div class="leetcode-radial-sub">${attempting} Attempting</div>
         </div>
-        <div class="leetcode-pie-breakdown">
-          <div class="leetcode-progress-item">
-            <div class="leetcode-progress-head"><span class="easy">Easy</span><strong>${easySolved}</strong></div>
-            <div class="leetcode-progress-track"><span class="leetcode-progress-fill easy" style="width: ${easyPct}%;"></span></div>
-            <div class="leetcode-progress-value">${formatPct(easyPct)}</div>
-          </div>
-          <div class="leetcode-progress-item">
-            <div class="leetcode-progress-head"><span class="medium">Medium</span><strong>${mediumSolved}</strong></div>
-            <div class="leetcode-progress-track"><span class="leetcode-progress-fill medium" style="width: ${mediumPct}%;"></span></div>
-            <div class="leetcode-progress-value">${formatPct(mediumPct)}</div>
-          </div>
-          <div class="leetcode-progress-item">
-            <div class="leetcode-progress-head"><span class="hard">Hard</span><strong>${hardSolved}</strong></div>
-            <div class="leetcode-progress-track"><span class="leetcode-progress-fill hard" style="width: ${hardPct}%;"></span></div>
-            <div class="leetcode-progress-value">${formatPct(hardPct)}</div>
-          </div>
-        </div>
+      </div>
+      <div class="leetcode-radial-legend">
+        <span class="easy">Easy</span>
+        <span class="medium">Medium</span>
+        <span class="hard">Hard</span>
       </div>
     </div>
   `;

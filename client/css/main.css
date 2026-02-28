@@ -323,6 +323,118 @@ nav ul li a:hover {
     gap: 0.85rem;
 }
 
+.leetcode-radial-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto;
+}
+
+.leetcode-radial-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.leetcode-radial-track {
+    fill: none;
+    stroke: #3a3a3a;
+    stroke-width: 8;
+    stroke-linecap: round;
+    opacity: 0.9;
+}
+
+.leetcode-radial-fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+}
+
+.leetcode-radial-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.leetcode-radial-total {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f5f5f5;
+    line-height: 1;
+}
+
+.leetcode-radial-total span {
+    font-size: 1rem;
+    color: #bdbdbd;
+    margin-left: 0.15rem;
+}
+
+.leetcode-radial-label {
+    margin-top: 0.55rem;
+    color: #d1d5db;
+    font-size: 1.05rem;
+}
+
+.leetcode-radial-sub {
+    margin-top: 0.85rem;
+    color: #9ca3af;
+    font-size: 0.95rem;
+}
+
+.leetcode-radial-legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.82rem;
+}
+
+.leetcode-radial-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.leetcode-radial-legend span::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.leetcode-radial-legend .easy,
+.leetcode-pie-breakdown .easy {
+    color: #22d3ee;
+}
+
+.leetcode-radial-legend .easy::before {
+    background: #22d3ee;
+}
+
+.leetcode-radial-legend .medium,
+.leetcode-pie-breakdown .medium {
+    color: #fbbf24;
+}
+
+.leetcode-radial-legend .medium::before {
+    background: #fbbf24;
+}
+
+.leetcode-radial-legend .hard,
+.leetcode-pie-breakdown .hard {
+    color: #ef4444;
+}
+
+.leetcode-radial-legend .hard::before {
+    background: #ef4444;
+}
+
 .leetcode-pie-meta h5 {
     margin: 0;
     font-size: 1rem;
