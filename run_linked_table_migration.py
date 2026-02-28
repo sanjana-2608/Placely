@@ -43,8 +43,8 @@ SQL_STATEMENTS = [
       s.name,
       s.dept,
       case when coalesce(s.year::text, '') ~ '^[0-9]+$' then s.year::integer else null end as year,
-      coalesce(pp.profile_name, '') as linkedin_username,
-      coalesce(pp.profile_url, '') as linkedin_profile_url,
+      coalesce(to_jsonb(pp)->>'profile_name', '') as linkedin_username,
+      coalesce(to_jsonb(pp)->>'profile_url', '') as linkedin_profile_url,
       now(),
       now()
     from public.students s
