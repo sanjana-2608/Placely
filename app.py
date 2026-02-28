@@ -204,7 +204,7 @@ _LIVE_INTERNSHIPS_CACHE = {
 STUDENT_LEETCODE_TABLE = 'student_leetcode_profiles'
 STUDENT_ACADEMIC_TABLE = 'student_academic_metrics'
 STUDENT_PROFILE_TABLE = 'student_profile_preferences'
-STUDENT_LINKED_TABLE = 'linked'
+STUDENT_LINKED_TABLE = 'linkedin'
 
 LEETCODE_FIELD_MAP = {
     'leetcodeUsername': 'leetcode_username',
@@ -1208,9 +1208,22 @@ def get_leetcode_profiles_for_students():
 
 @app.route('/api/students/<int:student_id>', methods=['PUT'])
 def update_student(student_id):
-    data = request.json
+    is_staff = bool(session.get('is_staff'))
+    session_user = session.get('user')
+
+    if not is_staff and not session_user:
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+
+    if not is_staff:
+        session_user_id = session_user.get('id') or session_user.get('registerNo')
+        if str(session_user_id) != str(student_id):
+            return jsonify({'success': False, 'message': 'Forbidden'}), 403
+
+    data = request.get_json(silent=True) or {}
     student = update_student_data(student_id, data)
     if student:
+        if not is_staff:
+            session['user'] = student
         return jsonify({'success': True, 'student': student})
     return jsonify({'success': False, 'message': 'Student not found'})
 

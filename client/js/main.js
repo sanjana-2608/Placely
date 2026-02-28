@@ -102,6 +102,7 @@ let dashboardSearchQuery = '';
 let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let analyticsProfileEditMode = false;
+let studentProfileEditMode = false;
 let currentDashboardSortKey = 'leetcodeSolvedAll';
 const dashboardMetricOrder = [
   'dept',
@@ -200,6 +201,16 @@ const analyticsProfileEditableFields = [
   'achievements', 'leetcodeUsername'
 ];
 
+const profileEditFieldEntries = [
+  ['name', 'Name'], ['dept', 'Department'], ['year', 'Year'], ['interest', 'Interest'], ['placementStatus', 'Placement Status'],
+  ['leetcodeSolvedAll', 'LeetCode Solved'], ['gradePoints', 'CGPA'], ['internships', 'Internships'], ['certifications', 'Certifications'],
+  ['rollNo', 'Roll No'], ['registerNo', 'Register No'], ['section', 'Section'], ['gender', 'Gender'], ['residencyType', 'Dayscholar/Hostel'],
+  ['tenthPercentage', '10th %'], ['twelfthPercentage', '12th %'], ['diplomaPercentage', 'Diploma %'],
+  ['collegeMail', 'College Mail'], ['personalMail', 'Personal Mail'], ['email', 'Email'], ['contactNo', 'Contact No'], ['address', 'Address'],
+  ['resumeLink', 'Resume Link'], ['preferredRoles', 'Gender Specific Roles'], ['preferredShift', 'Shift Priority'], ['travelPriority', 'Travel Priority'],
+  ['achievements', 'Achievements'], ['leetcodeUsername', 'LeetCode Username']
+];
+
 function escapeHtmlAttribute(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -214,6 +225,36 @@ function sanitizeExternalUrl(value) {
     return url;
   }
   return '#';
+}
+
+function showToast(message, type = 'info') {
+  const existingContainer = document.getElementById('app-toast-container');
+  const container = existingContainer || (() => {
+    const newContainer = document.createElement('div');
+    newContainer.id = 'app-toast-container';
+    newContainer.className = 'app-toast-container';
+    document.body.appendChild(newContainer);
+    return newContainer;
+  })();
+
+  const toast = document.createElement('div');
+  toast.className = `app-toast app-toast--${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      toast.remove();
+      if (!container.childElementCount) {
+        container.remove();
+      }
+    }, 220);
+  }, 2600);
 }
 
 function getDashboardFieldRawValue(student, fieldKey) {
@@ -424,10 +465,12 @@ async function loginWithGoogle() {
     const data = await response.json();
     if (data.auth_url) {
       window.location.href = data.auth_url;
+    } else {
+      showToast('Failed to initiate Google login. Please try again.', 'error');
     }
   } catch (error) {
     console.error('Google login error:', error);
-    alert('Failed to initiate Google login. Please try again.');
+    showToast('Failed to initiate Google login. Please try again.', 'error');
   }
 }
 
@@ -442,7 +485,7 @@ async function connectLinkedIn() {
     console.log("Response data:", data);
     
     if (!response.ok) {
-      alert(`Error: ${data.message || 'Failed to authenticate. Please log in and try again.'}`);
+      showToast(`Error: ${data.message || 'Failed to authenticate. Please log in and try again.'}`, 'error');
       return;
     }
     
@@ -450,11 +493,11 @@ async function connectLinkedIn() {
       console.log("Redirecting to LinkedIn...");
       window.open(data.auth_url, '_blank', 'noopener,noreferrer');
     } else {
-      alert(data.message || 'Failed to initiate LinkedIn connection. Please try again.');
+      showToast(data.message || 'Failed to initiate LinkedIn connection. Please try again.', 'error');
     }
   } catch (error) {
     console.error('LinkedIn connect error:', error);
-    alert('Failed to connect LinkedIn. Please try again.');
+    showToast('Failed to connect LinkedIn. Please try again.', 'error');
   }
 }
 
@@ -511,7 +554,7 @@ function checkLoginStatus() {
     // Clean URL
     window.history.replaceState({}, document.title, '/');
   } else if (loginStatus === 'error') {
-    alert(msg || 'Login failed. Please try again.');
+    showToast(msg || 'Login failed. Please try again.', 'error');
     // Clean URL
     window.history.replaceState({}, document.title, '/');
   }
@@ -552,7 +595,7 @@ async function loginUser(e) {
   const password = document.getElementById(loginType === 'student' ? 'student-password' : 'staff-password').value.trim();
 
   if (!email || !password) {
-    alert('Please enter email and password.');
+    showToast('Please enter email and password.', 'info');
     return;
   }
 
@@ -565,19 +608,20 @@ async function loginUser(e) {
 
     const data = await response.json();
     if (!response.ok || !data.success) {
-      alert(data.message || 'Login failed');
+      showToast(data.message || 'Login failed', 'error');
       return;
     }
 
     isStaff = !!data.is_staff;
     currentUser = isStaff ? null : data.user;
+    studentProfileEditMode = false;
     await refreshStudentsData();
     initializeApp();
     showSection('dashboard-section');
     renderDashboard();
   } catch (error) {
     console.error('Login error:', error);
-    alert('Unable to login right now. Please try again.');
+    showToast('Unable to login right now. Please try again.', 'error');
   }
 }
 
@@ -593,6 +637,7 @@ function logout() {
   fetch('/logout', { method: 'POST' }).catch(() => null);
   currentUser = null;
   isStaff = false;
+  studentProfileEditMode = false;
   const navbar = document.getElementById('navbar');
   const loginSection = document.getElementById('login-section');
   if (loginSection) {
@@ -1782,9 +1827,9 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         }
         await refreshStudentsData();
         applyDashboardFilters(staffView, highlightId);
-        alert(data.message || 'LeetCode stats fetch completed successfully.');
+        showToast(data.message || 'LeetCode stats fetch completed successfully.', 'success');
       } catch (error) {
-        alert(error.message || 'Unable to fetch LeetCode stats right now.');
+        showToast(error.message || 'Unable to fetch LeetCode stats right now.', 'error');
       } finally {
         fetchLeetCodeBtn.disabled = false;
         fetchLeetCodeBtn.textContent = originalLabel || 'Fetch LeetCode';
@@ -2091,6 +2136,104 @@ function buildAnalyticsProfileEditField(student, fieldKey, label) {
   `;
 }
 
+function buildProfileViewHtml(student, options = {}) {
+  const {
+    leetcodeContainerId = 'leetcode-stats-container',
+    showLinkedInButton = false,
+  } = options;
+
+  const interestCategory = getInterestCategory(student.interest);
+  const displayName = student.name || 'N/A';
+  const displayPhoto = student.linkedinPhotoUrl || '';
+  const twelfthPercentage = student.twelfthPercentage ?? 'N/A';
+  const tenthPercentage = student.tenthPercentage ?? 'N/A';
+
+  return `
+    <div class="profile-summary-grid" style="margin-bottom: 1rem;">
+      <div class="card profile-summary-card profile-summary-card--identity">
+        <div class="profile-summary-header" style="flex-direction: column; align-items: center; text-align: center; gap: 1rem;">
+          ${displayPhoto
+            ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium" style="width: 120px; height: 120px; border-radius: 50%;">`
+            : `<div class="profile-avatar-fallback profile-avatar-medium" style="width: 120px; height: 120px;">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
+          <div class="profile-identity-block" style="width: 100%;">
+            <h3 style="margin-bottom: 0.25rem;">${displayName}</h3>
+            <p style="margin: 0; font-size: 0.9rem; color: #999;">${student.dept || 'Student'} • Year ${student.year || 'N/A'}</p>
+          </div>
+        </div>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
+          <p class="profile-meta" style="margin-bottom: 0.75rem;">${student.email || student.collegeMail || 'N/A'}</p>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div
+              id="profile-interest-switch"
+              class="profile-interest-switch"
+              data-state="${getInterestStateKey(interestCategory)}"
+            >
+              <div class="profile-interest-labels">
+                ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
+                  <label class="profile-interest-option ${interestCategory === option ? 'active' : ''}">
+                    <input
+                      type="radio"
+                      name="profile-interest-radio"
+                      value="${option}"
+                      disabled
+                      ${interestCategory === option ? 'checked' : ''}
+                    >
+                    <span>${option}</span>
+                  </label>
+                `).join('')}
+              </div>
+              <div class="profile-interest-track">
+                <div class="profile-interest-thumb"></div>
+              </div>
+            </div>
+            ${showLinkedInButton ? `
+              <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
+                ${student.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="card profile-summary-card profile-summary-card--leetcode">
+        <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+          <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
+          <div style="text-align: right; font-size: 0.85rem;">
+            <div style="color: #999;">@${student.leetcodeUsername || 'Not set'}</div>
+            <div style="color: #666; font-size: 0.8rem;">
+              Rank ${student.leetcodeRanking ? '#' + Number(student.leetcodeRanking).toLocaleString() : 'N/A'}
+            </div>
+          </div>
+        </div>
+        <div id="${leetcodeContainerId}"></div>
+      </div>
+
+      <div class="card profile-summary-card profile-summary-card--academics">
+        <h4 class="profile-box-title">Academics</h4>
+        <div class="profile-academics-list">
+          <div><strong>CGPA:</strong> <span>${student.gradePoints || 'N/A'}</span></div>
+          <div><strong>12th %:</strong> <span>${twelfthPercentage}</span></div>
+          <div><strong>10th %:</strong> <span>${tenthPercentage}</span></div>
+          <div><strong>Diploma %:</strong> <span>${student.diplomaPercentage ?? 'N/A'}</span></div>
+          <div><strong>Register No:</strong> <span>${student.registerNo || 'N/A'}</span></div>
+          <div><strong>Section:</strong> <span>${student.section || 'N/A'}</span></div>
+          <div><strong>Gender:</strong> <span>${student.gender || 'N/A'}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
+      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
+      <div class="profile-percentile-list">
+        <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${student.preferredRoles || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${student.preferredShift || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${student.travelPriority || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Achievements:</strong> ${student.achievements || 'N/A'}</div>
+      </div>
+    </div>
+  `;
+}
+
 function renderAnalyticsProfileContent(student) {
   const profileContainer = document.getElementById('analytics-profile-content');
   const modalEditBtn = document.getElementById('analytics-profile-edit');
@@ -2102,16 +2245,6 @@ function renderAnalyticsProfileContent(student) {
     profileContainer.innerHTML = '<p style="margin: 0; color: #999;">Unable to load profile details.</p>';
     return;
   }
-
-  const profileFields = [
-    ['name', 'Name'], ['dept', 'Department'], ['year', 'Year'], ['interest', 'Interest'], ['placementStatus', 'Placement Status'],
-    ['leetcodeSolvedAll', 'LeetCode Solved'], ['gradePoints', 'CGPA'], ['internships', 'Internships'], ['certifications', 'Certifications'],
-    ['rollNo', 'Roll No'], ['registerNo', 'Register No'], ['section', 'Section'], ['gender', 'Gender'], ['residencyType', 'Dayscholar/Hostel'],
-    ['tenthPercentage', '10th %'], ['twelfthPercentage', '12th %'], ['diplomaPercentage', 'Diploma %'],
-    ['collegeMail', 'College Mail'], ['personalMail', 'Personal Mail'], ['email', 'Email'], ['contactNo', 'Contact No'], ['address', 'Address'],
-    ['resumeLink', 'Resume Link'], ['preferredRoles', 'Gender Specific Roles'], ['preferredShift', 'Shift Priority'], ['travelPriority', 'Travel Priority'],
-    ['achievements', 'Achievements'], ['leetcodeUsername', 'LeetCode Username']
-  ];
 
   if (analyticsProfileEditMode) {
     if (modalEditBtn) {
@@ -2125,7 +2258,7 @@ function renderAnalyticsProfileContent(student) {
         </div>
       </div>
       <div class="analytics-profile-edit-grid">
-        ${profileFields.map(([key, label]) => buildAnalyticsProfileEditField(student, key, label)).join('')}
+        ${profileEditFieldEntries.map(([key, label]) => buildAnalyticsProfileEditField(student, key, label)).join('')}
       </div>
       <div class="analytics-profile-edit-actions">
         <button type="button" id="analytics-profile-save" class="dashboard-filter-action-btn">Save</button>
@@ -2143,97 +2276,10 @@ function renderAnalyticsProfileContent(student) {
     modalEditBtn.textContent = 'Edit';
   }
 
-  const studentsData = Array.isArray(students) ? [...students] : [];
-  const cgpaRanked = [...studentsData].sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
-  const codingRanked = [...studentsData].sort((a, b) => Number(b.leetcodeSolvedAll || 0) - Number(a.leetcodeSolvedAll || 0));
-  const scoreMeta = getDynamicScoreMeta(studentsData);
-  const overallRanked = [...studentsData].sort((a, b) => getDynamicPlacementScore(b, scoreMeta) - getDynamicPlacementScore(a, scoreMeta));
-  const cgpaTopPercent = getTopPercentile(cgpaRanked, student);
-  const codingTopPercent = getTopPercentile(codingRanked, student);
-  const overallTopPercent = getTopPercentile(overallRanked, student);
-  const interestCategory = getInterestCategory(student.interest);
-
-  profileContainer.innerHTML = `
-    <div class="profile-summary-grid" style="margin-bottom: 1rem;">
-      <div class="card profile-summary-card profile-summary-card--identity">
-        <div class="profile-summary-header" style="flex-direction: column; align-items: center; text-align: center; gap: 1rem;">
-          ${student.linkedinPhotoUrl
-            ? `<img src="${student.linkedinPhotoUrl}" alt="${student.name || 'N/A'}" class="profile-avatar-medium" style="width: 120px; height: 120px; border-radius: 50%;">`
-            : `<div class="profile-avatar-fallback profile-avatar-medium" style="width: 120px; height: 120px;">${(student.name || 'S').charAt(0).toUpperCase()}</div>`}
-          <div class="profile-identity-block" style="width: 100%;">
-            <h3 style="margin-bottom: 0.25rem;">${student.name || 'N/A'}</h3>
-            <p style="margin: 0; font-size: 0.9rem; color: #999;">${student.dept || 'N/A'} • ${getYearLabel(student.year)}</p>
-          </div>
-        </div>
-        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
-          <p class="profile-meta" style="margin-bottom: 0.75rem;">${student.collegeMail || student.email || 'N/A'}</p>
-          <div id="profile-interest-switch" class="profile-interest-switch profile-interest-compact" data-state="${getInterestStateKey(interestCategory)}">
-            <div class="profile-interest-labels">
-              ${['Placements', 'Higher Studies', 'Entrepreneurship'].map((option) => `
-                <label class="profile-interest-option ${interestCategory === option ? 'active' : ''}">
-                  <input type="radio" disabled ${interestCategory === option ? 'checked' : ''}>
-                  <span>${option}</span>
-                </label>
-              `).join('')}
-            </div>
-            <div class="profile-interest-track"><div class="profile-interest-thumb"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card profile-summary-card profile-summary-card--leetcode">
-        <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-          <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
-          <div style="text-align: right; font-size: 0.85rem;">
-            <div style="color: #999;">@${student.leetcodeUsername || 'Not set'}</div>
-            <div style="color: #666; font-size: 0.8rem;">Rank ${student.leetcodeRanking ? '#' + Number(student.leetcodeRanking).toLocaleString() : 'N/A'}</div>
-          </div>
-        </div>
-        <div id="analytics-profile-leetcode-stats"></div>
-      </div>
-
-      <div class="card profile-summary-card profile-summary-card--academics">
-        <h4 class="profile-box-title">Academics</h4>
-        <div class="profile-academics-list">
-          <div><strong>CGPA:</strong> <span>${student.gradePoints ?? 'N/A'}</span></div>
-          <div><strong>12th %:</strong> <span>${student.twelfthPercentage ?? 'N/A'}</span></div>
-          <div><strong>10th %:</strong> <span>${student.tenthPercentage ?? 'N/A'}</span></div>
-          <div><strong>Diploma %:</strong> <span>${student.diplomaPercentage ?? 'N/A'}</span></div>
-          <div><strong>Register No:</strong> <span>${student.registerNo || 'N/A'}</span></div>
-          <div><strong>Section:</strong> <span>${student.section || 'N/A'}</span></div>
-          <div><strong>Gender:</strong> <span>${student.gender || 'N/A'}</span></div>
-          <div><strong>Roll No:</strong> <span>${student.rollNo || 'N/A'}</span></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
-      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Contact</h4>
-      <div class="profile-percentile-list">
-        <div class="profile-percentile-item"><strong>Interest:</strong> ${student.interest || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Placement Status:</strong> ${getPlacementStatusLabel(student)}</div>
-        <div class="profile-percentile-item"><strong>Dayscholar/Hostel:</strong> ${student.residencyType || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${student.preferredRoles || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${student.preferredShift || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${student.travelPriority || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Achievements:</strong> ${student.achievements || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>College Mail:</strong> ${student.collegeMail || student.email || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${student.personalMail || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Contact No:</strong> ${student.contactNo || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Address:</strong> ${student.address || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Resume:</strong> ${student.resumeLink ? `<a href="${student.resumeLink}" target="_blank" rel="noopener noreferrer">Open Resume</a>` : 'N/A'}</div>
-      </div>
-    </div>
-
-    <div class="card profile-percentile-card">
-      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Performance Insights</h4>
-      <div class="profile-percentile-list">
-        <div class="profile-percentile-item">You are in the <strong>Top ${cgpaTopPercent}%</strong> in CGPA.</div>
-        <div class="profile-percentile-item">You are in the <strong>Top ${codingTopPercent}%</strong> in Coding Problems.</div>
-        <div class="profile-percentile-item">Overall, you are in the <strong>Top ${overallTopPercent}%</strong> in Placement Readiness Score.</div>
-      </div>
-    </div>
-  `;
+  profileContainer.innerHTML = buildProfileViewHtml(student, {
+    leetcodeContainerId: 'analytics-profile-leetcode-stats',
+    showLinkedInButton: false,
+  });
 
   if (student.leetcodeUsername) {
     fetchAndDisplayLeetCodeStats(student.leetcodeUsername, 'analytics-profile-leetcode-stats');
@@ -2262,11 +2308,11 @@ async function saveAnalyticsProfileEdit(studentId) {
   });
 
   if (payload.gradePoints !== null && (payload.gradePoints < 0 || payload.gradePoints > 10)) {
-    alert('Invalid CGPA. Grade must be between 0 and 10.');
+    showToast('Invalid CGPA. Grade must be between 0 and 10.', 'error');
     return;
   }
   if (payload.year !== null && (payload.year < 1 || payload.year > 4)) {
-    alert('Invalid Year. Year must be between 1 and 4.');
+    showToast('Invalid Year. Year must be between 1 and 4.', 'error');
     return;
   }
 
@@ -2290,9 +2336,97 @@ async function saveAnalyticsProfileEdit(studentId) {
     analyticsProfileEditMode = false;
     renderTable(filterDashboardRowsBySearch(dashboardFilteredStudents, dashboardSearchQuery), true, null, currentDashboardSortKey);
     updateAnalyticsProfileModal();
-    alert('Student profile updated in database successfully!');
+    showToast('Student profile updated successfully!', 'success');
   } catch (error) {
-    alert(error.message || 'Unable to save profile changes right now.');
+    showToast(error.message || 'Unable to save profile changes right now.', 'error');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save';
+    }
+  }
+}
+
+function renderStudentProfileEditForm(profileContent, student) {
+  profileContent.innerHTML = `
+    <div class="company-modal-header" style="margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+      <div>
+        <h3 style="margin: 0 0 0.2rem 0;">Edit Your Profile</h3>
+        <p style="margin: 0; color: #999;">Update details and save to your profile.</p>
+      </div>
+      <button type="button" id="student-profile-cancel" class="analytics-profile-action-btn">Cancel</button>
+    </div>
+    <div class="analytics-profile-edit-grid">
+      ${profileEditFieldEntries.map(([key, label]) => buildAnalyticsProfileEditField(student, key, label).replace(/data-profile-field=/g, 'data-student-profile-field=')).join('')}
+    </div>
+    <div class="analytics-profile-edit-actions">
+      <button type="button" id="student-profile-save" class="dashboard-filter-action-btn">Save</button>
+    </div>
+  `;
+
+  const saveBtn = document.getElementById('student-profile-save');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveStudentProfileEdit);
+  }
+
+  const cancelBtn = document.getElementById('student-profile-cancel');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      studentProfileEditMode = false;
+      renderProfile();
+    });
+  }
+}
+
+async function saveStudentProfileEdit() {
+  if (!currentUser || isStaff) {
+    return;
+  }
+
+  const saveBtn = document.getElementById('student-profile-save');
+  const payload = {};
+  analyticsProfileEditableFields.forEach((fieldKey) => {
+    const input = document.querySelector(`[data-student-profile-field="${fieldKey}"]`);
+    if (!input) {
+      return;
+    }
+    payload[fieldKey] = parseDashboardEditableValue(fieldKey, input.value);
+  });
+
+  if (payload.gradePoints !== null && (payload.gradePoints < 0 || payload.gradePoints > 10)) {
+    showToast('Invalid CGPA. Grade must be between 0 and 10.', 'error');
+    return;
+  }
+  if (payload.year !== null && (payload.year < 1 || payload.year > 4)) {
+    showToast('Invalid Year. Year must be between 1 and 4.', 'error');
+    return;
+  }
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+  }
+
+  try {
+    const response = await fetch(`/api/students/${encodeURIComponent(currentUser.id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success || !data.student) {
+      throw new Error(data.message || 'Failed to update profile');
+    }
+
+    currentUser = { ...currentUser, ...data.student };
+    const studentIndex = students.findIndex((student) => String(student.id) === String(currentUser.id));
+    if (studentIndex >= 0) {
+      students[studentIndex] = { ...students[studentIndex], ...data.student };
+    }
+    studentProfileEditMode = false;
+    renderProfile();
+    showToast('Profile updated successfully!', 'success');
+  } catch (error) {
+    showToast(error.message || 'Unable to save profile changes right now.', 'error');
     if (saveBtn) {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save';
@@ -2635,113 +2769,28 @@ function renderProfile() {
   const profileContent = document.getElementById('profile-content');
 
   if (!isStaff && currentUser) {
-    const interestCategory = getInterestCategory(currentUser.interest);
-    const displayName = currentUser.name || 'N/A';
-    const displayPhoto = currentUser.linkedinPhotoUrl || '';
-    const displayHeadline = currentUser.linkedinHeadline || `${currentUser.dept || 'Student'} • Year ${currentUser.year || 'N/A'}`;
-    const twelfthPercentage = currentUser.twelfthPercentage ?? 'N/A';
-    const tenthPercentage = currentUser.tenthPercentage ?? 'N/A';
-    const studentsData = Array.isArray(students) ? [...students] : [];
-    const cgpaRanked = [...studentsData].sort((a, b) => Number(b.gradePoints || 0) - Number(a.gradePoints || 0));
-    const codingRanked = [...studentsData].sort((a, b) => Number(b.leetcodeSolvedAll || 0) - Number(a.leetcodeSolvedAll || 0));
-    const scoreMeta = getDynamicScoreMeta(studentsData);
-    const overallRanked = [...studentsData].sort((a, b) => getDynamicPlacementScore(b, scoreMeta) - getDynamicPlacementScore(a, scoreMeta));
-    const cgpaTopPercent = getTopPercentile(cgpaRanked, currentUser);
-    const codingTopPercent = getTopPercentile(codingRanked, currentUser);
-    const overallTopPercent = getTopPercentile(overallRanked, currentUser);
+    if (studentProfileEditMode) {
+      renderStudentProfileEditForm(profileContent, currentUser);
+      return;
+    }
 
-    // Student profile view - 3 box top row with LeetCode in second column
     profileContent.innerHTML = `
-      <div class="profile-summary-grid" style="margin-bottom: 1rem;">
-        <div class="card profile-summary-card profile-summary-card--identity">
-          <div class="profile-summary-header" style="flex-direction: column; align-items: center; text-align: center; gap: 1rem;">
-            ${displayPhoto
-              ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium" style="width: 120px; height: 120px; border-radius: 50%;">`
-              : `<div class="profile-avatar-fallback profile-avatar-medium" style="width: 120px; height: 120px;">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
-            <div class="profile-identity-block" style="width: 100%;">
-              <h3 style="margin-bottom: 0.25rem;">${displayName}</h3>
-              <p style="margin: 0; font-size: 0.9rem; color: #999;">${currentUser.dept || 'Student'} • Year ${currentUser.year || 'N/A'}</p>
-            </div>
-          </div>
-          <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
-            <p class="profile-meta" style="margin-bottom: 0.75rem;">${currentUser.email || 'N/A'}</p>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div
-                id="profile-interest-switch"
-                class="profile-interest-switch"
-                data-state="${getInterestStateKey(interestCategory)}"
-              >
-                <div class="profile-interest-labels">
-                  ${['Placements', 'Higher Studies', 'Entrepreneurship'].map(option => `
-                    <label class="profile-interest-option ${interestCategory === option ? 'active' : ''}">
-                      <input
-                        type="radio"
-                        name="profile-interest-radio"
-                        value="${option}"
-                        disabled
-                        ${interestCategory === option ? 'checked' : ''}
-                      >
-                      <span>${option}</span>
-                    </label>
-                  `).join('')}
-                </div>
-                <div class="profile-interest-track">
-                  <div class="profile-interest-thumb"></div>
-                </div>
-              </div>
-              <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
-                ${currentUser.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card profile-summary-card profile-summary-card--leetcode">
-          <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-            <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
-            <div style="text-align: right; font-size: 0.85rem;">
-              <div style="color: #999;">@${currentUser.leetcodeUsername || 'Not set'}</div>
-              <div style="color: #666; font-size: 0.8rem;">
-                Rank ${currentUser.leetcodeRanking ? '#' + currentUser.leetcodeRanking.toLocaleString() : 'N/A'}
-              </div>
-            </div>
-          </div>
-          <div id="leetcode-stats-container"></div>
-        </div>
-
-        <div class="card profile-summary-card profile-summary-card--academics">
-          <h4 class="profile-box-title">Academics</h4>
-          <div class="profile-academics-list">
-            <div><strong>CGPA:</strong> <span>${currentUser.gradePoints || 'N/A'}</span></div>
-            <div><strong>12th %:</strong> <span>${twelfthPercentage}</span></div>
-            <div><strong>10th %:</strong> <span>${tenthPercentage}</span></div>
-            <div><strong>Diploma %:</strong> <span>${currentUser.diplomaPercentage ?? 'N/A'}</span></div>
-            <div><strong>Register No:</strong> <span>${currentUser.registerNo || 'N/A'}</span></div>
-            <div><strong>Section:</strong> <span>${currentUser.section || 'N/A'}</span></div>
-            <div><strong>Gender:</strong> <span>${currentUser.gender || 'N/A'}</span></div>
-          </div>
-        </div>
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 0.8rem;">
+        <button type="button" id="student-profile-edit-btn" class="analytics-profile-action-btn">Edit Profile</button>
       </div>
-
-      <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
-        <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
-        <div class="profile-percentile-list">
-          <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${currentUser.preferredRoles || 'N/A'}</div>
-          <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${currentUser.preferredShift || 'N/A'}</div>
-          <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${currentUser.travelPriority || 'N/A'}</div>
-          <div class="profile-percentile-item"><strong>Achievements:</strong> ${currentUser.achievements || 'N/A'}</div>
-        </div>
-      </div>
-
-      <div class="card profile-percentile-card">
-        <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Your Performance Insights</h4>
-        <div class="profile-percentile-list">
-          <div class="profile-percentile-item">You are in the <strong>Top ${cgpaTopPercent}%</strong> in CGPA.</div>
-          <div class="profile-percentile-item">You are in the <strong>Top ${codingTopPercent}%</strong> in Coding Problems.</div>
-          <div class="profile-percentile-item">Overall, you are in the <strong>Top ${overallTopPercent}%</strong> in Placement Readiness Score.</div>
-        </div>
-      </div>
+      ${buildProfileViewHtml(currentUser, {
+      leetcodeContainerId: 'leetcode-stats-container',
+      showLinkedInButton: true,
+    })}
     `;
+
+    const editBtn = document.getElementById('student-profile-edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', () => {
+        studentProfileEditMode = true;
+        renderProfile();
+      });
+    }
     
     // Auto-fetch LeetCode stats if username is set
     if (currentUser.leetcodeUsername) {
