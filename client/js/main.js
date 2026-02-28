@@ -91,35 +91,34 @@ let analyticsProfileFilteredIds = [];
 let analyticsProfileCurrentIndex = -1;
 let currentDashboardSortKey = 'codingProblems';
 const dashboardMetricOrder = [
-  'codingProblems',
+  'dept',
   'year',
-  'internships',
-  'certifications',
   'gradePoints',
+  'codingProblems',
+  'interest',
+  'resumeLink',
+  'certifications',
+  'internships',
+  'achievements',
+  'registerNo',
+  'rollNo',
+  'collegeMail',
+  'personalMail',
+  'residencyType',
+  'gender',
+  'preferredRoles',
   'tenthPercentage',
   'twelfthPercentage',
   'diplomaPercentage',
-  'placementStatus',
-  'interest',
-  'rollNo',
-  'registerNo',
-  'section',
-  'gender',
-  'residencyType',
-  'personalMail',
-  'collegeMail',
   'contactNo',
   'address',
-  'resumeLink',
-  'preferredRoles',
-  'preferredShift',
-  'travelPriority',
-  'achievements'
+  'travelPriority'
 ];
 const dashboardMetricLabels = {
+  dept: 'Dept',
   codingProblems: 'Coding Problems',
   internships: 'Internships',
-  certifications: 'Certifications',
+  certifications: 'Certificates',
   gradePoints: 'CGPA',
   tenthPercentage: '10th %',
   twelfthPercentage: '12th %',
@@ -2052,6 +2051,7 @@ function bindAnalyticsProfileNameClicks() {
 
 function getFilteredExportRows() {
   const metricValueMap = {
+    dept: (student) => student.dept || '',
     codingProblems: (student) => student.codingProblems || 0,
     internships: (student) => student.internships || 0,
     certifications: (student) => student.certifications || 0,
@@ -2081,8 +2081,7 @@ function getFilteredExportRows() {
   const visibleMetricKeys = dashboardMetricOrder.filter((key) => dashboardVisibleMetrics.has(key));
   return (dashboardFilteredStudents && dashboardFilteredStudents.length ? dashboardFilteredStudents : students).map((student) => {
     const row = {
-      Name: student.name || '',
-      Department: student.dept || ''
+      Name: student.name || ''
     };
 
     visibleMetricKeys.forEach((key) => {
@@ -2112,6 +2111,10 @@ function exportFilteredDataAsExcel() {
 
 function renderTable(data, staffView, highlightId, sortKey = currentDashboardSortKey) {
   const columnDefs = {
+    dept: {
+      header: 'Dept',
+      cell: (s) => `${s.dept || 'N/A'}`
+    },
     codingProblems: {
       header: 'Coding Problems',
       cell: (s) => `<span id="val-problems-${s.id}">${s.codingProblems}</span>${staffView ? `<input type="number" id="input-problems-${s.id}" value="${s.codingProblems}" style="display:none;">` : ''}`
@@ -2213,21 +2216,14 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
   const baseOrder = [...dashboardMetricOrder];
   const visibleColumns = baseOrder.filter((key) => dashboardVisibleMetrics.has(key));
   const orderedColumns = [...visibleColumns];
-  const yearIndex = orderedColumns.indexOf('year');
-  if (yearIndex > 0) {
-    orderedColumns.splice(yearIndex, 1);
-    orderedColumns.unshift('year');
-  }
 
   const tableHtml = `<table><thead><tr>
     <th>Name</th>
-    <th>Dept</th>
     ${orderedColumns.map((key) => `<th>${columnDefs[key].header}</th>`).join('')}
     ${staffView ? '<th>Action</th>' : ''}
   </tr></thead><tbody>
     ${data.map(s => `<tr${!staffView && highlightId === s.id ? ' style="background:rgba(254, 197, 36, 0.15);border-left:3px solid #FEC524;"' : ''}>
       <td>${staffView ? `<button type="button" class="analytics-name-btn" data-student-id="${s.id}">${s.name}</button>` : s.name}</td>
-      <td>${s.dept}</td>
       ${orderedColumns.map((key) => `<td>${columnDefs[key].cell(s)}</td>`).join('')}
       ${staffView ? `<td><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem;" id="btn-${s.id}" onclick="toggleEdit(${s.id})">Edit</button><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem; display: none; background: #E6A800;" id="save-${s.id}" onclick="saveEdit(${s.id})">Save</button></td>` : ''}
     </tr>`).join('')}
