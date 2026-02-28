@@ -76,6 +76,24 @@ const companyLogoDomains = {
 
 const notifications = [ { msg: 'Welcome to Placely!', date: '2026-01-27' } ];
 
+if (typeof Chart !== 'undefined' && Chart.Tooltip?.positioners && !Chart.Tooltip.positioners.aboveSegment) {
+  Chart.Tooltip.positioners.aboveSegment = function aboveSegmentPositioner(elements, eventPosition) {
+    const first = elements?.[0];
+    if (!first?.element) {
+      return eventPosition || false;
+    }
+
+    const barElement = first.element;
+    const segmentHeight = Number(barElement.height || 0);
+    const topEdgeY = Number(barElement.y || 0) - (segmentHeight / 2);
+
+    return {
+      x: Number(barElement.x || eventPosition?.x || 0),
+      y: topEdgeY - 10
+    };
+  };
+}
+
 let currentUser = null;
 let isStaff = false;
 let currentLoginTab = 'student';
@@ -1215,10 +1233,10 @@ function renderAnalyticsRightPanel(selectedYear) {
       plugins: {
         legend: { position: 'bottom', labels: { color: chartTheme.legendColor } },
         tooltip: {
-          position: 'nearest',
+          position: 'aboveSegment',
           xAlign: 'center',
           yAlign: 'bottom',
-          caretPadding: 38,
+          caretPadding: 6,
           callbacks: {
             label(context) {
               return `${context.dataset.label}: ${context.raw}`;
