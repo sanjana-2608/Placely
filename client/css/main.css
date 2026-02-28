@@ -868,11 +868,16 @@ table tr:hover {
 }
 
 .analytics-profile-card {
-    width: min(1520px, 98vw);
+    width: 100vw;
+    height: 100vh;
     aspect-ratio: 16 / 9;
-    max-height: 95vh;
+    max-height: 100vh;
     overflow-y: auto;
-    border-radius: 8px;
+    border-radius: 0;
+}
+
+#analytics-profile-modal.company-modal-overlay {
+    padding: 0;
 }
 
 .analytics-profile-nav {
