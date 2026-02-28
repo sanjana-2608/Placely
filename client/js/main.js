@@ -127,7 +127,7 @@ const dashboardMetricLabels = {
   gender: 'Gender',
   residencyType: 'Dayscholar/Hostel',
   personalMail: 'Personal Mail',
-  collegeMail: 'Clg Mail',
+  collegeMail: 'College Mail',
   contactNo: 'Contact No',
   address: 'Address',
   resumeLink: 'Resume Link',
@@ -1982,7 +1982,7 @@ function renderAnalyticsProfileContent(student) {
     ['leetcodeSolvedAll', 'LeetCode Solved'], ['gradePoints', 'CGPA'], ['internships', 'Internships'], ['certifications', 'Certifications'],
     ['rollNo', 'Roll No'], ['registerNo', 'Register No'], ['section', 'Section'], ['gender', 'Gender'], ['residencyType', 'Dayscholar/Hostel'],
     ['tenthPercentage', '10th %'], ['twelfthPercentage', '12th %'], ['diplomaPercentage', 'Diploma %'],
-    ['collegeMail', 'Clg Mail'], ['personalMail', 'Personal Mail'], ['email', 'Email'], ['contactNo', 'Contact No'], ['address', 'Address'],
+    ['collegeMail', 'College Mail'], ['personalMail', 'Personal Mail'], ['email', 'Email'], ['contactNo', 'Contact No'], ['address', 'Address'],
     ['resumeLink', 'Resume Link'], ['preferredRoles', 'Gender Specific Roles'], ['preferredShift', 'Shift Priority'], ['travelPriority', 'Travel Priority'],
     ['achievements', 'Achievements'], ['leetcodeUsername', 'LeetCode Username']
   ];
@@ -2091,7 +2091,7 @@ function renderAnalyticsProfileContent(student) {
         <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${student.preferredShift || 'N/A'}</div>
         <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${student.travelPriority || 'N/A'}</div>
         <div class="profile-percentile-item"><strong>Achievements:</strong> ${student.achievements || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Clg Mail:</strong> ${student.collegeMail || student.email || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>College Mail:</strong> ${student.collegeMail || student.email || 'N/A'}</div>
         <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${student.personalMail || 'N/A'}</div>
         <div class="profile-percentile-item"><strong>Contact No:</strong> ${student.contactNo || 'N/A'}</div>
         <div class="profile-percentile-item"><strong>Address:</strong> ${student.address || 'N/A'}</div>
@@ -2415,7 +2415,7 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
       cell: (s) => renderEditableCell(s, 'personalMail', getDashboardFieldDisplayValue(s, 'personalMail', staffView))
     },
     collegeMail: {
-      header: 'Clg Mail',
+      header: 'College Mail',
       cell: (s) => renderEditableCell(s, 'collegeMail', getDashboardFieldDisplayValue(s, 'collegeMail', staffView), s.collegeMail || s.email || '')
     },
     contactNo: {
