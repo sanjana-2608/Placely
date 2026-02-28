@@ -88,6 +88,18 @@ let isStaff = false;
 let currentLoginTab = 'student';
 let dashboardFilteredStudents = [];
 let currentDashboardSortKey = 'codingProblems';
+const dashboardMetricOrder = ['codingProblems', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'year', 'interest'];
+const dashboardMetricLabels = {
+  codingProblems: 'Coding Problems',
+  internships: 'Internships',
+  certifications: 'Certifications',
+  gradePoints: 'CGPA',
+  tenthPercentage: '10th %',
+  twelfthPercentage: '12th %',
+  year: 'Year',
+  interest: 'Interest'
+};
+let dashboardVisibleMetrics = new Set(dashboardMetricOrder);
 
 const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
 
@@ -1389,6 +1401,13 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     </label>
   `).join('');
 
+  const makeMetricCheckboxes = () => dashboardMetricOrder.map((key) => `
+    <label class="dashboard-filter-check">
+      <input type="checkbox" name="dashboard-visible-metric" value="${key}" ${dashboardVisibleMetrics.has(key) ? 'checked' : ''}>
+      <span>${dashboardMetricLabels[key]}</span>
+    </label>
+  `).join('');
+
   const formatYearLabel = (year) => {
     if (Number(year) === 1) return 'First Year';
     if (Number(year) === 2) return 'Second Year';
@@ -1514,6 +1533,12 @@ function initializeDashboardFilters(staffView, highlightId = null) {
           </div>
         </div>
       </div>
+      <div class="dashboard-filter-group dashboard-filter-group--metric-visibility">
+        <h4>Visible Metrics (Table & Export)</h4>
+        <div class="dashboard-filter-list dashboard-filter-list--metric-visibility">
+          ${makeMetricCheckboxes()}
+        </div>
+      </div>
       <div class="dashboard-filter-actions">
         <button type="button" id="dashboard-filter-apply" class="dashboard-filter-action-btn">Apply</button>
         <button type="button" id="dashboard-filter-reset" class="dashboard-filter-action-btn dashboard-filter-action-btn--ghost">Reset</button>
@@ -1588,6 +1613,7 @@ function applyDashboardFilters(staffView, highlightId = null) {
   const selectedYears = getCheckedValues('dashboard-year', true);
   const selectedDepts = getCheckedValues('dashboard-dept');
   const selectedInterests = getCheckedValues('dashboard-interest');
+  const selectedVisibleMetrics = getCheckedValues('dashboard-visible-metric');
 
   const codingMin = Number(document.getElementById('coding-min')?.value || 0);
   const codingMax = Number(document.getElementById('coding-max')?.value || Number.MAX_SAFE_INTEGER);
@@ -1599,6 +1625,8 @@ function applyDashboardFilters(staffView, highlightId = null) {
   const twelfthMax = Number(document.getElementById('twelfth-max')?.value || 100);
   const sortKey = document.getElementById('dashboard-sort-key')?.value || 'codingProblems';
   const sortDir = document.getElementById('dashboard-sort-dir')?.value || 'desc';
+
+  dashboardVisibleMetrics = new Set(selectedVisibleMetrics);
 
   const inRange = (value, min, max) => value >= min && value <= max;
   const toNumberOrNull = (value) => {
@@ -1653,18 +1681,30 @@ function downloadBlob(content, filename, mimeType) {
 }
 
 function getFilteredExportRows() {
-  return (dashboardFilteredStudents && dashboardFilteredStudents.length ? dashboardFilteredStudents : students).map((student) => ({
-    Name: student.name || '',
-    Department: student.dept || '',
-    Year: student.year || '',
-    Interest: student.interest || '',
-    CodingProblems: student.codingProblems || 0,
-    CGPA: student.gradePoints || '',
-    TenthPercentage: student.tenthPercentage ?? '',
-    TwelfthPercentage: student.twelfthPercentage ?? '',
-    Internships: student.internships || 0,
-    Certifications: student.certifications || 0
-  }));
+  const metricValueMap = {
+    codingProblems: (student) => student.codingProblems || 0,
+    internships: (student) => student.internships || 0,
+    certifications: (student) => student.certifications || 0,
+    gradePoints: (student) => student.gradePoints || '',
+    tenthPercentage: (student) => student.tenthPercentage ?? '',
+    twelfthPercentage: (student) => student.twelfthPercentage ?? '',
+    year: (student) => student.year || '',
+    interest: (student) => student.interest || ''
+  };
+
+  const visibleMetricKeys = dashboardMetricOrder.filter((key) => dashboardVisibleMetrics.has(key));
+  return (dashboardFilteredStudents && dashboardFilteredStudents.length ? dashboardFilteredStudents : students).map((student) => {
+    const row = {
+      Name: student.name || '',
+      Department: student.dept || ''
+    };
+
+    visibleMetricKeys.forEach((key) => {
+      row[dashboardMetricLabels[key]] = metricValueMap[key](student);
+    });
+
+    return row;
+  });
 }
 
 function exportFilteredDataAsCsv() {
@@ -1720,9 +1760,12 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     }
   };
 
-  const baseOrder = ['codingProblems', 'internships', 'certifications', 'gradePoints', 'tenthPercentage', 'twelfthPercentage', 'year', 'interest'];
+  const baseOrder = [...dashboardMetricOrder];
   const selectedColumn = columnDefs[sortKey] ? sortKey : 'codingProblems';
-  const orderedColumns = [selectedColumn, ...baseOrder.filter((key) => key !== selectedColumn)];
+  const visibleColumns = baseOrder.filter((key) => dashboardVisibleMetrics.has(key));
+  const orderedColumns = visibleColumns.includes(selectedColumn)
+    ? [selectedColumn, ...visibleColumns.filter((key) => key !== selectedColumn)]
+    : visibleColumns;
 
   const tableHtml = `<table><thead><tr>
     <th>Name</th>

@@ -801,8 +801,25 @@ table tr:hover {
 }
 
 .dashboard-filter-check input[type="checkbox"] {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0;
     margin: 0;
-    transform: translateY(1px);
+    margin-bottom: 0;
+    border-radius: 4px;
+    border: 1px solid rgba(254, 197, 36, 0.45);
+    background: #0a0a0a;
+    box-shadow: none;
+    transform: translateY(0);
+}
+
+.dashboard-filter-check input[type="checkbox"]:focus,
+.dashboard-filter-check input[type="checkbox"]:focus-visible {
+    outline: 2px solid rgba(254, 197, 36, 0.55);
+    outline-offset: 1px;
+    box-shadow: none;
+    border-color: rgba(254, 197, 36, 0.8);
 }
 
 .dashboard-filter-check span {
@@ -823,6 +840,14 @@ table tr:hover {
 
 .dashboard-filter-group--inline-range .dashboard-number-range {
     flex: 1 1 0;
+}
+
+.dashboard-filter-group--metric-visibility {
+    margin-top: 0.75rem;
+}
+
+.dashboard-filter-list--metric-visibility {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .dashboard-number-range {
@@ -1973,6 +1998,10 @@ body.light-mode .company-apply-btn:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .dashboard-filter-list--metric-visibility {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .dashboard-filter-grid,
     .dashboard-metric-grid {
         grid-template-columns: 1fr;
@@ -2073,6 +2102,10 @@ body.light-mode .company-apply-btn:hover {
     }
 
     .dashboard-filter-list--departments {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-filter-list--metric-visibility {
         grid-template-columns: 1fr;
     }
 
