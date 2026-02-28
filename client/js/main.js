@@ -2304,7 +2304,7 @@ function toggleEdit(studentId) {
   });
 }
 
-function saveEdit(studentId) {
+async function saveEdit(studentId) {
   const student = students.find(s => s.id === studentId);
   const editBtn = document.getElementById(`btn-${studentId}`);
   const saveBtn = document.getElementById(`save-${studentId}`);
@@ -2320,13 +2320,38 @@ function saveEdit(studentId) {
     alert('Invalid values. Grade: 0-10, Year: 1-4');
     return;
   }
-  
-  student.codingProblems = problems;
-  student.internships = internships;
-  student.certifications = certs;
-  student.gradePoints = grade;
-  student.year = year;
-  student.interest = interest;
+
+  const payload = {
+    codingProblems: problems,
+    internships,
+    certifications: certs,
+    gradePoints: grade,
+    year,
+    interest
+  };
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try {
+    const response = await fetch(`/api/students/${encodeURIComponent(studentId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success || !data.student) {
+      throw new Error(data.message || 'Failed to update student info');
+    }
+
+    Object.assign(student, data.student);
+  } catch (error) {
+    alert(error.message || 'Unable to save changes right now.');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+    return;
+  }
   
   const fields = ['problems', 'internships', 'certs', 'grade', 'year', 'interest'];
   fields.forEach(field => {
@@ -2346,7 +2371,9 @@ function saveEdit(studentId) {
   
   editBtn.style.display = 'inline-block';
   saveBtn.style.display = 'none';
-  alert('Student info updated successfully!');
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Save';
+  alert('Student info updated in database successfully!');
 }
 
 function renderNotifications() {
