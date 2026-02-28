@@ -1794,7 +1794,12 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
 
   const baseOrder = [...dashboardMetricOrder];
   const visibleColumns = baseOrder.filter((key) => dashboardVisibleMetrics.has(key));
-  const orderedColumns = visibleColumns;
+  const orderedColumns = [...visibleColumns];
+  const yearIndex = orderedColumns.indexOf('year');
+  if (yearIndex > 0) {
+    orderedColumns.splice(yearIndex, 1);
+    orderedColumns.unshift('year');
+  }
 
   const tableHtml = `<table><thead><tr>
     <th>Name</th>
