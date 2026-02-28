@@ -1032,6 +1032,7 @@ table tr:hover {
     border: 1px solid rgba(254, 197, 36, 0.45);
     border-radius: 6px;
     padding: 0.55rem 0.75rem;
+    margin-bottom: 0;
     font-size: 0.9rem;
 }
 
