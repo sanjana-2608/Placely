@@ -943,7 +943,9 @@ function renderUnifiedAnalytics(container) {
         data: yearData.values,
         backgroundColor: colors,
         borderWidth: 0,
-        hoverOffset: 0,
+        hoverOffset(context) {
+          return context.dataIndex === selectedIndex ? 18 : 0;
+        },
         offset(context) {
           return context.dataIndex === selectedIndex ? 18 : 0;
         }
