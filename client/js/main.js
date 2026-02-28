@@ -89,7 +89,7 @@ if (typeof Chart !== 'undefined' && Chart.Tooltip?.positioners && !Chart.Tooltip
 
     return {
       x: Number(barElement.x || eventPosition?.x || 0),
-      y: topEdgeY - 10
+      y: topEdgeY - 36
     };
   };
 }
@@ -1230,6 +1230,11 @@ function renderAnalyticsRightPanel(selectedYear) {
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 42
+        }
+      },
       plugins: {
         legend: { position: 'bottom', labels: { color: chartTheme.legendColor } },
         tooltip: {
@@ -1288,7 +1293,7 @@ function renderAnalyticsRightPanel(selectedYear) {
       if (selectedBar) {
         const tooltipAnchor = {
           x: Number(selectedBar.x || 0),
-          y: Number(selectedBar.y || 0) - (Number(selectedBar.height || 0) / 2) - 10
+          y: Number(selectedBar.y || 0) - (Number(selectedBar.height || 0) / 2) - 36
         };
         const activeElement = [{ datasetIndex: selectedDatasetIndex, index: 0 }];
         analyticsDeptBarChart.setActiveElements(activeElement);
