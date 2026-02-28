@@ -2389,7 +2389,7 @@ function renderStudentProfileEditForm(profileContent, student) {
         <button type="button" id="student-profile-save" class="dashboard-filter-action-btn">Save</button>
         <button type="button" id="student-profile-cancel" class="analytics-profile-action-btn">Cancel</button>
       </div>
-      <p style="margin: 0; color: #999;">Edit directly on this profile page.</p>
+      <p style="margin: 0; color: #999;">Edit only the highlighted fields.</p>
     </div>
 
     <div class="profile-summary-grid" style="margin-bottom: 1rem;">
@@ -2399,16 +2399,16 @@ function renderStudentProfileEditForm(profileContent, student) {
             ? `<img src="${displayPhoto}" alt="${displayName}" class="profile-avatar-medium" style="width: 120px; height: 120px; border-radius: 50%;">`
             : `<div class="profile-avatar-fallback profile-avatar-medium" style="width: 120px; height: 120px;">${(displayName || 'S').charAt(0).toUpperCase()}</div>`}
           <div class="profile-identity-block" style="width: 100%; display: grid; gap: 0.5rem;">
-            ${buildInlineControl('name')}
+            <span>${student.name || 'N/A'}</span>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-              ${buildInlineControl('dept')}
-              ${buildInlineControl('year')}
+              <span>${student.dept || 'N/A'}</span>
+              <span>${student.year || 'N/A'}</span>
             </div>
           </div>
         </div>
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333; display: grid; gap: 0.5rem;">
-          ${buildInlineControl('email')}
-          ${buildInlineControl('interest')}
+          <span>${student.email || 'N/A'}</span>
+          <span>${student.interest || 'N/A'}</span>
           <button class="btn profile-linkedin-btn" onclick="connectLinkedIn()" type="button">
             ${student.linkedinName ? 'Update LinkedIn' : 'Connect LinkedIn'}
           </button>
@@ -2429,14 +2429,14 @@ function renderStudentProfileEditForm(profileContent, student) {
       <div class="card profile-summary-card profile-summary-card--academics">
         <h4 class="profile-box-title">Academics</h4>
         <div class="profile-academics-list" style="display: grid; gap: 0.5rem;">
-          ${buildInlineControl('gradePoints')}
-          ${buildInlineControl('twelfthPercentage')}
-          ${buildInlineControl('tenthPercentage')}
-          ${buildInlineControl('diplomaPercentage')}
-          ${buildInlineControl('registerNo')}
-          ${buildInlineControl('section')}
-          ${buildInlineControl('gender')}
-          ${buildInlineControl('rollNo')}
+          <div><strong>CGPA:</strong> <span>${student.gradePoints ?? 'N/A'}</span></div>
+          <div><strong>12th %:</strong> <span>${student.twelfthPercentage ?? 'N/A'}</span></div>
+          <div><strong>10th %:</strong> <span>${student.tenthPercentage ?? 'N/A'}</span></div>
+          <div><strong>Diploma %:</strong> <span>${student.diplomaPercentage ?? 'N/A'}</span></div>
+          <div><strong>Register No:</strong> <span>${student.registerNo ?? 'N/A'}</span></div>
+          <div><strong>Section:</strong> <span>${student.section ?? 'N/A'}</span></div>
+          <div><strong>Gender:</strong> <span>${student.gender ?? 'N/A'}</span></div>
+          <div><strong>Roll No:</strong> <span>${student.rollNo ?? 'N/A'}</span></div>
         </div>
       </div>
     </div>
@@ -2444,20 +2444,10 @@ function renderStudentProfileEditForm(profileContent, student) {
     <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
       <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
       <div class="profile-percentile-list" style="display: grid; gap: 0.5rem;">
-        ${buildInlineControl('preferredRoles')}
-        ${buildInlineControl('preferredShift')}
-        ${buildInlineControl('travelPriority')}
-        ${buildInlineControl('achievements')}
-        ${buildInlineControl('placementStatus')}
-        ${buildInlineControl('residencyType')}
-        ${buildInlineControl('collegeMail')}
-        ${buildInlineControl('personalMail')}
-        ${buildInlineControl('contactNo')}
-        ${buildInlineControl('address')}
-        ${buildInlineControl('resumeLink')}
-        ${buildInlineControl('internships')}
-        ${buildInlineControl('certifications')}
-        ${buildInlineControl('leetcodeSolvedAll')}
+        <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${buildInlineControl('preferredRoles')}</div>
+        <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${buildInlineControl('preferredShift')}</div>
+        <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${buildInlineControl('travelPriority')}</div>
+        <div class="profile-percentile-item"><strong>Achievements:</strong> ${buildInlineControl('achievements')}</div>
       </div>
     </div>
   `;
