@@ -874,9 +874,17 @@ table tr:hover {
 }
 
 .analytics-single-donut-wrap {
-    height: 340px;
-    max-width: 360px;
+    width: min(340px, 100%);
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+    height: auto;
     margin: 0 auto;
+}
+
+.analytics-single-donut-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
 }
 
 .analytics-single-right-card {

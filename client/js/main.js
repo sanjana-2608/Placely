@@ -731,20 +731,8 @@ function getYearDistributionBuckets() {
 }
 
 function renderAnalyticsRightPanel(selectedYear) {
-  const bulletin = document.getElementById('analytics-year-bulletin');
   const heading = document.getElementById('analytics-selected-heading');
   const yearData = getYearDistributionBuckets();
-  const total = yearData.values.reduce((sum, value) => sum + Number(value || 0), 0);
-
-  if (bulletin) {
-    bulletin.innerHTML = `
-      <li><span>First Year</span><strong>${yearData.values[0]}</strong></li>
-      <li><span>Second Year</span><strong>${yearData.values[1]}</strong></li>
-      <li><span>Third Year</span><strong>${yearData.values[2]}</strong></li>
-      <li><span>Fourth Year</span><strong>${yearData.values[3]}</strong></li>
-      <li class="analytics-year-bulletin-total"><span>Total</span><strong>${total}</strong></li>
-    `;
-  }
 
   const selectedStudents = Number.isInteger(selectedYear)
     ? students.filter((student) => Number(student.year || 0) === selectedYear)
@@ -890,13 +878,11 @@ function renderUnifiedAnalytics(container) {
       <div class="chart-card analytics-single-donut-card">
         <h3 style="text-align: center; margin-top: 0;">Student Distribution</h3>
         <div class="analytics-single-donut-wrap">
-          <canvas id="analytics-student-distribution" class="chart-canvas"></canvas>
+          <canvas id="analytics-student-distribution" class="analytics-single-donut-canvas"></canvas>
         </div>
       </div>
       <div class="chart-card analytics-single-right-card">
-        <h3 style="margin-top: 0;">Student Counts</h3>
-        <ul id="analytics-year-bulletin" class="analytics-year-bulletin"></ul>
-        <h4 id="analytics-selected-heading" style="margin: 1rem 0 0.6rem 0;">All Years Insights</h4>
+        <h4 id="analytics-selected-heading" style="margin: 0 0 0.6rem 0;">All Years Insights</h4>
         <div class="analytics-horizontal-block">
           <h5 style="margin: 0 0 0.45rem 0;">Department Distribution</h5>
           <div class="analytics-bar-canvas-wrap"><canvas id="analytics-dept-bar"></canvas></div>
@@ -966,6 +952,10 @@ function renderUnifiedAnalytics(container) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'nearest',
+        intersect: true
+      },
       cutout: '64%',
       plugins: {
         legend: { display: false },
@@ -982,13 +972,20 @@ function renderUnifiedAnalytics(container) {
         }
       },
       onClick(event, elements, chart) {
-        if (!elements.length) {
+        const clickedElements = chart.getElementsAtEventForMode(
+          event,
+          'nearest',
+          { intersect: true },
+          true
+        );
+
+        if (!clickedElements.length) {
           selectedIndex = null;
           chart.update();
           renderAnalyticsRightPanel(null);
           return;
         }
-        const index = elements[0].index;
+        const index = clickedElements[0].index;
         selectedIndex = selectedIndex === index ? null : index;
         chart.update();
         renderAnalyticsRightPanel(selectedIndex === null ? null : (selectedIndex + 1));
