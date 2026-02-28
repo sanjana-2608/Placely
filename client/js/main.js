@@ -1215,6 +1215,10 @@ function renderAnalyticsRightPanel(selectedYear) {
       plugins: {
         legend: { position: 'bottom', labels: { color: chartTheme.legendColor } },
         tooltip: {
+          position: 'nearest',
+          xAlign: 'center',
+          yAlign: 'bottom',
+          caretPadding: 10,
           callbacks: {
             label(context) {
               return `${context.dataset.label}: ${context.raw}`;
