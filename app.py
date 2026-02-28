@@ -278,12 +278,6 @@ STUDENT_ALLOWED_FIELDS = {
     'leetcodeAcceptanceMedium', 'leetcodeAcceptanceHard', 'leetcodeLastSyncedAt'
 }
 
-STUDENT_SELF_EDITABLE_FIELDS = {
-    'interest', 'collegeMail', 'personalMail', 'contactNo', 'address',
-    'resumeLink', 'preferredRoles', 'preferredShift', 'travelPriority',
-    'achievements', 'leetcodeUsername'
-}
-
 
 def _db_to_student(row):
     register_no = row.get('register_no')
@@ -1207,17 +1201,7 @@ def get_leetcode_profiles_for_students():
 
 @app.route('/api/students/<int:student_id>', methods=['PUT'])
 def update_student(student_id):
-    data = request.json or {}
-
-    if 'user' in session:
-        is_staff_session = bool(session.get('is_staff', False))
-        if not is_staff_session:
-            session_user = session.get('user') or {}
-            session_student_id = session_user.get('registerNo') or session_user.get('id')
-            if str(session_student_id) != str(student_id):
-                return jsonify({'success': False, 'message': 'Forbidden'}), 403
-            data = {key: value for key, value in data.items() if key in STUDENT_SELF_EDITABLE_FIELDS}
-
+    data = request.json
     student = update_student_data(student_id, data)
     if student:
         return jsonify({'success': True, 'student': student})
