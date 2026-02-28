@@ -947,8 +947,8 @@ table tr:hover {
 }
 
 .dashboard-filter-toolbar {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto minmax(280px, 1fr) auto;
     align-items: center;
     gap: 0.8rem;
     margin-bottom: 0.9rem;
@@ -969,10 +969,11 @@ table tr:hover {
 .dashboard-export-actions {
     display: flex;
     gap: 0.5rem;
+    justify-self: end;
 }
 
 .dashboard-toolbar-search-wrap {
-    flex: 1 1 260px;
+    width: 100%;
     min-width: 180px;
 }
 
@@ -984,6 +985,18 @@ table tr:hover {
     border-radius: 6px;
     padding: 0.55rem 0.75rem;
     font-size: 0.9rem;
+}
+
+.dashboard-inline-edit-control {
+    width: 100%;
+    min-width: 88px;
+    background: #0a0a0a;
+    color: #f5f5f5;
+    border: 1px solid rgba(254, 197, 36, 0.75);
+    border-radius: 4px;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.82rem;
+    box-sizing: border-box;
 }
 
 .dashboard-toolbar-search:focus,
@@ -2255,7 +2268,8 @@ body.light-mode .dashboard-filter-action-btn,
 body.light-mode .dashboard-filter-header-sort select,
 body.light-mode .dashboard-sort-wrap select,
 body.light-mode .dashboard-range-wrap input[type="number"],
-body.light-mode .dashboard-toolbar-search {
+body.light-mode .dashboard-toolbar-search,
+body.light-mode .dashboard-inline-edit-control {
     background: #f8fafc;
     color: #2c3e50;
     border-color: rgba(59, 130, 246, 0.25);
@@ -2357,6 +2371,7 @@ body.light-mode .company-apply-btn:hover {
     }
 
     .dashboard-filter-toolbar {
+        display: flex;
         flex-direction: column;
         align-items: stretch;
     }

@@ -144,6 +144,110 @@ const dashboardMetricLabels = {
 };
 let dashboardVisibleMetrics = new Set(dashboardMetricOrder);
 
+const dashboardInterestOptions = ['Interested', 'Not interested', 'Going for Higher studies', 'Interested in becoming an entrepreneur'];
+const dashboardEditableFieldOrder = ['name', ...dashboardMetricOrder];
+const dashboardEditableFieldConfigs = {
+  name: { type: 'text' },
+  dept: { type: 'text' },
+  year: { type: 'number', min: 1, max: 4, step: 1 },
+  gradePoints: { type: 'number', min: 0, max: 10, step: 0.1 },
+  codingProblems: { type: 'number', min: 0, step: 1 },
+  internships: { type: 'number', min: 0, step: 1 },
+  certifications: { type: 'number', min: 0, step: 1 },
+  interest: { type: 'select', options: dashboardInterestOptions },
+  resumeLink: { type: 'text' },
+  registerNo: { type: 'text' },
+  rollNo: { type: 'text' },
+  collegeMail: { type: 'text' },
+  personalMail: { type: 'text' },
+  residencyType: { type: 'text' },
+  gender: { type: 'text' },
+  preferredRoles: { type: 'text' },
+  tenthPercentage: { type: 'number', step: 0.1 },
+  twelfthPercentage: { type: 'number', step: 0.1 },
+  diplomaPercentage: { type: 'number', step: 0.1 },
+  contactNo: { type: 'text' },
+  address: { type: 'text' },
+  travelPriority: { type: 'text' },
+  achievements: { type: 'text' }
+};
+
+function escapeHtmlAttribute(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function getDashboardFieldRawValue(student, fieldKey) {
+  const fieldMap = {
+    name: student.name,
+    dept: student.dept,
+    codingProblems: student.codingProblems,
+    internships: student.internships,
+    certifications: student.certifications,
+    gradePoints: student.gradePoints,
+    tenthPercentage: student.tenthPercentage,
+    twelfthPercentage: student.twelfthPercentage,
+    diplomaPercentage: student.diplomaPercentage,
+    year: getYearNumber(student.year) || '',
+    interest: student.interest,
+    rollNo: student.rollNo,
+    registerNo: student.registerNo,
+    section: student.section,
+    gender: student.gender,
+    residencyType: student.residencyType,
+    personalMail: student.personalMail,
+    collegeMail: student.collegeMail || student.email,
+    contactNo: student.contactNo,
+    address: student.address,
+    resumeLink: student.resumeLink,
+    preferredRoles: student.preferredRoles,
+    preferredShift: student.preferredShift,
+    travelPriority: student.travelPriority,
+    achievements: student.achievements
+  };
+
+  const value = fieldMap[fieldKey];
+  return value ?? '';
+}
+
+function getDashboardFieldDisplayValue(student, fieldKey, staffView = false) {
+  if (fieldKey === 'year') {
+    return getYearLabel(student.year);
+  }
+
+  if (fieldKey === 'resumeLink') {
+    const resumeLink = student.resumeLink || '';
+    if (!resumeLink) {
+      return 'N/A';
+    }
+    return staffView
+      ? `<a href="${resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>`
+      : `<a href="${resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>`;
+  }
+
+  if (fieldKey === 'collegeMail') {
+    return student.collegeMail || student.email || 'N/A';
+  }
+
+  const rawValue = getDashboardFieldRawValue(student, fieldKey);
+  return rawValue === '' ? 'N/A' : `${rawValue}`;
+}
+
+function parseDashboardEditableValue(fieldKey, value) {
+  const config = dashboardEditableFieldConfigs[fieldKey] || { type: 'text' };
+  if (config.type === 'number') {
+    if (value === '' || value === null || value === undefined) {
+      return null;
+    }
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+  return String(value ?? '').trim();
+}
+
 function getYearNumber(value) {
   const numericValue = Number(value);
   if (Number.isInteger(numericValue) && numericValue >= 1 && numericValue <= 4) {
@@ -2166,38 +2270,73 @@ function exportFilteredDataAsExcel() {
 }
 
 function renderTable(data, staffView, highlightId, sortKey = currentDashboardSortKey) {
+  const renderEditableCell = (student, fieldKey, displayHtml, inputValue = null) => {
+    if (!staffView) {
+      return displayHtml;
+    }
+
+    const config = dashboardEditableFieldConfigs[fieldKey] || { type: 'text' };
+    const value = inputValue ?? getDashboardFieldRawValue(student, fieldKey);
+    const displayNode = `<span id="val-${fieldKey}-${student.id}">${displayHtml}</span>`;
+
+    if (config.type === 'select') {
+      const options = (config.options || []).map((option) => `<option value="${escapeHtmlAttribute(option)}">${option}</option>`).join('');
+      return `${displayNode}<select id="input-${fieldKey}-${student.id}" class="dashboard-inline-edit-control" style="display:none;">${options}</select>`;
+    }
+
+    const attributes = [
+      `type="${config.type || 'text'}"`,
+      `id="input-${fieldKey}-${student.id}"`,
+      'class="dashboard-inline-edit-control"',
+      `value="${escapeHtmlAttribute(value)}"`,
+      'style="display:none;"'
+    ];
+
+    if (config.min !== undefined) {
+      attributes.push(`min="${config.min}"`);
+    }
+    if (config.max !== undefined) {
+      attributes.push(`max="${config.max}"`);
+    }
+    if (config.step !== undefined) {
+      attributes.push(`step="${config.step}"`);
+    }
+
+    return `${displayNode}<input ${attributes.join(' ')}>`;
+  };
+
   const columnDefs = {
     dept: {
       header: 'Dept',
-      cell: (s) => `${s.dept || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'dept', getDashboardFieldDisplayValue(s, 'dept', staffView))
     },
     codingProblems: {
       header: 'Coding Problems',
-      cell: (s) => `<span id="val-problems-${s.id}">${s.codingProblems}</span>${staffView ? `<input type="number" id="input-problems-${s.id}" value="${s.codingProblems}" style="display:none;">` : ''}`
+      cell: (s) => renderEditableCell(s, 'codingProblems', getDashboardFieldDisplayValue(s, 'codingProblems', staffView))
     },
     internships: {
       header: 'Internships',
-      cell: (s) => `<span id="val-internships-${s.id}">${s.internships}</span>${staffView ? `<input type="number" id="input-internships-${s.id}" value="${s.internships}" style="display:none;">` : ''}`
+      cell: (s) => renderEditableCell(s, 'internships', getDashboardFieldDisplayValue(s, 'internships', staffView))
     },
     certifications: {
       header: 'Certifications',
-      cell: (s) => `<span id="val-certs-${s.id}">${s.certifications}</span>${staffView ? `<input type="number" id="input-certs-${s.id}" value="${s.certifications}" style="display:none;">` : ''}`
+      cell: (s) => renderEditableCell(s, 'certifications', getDashboardFieldDisplayValue(s, 'certifications', staffView))
     },
     gradePoints: {
       header: 'Grade Points',
-      cell: (s) => `<span id="val-grade-${s.id}">${s.gradePoints}</span>${staffView ? `<input type="number" step="0.1" id="input-grade-${s.id}" value="${s.gradePoints}" style="display:none;">` : ''}`
+      cell: (s) => renderEditableCell(s, 'gradePoints', getDashboardFieldDisplayValue(s, 'gradePoints', staffView))
     },
     tenthPercentage: {
       header: '10th %',
-      cell: (s) => `${s.tenthPercentage ?? 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'tenthPercentage', getDashboardFieldDisplayValue(s, 'tenthPercentage', staffView))
     },
     twelfthPercentage: {
       header: '12th %',
-      cell: (s) => `${s.twelfthPercentage ?? 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'twelfthPercentage', getDashboardFieldDisplayValue(s, 'twelfthPercentage', staffView))
     },
     diplomaPercentage: {
       header: 'Diploma %',
-      cell: (s) => `${s.diplomaPercentage ?? 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'diplomaPercentage', getDashboardFieldDisplayValue(s, 'diplomaPercentage', staffView))
     },
     placementStatus: {
       header: 'Placed/Yet to be Placed',
@@ -2205,19 +2344,19 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     },
     year: {
       header: 'Year',
-      cell: (s) => `<span id="val-year-${s.id}">${getYearLabel(s.year)}</span>${staffView ? `<input type="number" id="input-year-${s.id}" min="1" max="4" value="${getYearNumber(s.year) || ''}" style="display:none;">` : ''}`
+      cell: (s) => renderEditableCell(s, 'year', getDashboardFieldDisplayValue(s, 'year', staffView), getYearNumber(s.year) || '')
     },
     interest: {
       header: 'Interest',
-      cell: (s) => `<span id="val-interest-${s.id}">${s.interest}</span>${staffView ? `<input type="text" id="input-interest-${s.id}" value="${s.interest}" style="display:none;">` : ''}`
+      cell: (s) => renderEditableCell(s, 'interest', getDashboardFieldDisplayValue(s, 'interest', staffView))
     },
     rollNo: {
       header: 'Roll No',
-      cell: (s) => `${s.rollNo || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'rollNo', getDashboardFieldDisplayValue(s, 'rollNo', staffView))
     },
     registerNo: {
       header: 'Register No',
-      cell: (s) => `${s.registerNo || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'registerNo', getDashboardFieldDisplayValue(s, 'registerNo', staffView))
     },
     section: {
       header: 'Section',
@@ -2225,35 +2364,35 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     },
     gender: {
       header: 'Gender',
-      cell: (s) => `${s.gender || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'gender', getDashboardFieldDisplayValue(s, 'gender', staffView))
     },
     residencyType: {
       header: 'Dayscholar/Hostel',
-      cell: (s) => `${s.residencyType || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'residencyType', getDashboardFieldDisplayValue(s, 'residencyType', staffView))
     },
     personalMail: {
       header: 'Personal Mail',
-      cell: (s) => `${s.personalMail || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'personalMail', getDashboardFieldDisplayValue(s, 'personalMail', staffView))
     },
     collegeMail: {
       header: 'Clg Mail',
-      cell: (s) => `${s.collegeMail || s.email || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'collegeMail', getDashboardFieldDisplayValue(s, 'collegeMail', staffView), s.collegeMail || s.email || '')
     },
     contactNo: {
       header: 'Contact No',
-      cell: (s) => `${s.contactNo || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'contactNo', getDashboardFieldDisplayValue(s, 'contactNo', staffView))
     },
     address: {
       header: 'Address',
-      cell: (s) => `${s.address || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'address', getDashboardFieldDisplayValue(s, 'address', staffView))
     },
     resumeLink: {
       header: 'Resume Link',
-      cell: (s) => s.resumeLink ? `<a href="${s.resumeLink}" target="_blank" rel="noopener noreferrer">Resume</a>` : 'N/A'
+      cell: (s) => renderEditableCell(s, 'resumeLink', getDashboardFieldDisplayValue(s, 'resumeLink', staffView), s.resumeLink || '')
     },
     preferredRoles: {
       header: 'Gender Specific Roles',
-      cell: (s) => `${s.preferredRoles || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'preferredRoles', getDashboardFieldDisplayValue(s, 'preferredRoles', staffView))
     },
     preferredShift: {
       header: 'Shift Priority',
@@ -2261,11 +2400,11 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     },
     travelPriority: {
       header: 'Travel Priority',
-      cell: (s) => `${s.travelPriority || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'travelPriority', getDashboardFieldDisplayValue(s, 'travelPriority', staffView))
     },
     achievements: {
       header: 'Achievements',
-      cell: (s) => `${s.achievements || 'N/A'}`
+      cell: (s) => renderEditableCell(s, 'achievements', getDashboardFieldDisplayValue(s, 'achievements', staffView))
     }
   };
 
@@ -2279,7 +2418,10 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
     ${staffView ? '<th>Action</th>' : ''}
   </tr></thead><tbody>
     ${data.map(s => `<tr${!staffView && highlightId === s.id ? ' style="background:rgba(254, 197, 36, 0.15);border-left:3px solid #FEC524;"' : ''}>
-      <td>${staffView ? `<button type="button" class="analytics-name-btn" data-student-id="${s.id}">${s.name}</button>` : s.name}</td>
+      <td>${staffView
+        ? `<button type="button" class="analytics-name-btn" id="val-name-${s.id}" data-student-id="${s.id}">${s.name || 'N/A'}</button><input type="text" id="input-name-${s.id}" class="dashboard-inline-edit-control" value="${escapeHtmlAttribute(s.name || '')}" style="display:none;">`
+        : (s.name || 'N/A')}
+      </td>
       ${orderedColumns.map((key) => `<td>${columnDefs[key].cell(s)}</td>`).join('')}
       ${staffView ? `<td><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem;" id="btn-${s.id}" onclick="toggleEdit(${s.id})">Edit</button><button class="btn" style="width: 80px; padding: 0.4rem 0.8rem; font-size: 0.85rem; display: none; background: #E6A800;" id="save-${s.id}" onclick="saveEdit(${s.id})">Save</button></td>` : ''}
     </tr>`).join('')}
@@ -2309,82 +2451,69 @@ function renderTable(data, staffView, highlightId, sortKey = currentDashboardSor
 }
 
 function toggleEdit(studentId) {
-  const student = students.find(s => s.id === studentId);
-  const editBtn = document.getElementById(`btn-${studentId}`);
-  const saveBtn = document.getElementById(`save-${studentId}`);
-  
-  const fields = ['problems', 'internships', 'certs', 'grade', 'year', 'interest'];
-  const isEditing = editBtn.style.display === 'none';
-  
-  fields.forEach(field => {
-    const span = document.getElementById(`val-${field}-${studentId}`);
-    const input = document.getElementById(`input-${field}-${studentId}`);
-    if (!isEditing) {
-      // Enter edit mode
-      input.value = field === 'year' ? String(getYearNumber(student.year) || '') : span.textContent;
-      span.style.display = 'none';
-      input.style.display = 'inline-block';
-      input.style.background = '#0a0a0a';
-      input.style.color = '#f5f5f5';
-      input.style.border = '1px solid #FEC524';
-      input.style.padding = '0.3rem 0.5rem';
-      input.style.borderRadius = '4px';
-      input.style.width = '70px';
-      input.style.marginRight = '0.5rem';
-
-      if (field === 'interest') {
-        input.style.display = 'none';
-        let select = document.getElementById(`select-interest-${studentId}`);
-        if (!select) {
-          select = document.createElement('select');
-          select.id = `select-interest-${studentId}`;
-          select.style.background = '#0a0a0a';
-          select.style.color = '#f5f5f5';
-          select.style.border = '1px solid #FEC524';
-          select.style.padding = '0.3rem';
-          select.style.borderRadius = '4px';
-          ['Interested', 'Not interested', 'Going for Higher studies', 'Interested in becoming an entrepreneur'].forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt;
-            option.textContent = opt;
-            select.appendChild(option);
-          });
-          span.parentNode.appendChild(select);
-        }
-        select.value = span.textContent;
-        select.style.display = 'inline-block';
-      }
-      editBtn.style.display = 'none';
-      saveBtn.style.display = 'inline-block';
-    }
-  });
-}
-
-async function saveEdit(studentId) {
-  const student = students.find(s => s.id === studentId);
-  const editBtn = document.getElementById(`btn-${studentId}`);
-  const saveBtn = document.getElementById(`save-${studentId}`);
-  
-  const problems = +document.getElementById(`input-problems-${studentId}`).value;
-  const internships = +document.getElementById(`input-internships-${studentId}`).value;
-  const certs = +document.getElementById(`input-certs-${studentId}`).value;
-  const grade = +document.getElementById(`input-grade-${studentId}`).value;
-  const year = +document.getElementById(`input-year-${studentId}`).value;
-  const interest = document.getElementById(`select-interest-${studentId}`)?.value || document.getElementById(`input-interest-${studentId}`).value;
-  
-  if (grade < 0 || grade > 10 || year < 1 || year > 4) {
-    alert('Invalid values. Grade: 0-10, Year: 1-4');
+  const student = students.find((s) => String(s.id) === String(studentId));
+  if (!student) {
     return;
   }
 
-  const payload = {
-    codingProblems: problems,
-    internships,
-    certifications: certs,
-    gradePoints: grade,
-    year,
-    interest
-  };
+  const editBtn = document.getElementById(`btn-${studentId}`);
+  const saveBtn = document.getElementById(`save-${studentId}`);
+
+  dashboardEditableFieldOrder.forEach((fieldKey) => {
+    const span = document.getElementById(`val-${fieldKey}-${studentId}`);
+    const input = document.getElementById(`input-${fieldKey}-${studentId}`);
+    if (!span || !input) {
+      return;
+    }
+
+    const currentValue = getDashboardFieldRawValue(student, fieldKey);
+    input.value = currentValue ?? '';
+    span.style.display = 'none';
+    input.style.display = 'inline-block';
+  });
+
+  editBtn.style.display = 'none';
+  saveBtn.style.display = 'inline-block';
+}
+
+async function saveEdit(studentId) {
+  const student = students.find((s) => String(s.id) === String(studentId));
+  if (!student) {
+    return;
+  }
+
+  const editBtn = document.getElementById(`btn-${studentId}`);
+  const saveBtn = document.getElementById(`save-${studentId}`);
+
+  const payload = {};
+  for (const fieldKey of dashboardEditableFieldOrder) {
+    const input = document.getElementById(`input-${fieldKey}-${studentId}`);
+    if (!input) {
+      continue;
+    }
+    payload[fieldKey] = parseDashboardEditableValue(fieldKey, input.value);
+  }
+
+  if (payload.gradePoints !== null && (payload.gradePoints < 0 || payload.gradePoints > 10)) {
+    alert('Invalid CGPA. Grade must be between 0 and 10.');
+    return;
+  }
+  if (payload.year !== null && (payload.year < 1 || payload.year > 4)) {
+    alert('Invalid Year. Year must be between 1 and 4.');
+    return;
+  }
+  if (payload.codingProblems !== null && payload.codingProblems < 0) {
+    alert('Coding problems cannot be negative.');
+    return;
+  }
+  if (payload.internships !== null && payload.internships < 0) {
+    alert('Internships cannot be negative.');
+    return;
+  }
+  if (payload.certifications !== null && payload.certifications < 0) {
+    alert('Certifications cannot be negative.');
+    return;
+  }
 
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving...';
@@ -2408,22 +2537,23 @@ async function saveEdit(studentId) {
     saveBtn.textContent = 'Save';
     return;
   }
-  
-  const fields = ['problems', 'internships', 'certs', 'grade', 'year', 'interest'];
-  fields.forEach(field => {
-    const span = document.getElementById(`val-${field}-${studentId}`);
-    const input = document.getElementById(`input-${field}-${studentId}`);
-    const select = document.getElementById(`select-interest-${studentId}`);
-    
-    if (field === 'interest') {
-      span.textContent = interest;
-      if (select) select.style.display = 'none';
-    } else {
-      span.textContent = field === 'problems' ? problems : field === 'internships' ? internships : field === 'certs' ? certs : field === 'grade' ? grade : getYearLabel(year);
+
+  dashboardEditableFieldOrder.forEach((fieldKey) => {
+    const span = document.getElementById(`val-${fieldKey}-${studentId}`);
+    const input = document.getElementById(`input-${fieldKey}-${studentId}`);
+    if (!span || !input) {
+      return;
     }
+
+    const displayValue = getDashboardFieldDisplayValue(student, fieldKey, true);
+    span.innerHTML = displayValue;
     span.style.display = 'inline';
-    if (input) input.style.display = 'none';
+
+    input.value = getDashboardFieldRawValue(student, fieldKey);
+    input.style.display = 'none';
   });
+
+  bindAnalyticsProfileNameClicks();
   
   editBtn.style.display = 'inline-block';
   saveBtn.style.display = 'none';
