@@ -2464,13 +2464,23 @@ function renderStudentProfileEditForm(profileContent, student) {
 
   const saveBtn = document.getElementById('student-profile-save');
   if (saveBtn) {
-    saveBtn.addEventListener('click', saveStudentProfileEdit);
+    saveBtn.addEventListener('click', () => {
+      if (isStaff) {
+        saveAnalyticsProfileEdit(currentUser.id);
+      } else {
+        saveStudentProfileEdit();
+      }
+    });
   }
 
   const cancelBtn = document.getElementById('student-profile-cancel');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
-      studentProfileEditMode = false;
+      if (isStaff) {
+        analyticsProfileEditMode = false;
+      } else {
+        studentProfileEditMode = false;
+      }
       renderProfile();
     });
   }
@@ -2876,8 +2886,9 @@ function renderNotifications() {
 function renderProfile() {
   const profileContent = document.getElementById('profile-content');
 
-  if (!isStaff && currentUser) {
-    if (studentProfileEditMode) {
+  if ((isStaff || !isStaff) && currentUser) {
+    // Use a shared edit mode for both staff and student
+    if (studentProfileEditMode || (isStaff && analyticsProfileEditMode)) {
       renderStudentProfileEditForm(profileContent, currentUser);
       return;
     }
@@ -2895,11 +2906,15 @@ function renderProfile() {
     const editBtn = document.getElementById('student-profile-edit-btn');
     if (editBtn) {
       editBtn.addEventListener('click', () => {
-        studentProfileEditMode = true;
+        if (isStaff) {
+          analyticsProfileEditMode = true;
+        } else {
+          studentProfileEditMode = true;
+        }
         renderProfile();
       });
     }
-    
+
     // Auto-fetch LeetCode stats if username is set
     if (currentUser.leetcodeUsername) {
       fetchAndDisplayLeetCodeStats(currentUser.leetcodeUsername);
@@ -2909,10 +2924,7 @@ function renderProfile() {
         leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
       }
     }
-  } else if (isStaff) {
-    profileContent.innerHTML = '';
-    return;
-  } else {
+  } else if (!currentUser) {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
     return;
   }
