@@ -897,6 +897,20 @@ table tr:hover {
     align-items: center;
 }
 
+.staff-demo-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.85rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid rgba(254, 197, 36, 0.45);
+    background: rgba(254, 197, 36, 0.12);
+    color: #FEC524;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
 #sort-dropdown {
     padding: 0.6rem 0.8rem;
     background: #0a0a0a;
@@ -1951,6 +1965,12 @@ body.light-mode table th {
 }
 body.light-mode table tr:hover {
     background: rgba(59, 130, 246, 0.03);
+}
+
+body.light-mode .staff-demo-badge {
+    border-color: rgba(59, 130, 246, 0.35);
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
 }
 
 body.light-mode .analytics-name-btn {

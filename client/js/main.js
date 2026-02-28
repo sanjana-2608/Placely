@@ -137,6 +137,10 @@ function getYearLabel(value) {
   return String(value || 'N/A');
 }
 
+function isStaffDemoMode() {
+  return isStaff && !document.getElementById('login-section');
+}
+
 const sectionIds = ['login-section', 'home-section', 'dashboard-section', 'profile-section', 'notifications-section', 'leaderboard-section'];
 
 // Google Login Function
@@ -1062,7 +1066,7 @@ function renderDashboard() {
   if (isStaff) {
     title.textContent = '';
     renderUnifiedAnalytics(chartsContainer);
-    dash.innerHTML = `<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div><div id="staff-reports" style="margin-top: 1.25rem;"></div>`;
+    dash.innerHTML = `${isStaffDemoMode() ? '<div class="staff-demo-badge">Staff Demo Mode</div>' : ''}<div id="analytics-insights"></div><div id="dashboard-filter-controls"></div><div id="staff-table"></div><div id="staff-reports" style="margin-top: 1.25rem;"></div>`;
     renderAnalyticsInsights(document.getElementById('analytics-insights'));
     initializeDashboardFilters(true);
     dashboardFilteredStudents = [...defaultSortedStudents];
