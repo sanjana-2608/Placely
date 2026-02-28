@@ -98,6 +98,7 @@ const dashboardMetricOrder = [
   'gradePoints',
   'codingProblems',
   'interest',
+  'placementStatus',
   'resumeLink',
   'certifications',
   'internships',
