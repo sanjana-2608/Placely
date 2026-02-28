@@ -975,8 +975,8 @@ function getInterestCategory(interest) {
 function getPlacementStatusLabel(student) {
   const explicit = String(student?.placementStatus || '').trim().toLowerCase();
   if (explicit) {
-    if (explicit.includes('placed')) return 'Placed';
     if (explicit.includes('yet')) return 'Yet to be Placed';
+    if (explicit.includes('placed')) return 'Placed';
   }
 
   const interestRaw = String(student?.interest || '').trim().toLowerCase();
