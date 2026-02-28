@@ -2387,7 +2387,6 @@ function renderLeetCodeStatsCard(data) {
   const easyTotal = Math.max(Number(data.totalQuestions?.easy || defaultDifficultyTotal), 1);
   const mediumTotal = Math.max(Number(data.totalQuestions?.medium || defaultDifficultyTotal), 1);
   const hardTotal = Math.max(Number(data.totalQuestions?.hard || defaultDifficultyTotal), 1);
-  const attempting = Math.max(Number(data.attempting || 0), 0);
 
   const easyProgress = Math.max(0, Math.min(easySolved / easyTotal, 1));
   const mediumProgress = Math.max(0, Math.min(mediumSolved / mediumTotal, 1));
@@ -2429,9 +2428,8 @@ function renderLeetCodeStatsCard(data) {
           ${fillPaths}
         </svg>
         <div class="leetcode-radial-center">
-          <div class="leetcode-radial-total">${totalSolved}<span>/${totalQuestions}</span></div>
-          <div class="leetcode-radial-label">✓ Solved</div>
-          <div class="leetcode-radial-sub">${attempting} Attempting</div>
+          <div class="leetcode-radial-total">${totalSolved}</div>
+          <div class="leetcode-radial-label">Questions Solved</div>
         </div>
       </div>
       <div class="leetcode-radial-legend">

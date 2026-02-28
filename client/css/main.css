@@ -380,12 +380,6 @@ nav ul li a:hover {
     font-size: 1.05rem;
 }
 
-.leetcode-radial-sub {
-    margin-top: 0.85rem;
-    color: #9ca3af;
-    font-size: 0.95rem;
-}
-
 .leetcode-radial-legend {
     display: flex;
     justify-content: center;
