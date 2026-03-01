@@ -1198,6 +1198,42 @@ table tr:hover {
     font-size: 0.95rem;
 }
 
+.dashboard-filter-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-filter-group-header h4 {
+    margin: 0;
+}
+
+.dashboard-select-all-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-select-all-check input[type="checkbox"] {
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0;
+    border-radius: 4px;
+    border: 1px solid rgba(254, 197, 36, 0.45);
+    background: #0a0a0a;
+}
+
+.dashboard-select-all-check input[type="checkbox"]:focus,
+.dashboard-select-all-check input[type="checkbox"]:focus-visible {
+    outline: 2px solid rgba(254, 197, 36, 0.55);
+    outline-offset: 1px;
+    border-color: rgba(254, 197, 36, 0.8);
+}
+
 .dashboard-filter-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -2366,6 +2402,11 @@ body.light-mode .dashboard-filter-group {
     color: #334155;
 }
 
+body.light-mode .dashboard-select-all-check input[type="checkbox"] {
+    background: #f8fafc;
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
 body.light-mode .dashboard-filter-group {
     background: rgba(59, 130, 246, 0.04);
     border-color: rgba(59, 130, 246, 0.15);
@@ -2531,6 +2572,10 @@ body.light-mode .company-apply-btn:hover {
 
     .dashboard-filter-list {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-filter-group-header {
+        margin-bottom: 0.45rem;
     }
 
     .dashboard-filter-list--metric-visibility {
