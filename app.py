@@ -42,8 +42,14 @@ app.secret_key = os.environ.get('SECRET_KEY', 'placely-secret-key-2026')
 
 # Configure Flask for HTTPS on Railway (behind reverse proxy)
 app.config['PREFERRED_URL_SCHEME'] = 'https'
-# Only set secure cookies on production (Railway), allow HTTP on localhost
-app.config['SESSION_COOKIE_SECURE'] = 'RAILWAY_PUBLIC_DOMAIN' in os.environ
+# Set secure cookies for hosted deployments (Railway/Vercel), allow HTTP on localhost
+_is_hosted_env = any([
+    'RAILWAY_PUBLIC_DOMAIN' in os.environ,
+    bool(os.environ.get('VERCEL')),
+    bool(os.environ.get('VERCEL_URL')),
+    bool(os.environ.get('APP_BASE_URL'))
+])
+app.config['SESSION_COOKIE_SECURE'] = _is_hosted_env
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cookies on OAuth redirects
 
@@ -58,6 +64,8 @@ SUPABASE_URL = (
 
 SUPABASE_SERVICE_ROLE_KEY = (
     os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '').strip()
+    or os.environ.get('SUPABASE_SERVICE_KEY', '').strip()
+    or os.environ.get('SUPABASE_SECRET', '').strip()
     or getattr(config, 'SUPABASE_SERVICE_ROLE_KEY', '').strip()
 )
 
@@ -125,11 +133,21 @@ LINKEDIN_OAUTH_ENABLED = (
 )
 
 RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
+APP_BASE_URL = os.environ.get('APP_BASE_URL', '').strip()
+VERCEL_URL = os.environ.get('VERCEL_URL', '').strip()
+VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL', '').strip()
+VERCEL_BRANCH_URL = os.environ.get('VERCEL_BRANCH_URL', '').strip()
 
 
 def get_deployed_base_url():
+    if APP_BASE_URL:
+        return APP_BASE_URL if APP_BASE_URL.startswith('http') else f"https://{APP_BASE_URL}"
+
     if not RAILWAY_PUBLIC_DOMAIN:
-        return ''
+        vercel_host = VERCEL_PROJECT_PRODUCTION_URL or VERCEL_URL or VERCEL_BRANCH_URL
+        if not vercel_host:
+            return ''
+        return vercel_host if vercel_host.startswith('http') else f"https://{vercel_host}"
     return f"https://{RAILWAY_PUBLIC_DOMAIN}"
 
 
@@ -153,7 +171,7 @@ def get_linkedin_redirect_uri():
     if base_url:
         return f"{base_url}/linkedin-callback"
 
-    raise ValueError('LINKEDIN_REDIRECT_URI or RAILWAY_PUBLIC_DOMAIN is required for deployed LinkedIn OAuth')
+    raise ValueError('Set LINKEDIN_REDIRECT_URI or APP_BASE_URL (or hosted domain env like RAILWAY_PUBLIC_DOMAIN / VERCEL_URL) for LinkedIn OAuth')
 
 
 def build_linkedin_authorization_url(state):

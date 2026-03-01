@@ -61,6 +61,24 @@ For database integration setup, see:
 - [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
 - [Program Flow/supabase_rls_lockdown.sql](Program%20Flow/supabase_rls_lockdown.sql) (run in Supabase SQL Editor to enforce RLS and restrict table access to `service_role`)
 
+## Vercel Environment Variables
+
+If migrated from Railway to Vercel and data is not visible, set these in Vercel Project Settings → Environment Variables:
+
+- `SECRET_KEY` = strong random string
+- `SUPABASE_URL` = your Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` = service role key (required for this backend pattern)
+- `APP_BASE_URL` = your deployed site URL (example: `https://your-app.vercel.app`)
+
+Optional aliases also supported:
+
+- `SUPABASE_SERVICE_KEY`
+- `SUPABASE_SECRET`
+
+Then redeploy and verify API returns data:
+
+- `GET /api/students`
+
 ## Project Structure
 
 ```
