@@ -2327,28 +2327,30 @@ function buildProfileViewHtml(student, options = {}) {
       </div>
     </div>
 
-    <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
-      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
-      <div class="profile-percentile-list">
-        <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${buildInlineFieldControl('preferredRoles', student.preferredRoles || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${buildInlineFieldControl('preferredShift', student.preferredShift || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${buildInlineFieldControl('travelPriority', student.travelPriority || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Achievements:</strong> ${buildInlineFieldControl('achievements', student.achievements || 'N/A')}</div>
+    <div class="profile-details-row" style="margin-bottom: 1rem;">
+      <div class="card profile-percentile-card" style="margin-bottom: 0;">
+        <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
+        <div class="profile-percentile-list">
+          <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${buildInlineFieldControl('preferredRoles', student.preferredRoles || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${buildInlineFieldControl('preferredShift', student.preferredShift || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${buildInlineFieldControl('travelPriority', student.travelPriority || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Achievements:</strong> ${buildInlineFieldControl('achievements', student.achievements || 'N/A')}</div>
+        </div>
       </div>
-    </div>
 
-    <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
-      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Additional Details</h4>
-      <div class="profile-percentile-list">
-        <div class="profile-percentile-item"><strong>Placement Status:</strong> ${buildInlineFieldControl('placementStatus', student.placementStatus || getPlacementStatusLabel(student) || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Internships:</strong> ${buildInlineFieldControl('internships', student.internships ?? 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Certifications:</strong> ${buildInlineFieldControl('certifications', student.certifications ?? 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Roll No:</strong> ${buildInlineFieldControl('rollNo', student.rollNo || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>College Mail:</strong> ${buildInlineFieldControl('collegeMail', student.collegeMail || student.email || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${buildInlineFieldControl('personalMail', student.personalMail || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Contact No:</strong> ${buildInlineFieldControl('contactNo', student.contactNo || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Address:</strong> ${buildInlineFieldControl('address', student.address || 'N/A')}</div>
-        <div class="profile-percentile-item"><strong>Resume Link:</strong> ${inlineProfileEdit ? buildInlineFieldControl('resumeLink', resumeLink || 'N/A') : (resumeLink ? `<a href="${safeResumeLink}" target="_blank" rel="noopener noreferrer">View Resume</a>` : 'N/A')}</div>
+      <div class="card profile-percentile-card" style="margin-bottom: 0;">
+        <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Additional Details</h4>
+        <div class="profile-percentile-list">
+          <div class="profile-percentile-item"><strong>Placement Status:</strong> ${buildInlineFieldControl('placementStatus', student.placementStatus || getPlacementStatusLabel(student) || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Internships:</strong> ${buildInlineFieldControl('internships', student.internships ?? 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Certifications:</strong> ${buildInlineFieldControl('certifications', student.certifications ?? 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Roll No:</strong> ${buildInlineFieldControl('rollNo', student.rollNo || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>College Mail:</strong> ${buildInlineFieldControl('collegeMail', student.collegeMail || student.email || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${buildInlineFieldControl('personalMail', student.personalMail || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Contact No:</strong> ${buildInlineFieldControl('contactNo', student.contactNo || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Address:</strong> ${buildInlineFieldControl('address', student.address || 'N/A')}</div>
+          <div class="profile-percentile-item"><strong>Resume Link:</strong> ${inlineProfileEdit ? buildInlineFieldControl('resumeLink', resumeLink || 'N/A') : (resumeLink ? `<a href="${safeResumeLink}" target="_blank" rel="noopener noreferrer">View Resume</a>` : 'N/A')}</div>
+        </div>
       </div>
     </div>
   `;
