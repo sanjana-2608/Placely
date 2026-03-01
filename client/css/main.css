@@ -1072,6 +1072,24 @@ table tr:hover {
     margin-left: 0.25rem;
 }
 
+.leetcode-username-quick-set {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.leetcode-username-quick-input {
+    width: 180px;
+    min-width: 120px;
+    margin: 0;
+}
+
+.leetcode-username-quick-save {
+    padding: 0.22rem 0.55rem;
+    font-size: 0.8rem;
+}
+
 .dashboard-toolbar-search:focus,
 .dashboard-toolbar-search:focus-visible {
     outline: 2px solid rgba(254, 197, 36, 0.35);

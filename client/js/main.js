@@ -2210,6 +2210,8 @@ function buildProfileViewHtml(student, options = {}) {
   const tenthPercentage = student.tenthPercentage ?? 'N/A';
   const resumeLink = String(student.resumeLink || '').trim();
   const safeResumeLink = sanitizeExternalUrl(resumeLink);
+  const usernameInputId = `${leetcodeContainerId}-username-input`;
+  const usernameSaveId = `${leetcodeContainerId}-username-save`;
 
   const buildInlineFieldControl = (fieldKey, fallbackValue = 'N/A') => {
     const displayValue = fallbackValue;
@@ -2290,7 +2292,20 @@ function buildProfileViewHtml(student, options = {}) {
         <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
           <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
           <div style="text-align: right; font-size: 0.85rem;">
-            <div style="color: #999;">@${buildInlineFieldControl('leetcodeUsername', student.leetcodeUsername || 'Not set')}</div>
+            ${(!inlineProfileEdit && !student.leetcodeUsername)
+              ? `
+                <div class="leetcode-username-quick-set">
+                  <input
+                    type="text"
+                    id="${usernameInputId}"
+                    class="dashboard-inline-edit-control leetcode-username-quick-input"
+                    placeholder="Enter your LeetCode username"
+                    value=""
+                  >
+                  <button type="button" id="${usernameSaveId}" class="analytics-profile-action-btn leetcode-username-quick-save">Save</button>
+                </div>
+              `
+              : `<div style="color: #999;">@${buildInlineFieldControl('leetcodeUsername', student.leetcodeUsername || 'Not set')}</div>`}
             <div style="color: #666; font-size: 0.8rem;">
               Rank ${student.leetcodeRanking ? '#' + Number(student.leetcodeRanking).toLocaleString() : 'N/A'}
             </div>
@@ -2340,6 +2355,69 @@ function buildProfileViewHtml(student, options = {}) {
   `;
 }
 
+function bindLeetCodeUsernameQuickSet(studentId, containerId = 'leetcode-stats-container') {
+  const input = document.getElementById(`${containerId}-username-input`);
+  const saveBtn = document.getElementById(`${containerId}-username-save`);
+
+  if (!input || !saveBtn) {
+    return;
+  }
+
+  const submit = async () => {
+    const username = String(input.value || '').trim();
+    if (!username) {
+      showToast('Enter a LeetCode username first.', 'error');
+      return;
+    }
+
+    saveBtn.disabled = true;
+    const originalLabel = saveBtn.textContent;
+    saveBtn.textContent = 'Saving...';
+
+    try {
+      const response = await fetch(`/api/students/${encodeURIComponent(studentId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leetcodeUsername: username })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.student) {
+        throw new Error(data.message || 'Failed to save LeetCode username');
+      }
+
+      const student = getStudentById(studentId);
+      if (student) {
+        Object.assign(student, data.student);
+      }
+
+      if (currentUser && String(currentUser.id) === String(studentId)) {
+        Object.assign(currentUser, data.student);
+      }
+
+      showToast('LeetCode username updated.', 'success');
+
+      if (containerId === 'analytics-profile-leetcode-stats') {
+        updateAnalyticsProfileModal();
+      } else {
+        renderProfile();
+      }
+    } catch (error) {
+      showToast(error.message || 'Unable to save LeetCode username right now.', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel || 'Save';
+    }
+  };
+
+  saveBtn.addEventListener('click', submit);
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      submit();
+    }
+  });
+}
+
 function renderAnalyticsProfileContent(student) {
   const profileContainer = document.getElementById('analytics-profile-content');
   const modalEditBtn = document.getElementById('analytics-profile-edit');
@@ -2380,9 +2458,11 @@ function renderAnalyticsProfileContent(student) {
   } else {
     const lcContainer = document.getElementById('analytics-profile-leetcode-stats');
     if (lcContainer) {
-      lcContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
+      lcContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">Enter your LeetCode username.</p>';
     }
   }
+
+  bindLeetCodeUsernameQuickSet(student.id, 'analytics-profile-leetcode-stats');
 }
 
 async function saveAnalyticsProfileEdit(studentId) {
@@ -3006,9 +3086,11 @@ function renderProfile() {
       } else {
         const leetcodeContainer = document.getElementById('leetcode-stats-container');
         if (leetcodeContainer) {
-          leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
+          leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">Enter your LeetCode username.</p>';
         }
       }
+
+      bindLeetCodeUsernameQuickSet(currentUser.id, 'leetcode-stats-container');
       return;
     }
 
@@ -3042,9 +3124,11 @@ function renderProfile() {
     } else {
       const leetcodeContainer = document.getElementById('leetcode-stats-container');
       if (leetcodeContainer) {
-        leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
+        leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">Enter your LeetCode username.</p>';
       }
     }
+
+    bindLeetCodeUsernameQuickSet(currentUser.id, 'leetcode-stats-container');
   } else if (!currentUser) {
     profileContent.innerHTML = `<p>Please log in to view your profile.</p>`;
     return;
