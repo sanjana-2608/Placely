@@ -2326,15 +2326,15 @@ function buildProfileViewHtml(student, options = {}) {
     <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
       <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Additional Details</h4>
       <div class="profile-percentile-list">
-        <div class="profile-percentile-item"><strong>Placement Status:</strong> ${student.placementStatus || getPlacementStatusLabel(student) || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Internships:</strong> ${student.internships ?? 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Certifications:</strong> ${student.certifications ?? 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Roll No:</strong> ${student.rollNo || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>College Mail:</strong> ${student.collegeMail || student.email || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${student.personalMail || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Contact No:</strong> ${student.contactNo || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Address:</strong> ${student.address || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Resume Link:</strong> ${resumeLink ? `<a href="${safeResumeLink}" target="_blank" rel="noopener noreferrer">View Resume</a>` : 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Placement Status:</strong> ${buildInlineFieldControl('placementStatus', student.placementStatus || getPlacementStatusLabel(student) || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Internships:</strong> ${buildInlineFieldControl('internships', student.internships ?? 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Certifications:</strong> ${buildInlineFieldControl('certifications', student.certifications ?? 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Roll No:</strong> ${buildInlineFieldControl('rollNo', student.rollNo || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>College Mail:</strong> ${buildInlineFieldControl('collegeMail', student.collegeMail || student.email || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${buildInlineFieldControl('personalMail', student.personalMail || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Contact No:</strong> ${buildInlineFieldControl('contactNo', student.contactNo || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Address:</strong> ${buildInlineFieldControl('address', student.address || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Resume Link:</strong> ${inlineProfileEdit ? buildInlineFieldControl('resumeLink', resumeLink || 'N/A') : (resumeLink ? `<a href="${safeResumeLink}" target="_blank" rel="noopener noreferrer">View Resume</a>` : 'N/A')}</div>
       </div>
     </div>
   `;
