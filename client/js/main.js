@@ -2200,6 +2200,7 @@ function buildProfileViewHtml(student, options = {}) {
   const {
     leetcodeContainerId = 'leetcode-stats-container',
     showLinkedInButton = false,
+    inlineProfileEdit = false,
   } = options;
 
   const interestCategory = getInterestCategory(student.interest);
@@ -2207,6 +2208,36 @@ function buildProfileViewHtml(student, options = {}) {
   const displayPhoto = student.linkedinPhotoUrl || '';
   const twelfthPercentage = student.twelfthPercentage ?? 'N/A';
   const tenthPercentage = student.tenthPercentage ?? 'N/A';
+  const resumeLink = String(student.resumeLink || '').trim();
+  const safeResumeLink = sanitizeExternalUrl(resumeLink);
+
+  const buildInlineFieldControl = (fieldKey, fallbackValue = 'N/A') => {
+    const displayValue = fallbackValue;
+    if (!inlineProfileEdit) {
+      return `${displayValue}`;
+    }
+
+    const rawValue = getDashboardFieldRawValue(student, fieldKey);
+    const config = dashboardEditableFieldConfigs[fieldKey] || { type: 'text' };
+    const attributes = [
+      `type="${config.type || 'text'}"`,
+      `data-profile-field="${fieldKey}"`,
+      'class="dashboard-inline-edit-control profile-inline-edit-control"',
+      `value="${escapeHtmlAttribute(rawValue)}"`
+    ];
+
+    if (config.min !== undefined) {
+      attributes.push(`min="${config.min}"`);
+    }
+    if (config.max !== undefined) {
+      attributes.push(`max="${config.max}"`);
+    }
+    if (config.step !== undefined) {
+      attributes.push(`step="${config.step}"`);
+    }
+
+    return `<input ${attributes.join(' ')}>`;
+  };
 
   return `
     <div class="profile-summary-grid" style="margin-bottom: 1rem;">
@@ -2259,7 +2290,7 @@ function buildProfileViewHtml(student, options = {}) {
         <div class="profile-leetcode-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
           <h4 class="profile-box-title" style="margin-bottom: 0;">LeetCode</h4>
           <div style="text-align: right; font-size: 0.85rem;">
-            <div style="color: #999;">@${student.leetcodeUsername || 'Not set'}</div>
+            <div style="color: #999;">@${buildInlineFieldControl('leetcodeUsername', student.leetcodeUsername || 'Not set')}</div>
             <div style="color: #666; font-size: 0.8rem;">
               Rank ${student.leetcodeRanking ? '#' + Number(student.leetcodeRanking).toLocaleString() : 'N/A'}
             </div>
@@ -2271,13 +2302,13 @@ function buildProfileViewHtml(student, options = {}) {
       <div class="card profile-summary-card profile-summary-card--academics">
         <h4 class="profile-box-title">Academics</h4>
         <div class="profile-academics-list">
-          <div><strong>CGPA:</strong> <span>${student.gradePoints || 'N/A'}</span></div>
-          <div><strong>12th %:</strong> <span>${twelfthPercentage}</span></div>
-          <div><strong>10th %:</strong> <span>${tenthPercentage}</span></div>
-          <div><strong>Diploma %:</strong> <span>${student.diplomaPercentage ?? 'N/A'}</span></div>
-          <div><strong>Register No:</strong> <span>${student.registerNo || 'N/A'}</span></div>
-          <div><strong>Section:</strong> <span>${student.section || 'N/A'}</span></div>
-          <div><strong>Gender:</strong> <span>${student.gender || 'N/A'}</span></div>
+          <div><strong>CGPA:</strong> <span>${buildInlineFieldControl('gradePoints', student.gradePoints || 'N/A')}</span></div>
+          <div><strong>12th %:</strong> <span>${buildInlineFieldControl('twelfthPercentage', twelfthPercentage)}</span></div>
+          <div><strong>10th %:</strong> <span>${buildInlineFieldControl('tenthPercentage', tenthPercentage)}</span></div>
+          <div><strong>Diploma %:</strong> <span>${buildInlineFieldControl('diplomaPercentage', student.diplomaPercentage ?? 'N/A')}</span></div>
+          <div><strong>Register No:</strong> <span>${buildInlineFieldControl('registerNo', student.registerNo || 'N/A')}</span></div>
+          <div><strong>Section:</strong> <span>${buildInlineFieldControl('section', student.section || 'N/A')}</span></div>
+          <div><strong>Gender:</strong> <span>${buildInlineFieldControl('gender', student.gender || 'N/A')}</span></div>
         </div>
       </div>
     </div>
@@ -2285,10 +2316,25 @@ function buildProfileViewHtml(student, options = {}) {
     <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
       <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Company Preferences & Achievements</h4>
       <div class="profile-percentile-list">
-        <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${student.preferredRoles || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${student.preferredShift || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${student.travelPriority || 'N/A'}</div>
-        <div class="profile-percentile-item"><strong>Achievements:</strong> ${student.achievements || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Gender Specific Roles:</strong> ${buildInlineFieldControl('preferredRoles', student.preferredRoles || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Shift Priority:</strong> ${buildInlineFieldControl('preferredShift', student.preferredShift || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Travel Priority:</strong> ${buildInlineFieldControl('travelPriority', student.travelPriority || 'N/A')}</div>
+        <div class="profile-percentile-item"><strong>Achievements:</strong> ${buildInlineFieldControl('achievements', student.achievements || 'N/A')}</div>
+      </div>
+    </div>
+
+    <div class="card profile-percentile-card" style="margin-bottom: 1rem;">
+      <h4 class="profile-box-title" style="margin-bottom: 0.75rem;">Additional Details</h4>
+      <div class="profile-percentile-list">
+        <div class="profile-percentile-item"><strong>Placement Status:</strong> ${student.placementStatus || getPlacementStatusLabel(student) || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Internships:</strong> ${student.internships ?? 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Certifications:</strong> ${student.certifications ?? 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Roll No:</strong> ${student.rollNo || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>College Mail:</strong> ${student.collegeMail || student.email || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Personal Mail:</strong> ${student.personalMail || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Contact No:</strong> ${student.contactNo || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Address:</strong> ${student.address || 'N/A'}</div>
+        <div class="profile-percentile-item"><strong>Resume Link:</strong> ${resumeLink ? `<a href="${safeResumeLink}" target="_blank" rel="noopener noreferrer">View Resume</a>` : 'N/A'}</div>
       </div>
     </div>
   `;
@@ -2306,40 +2352,28 @@ function renderAnalyticsProfileContent(student) {
     return;
   }
 
-  if (analyticsProfileEditMode) {
-    if (modalEditBtn) {
-      modalEditBtn.textContent = 'Cancel Edit';
-    }
-    profileContainer.innerHTML = `
-      <div class="company-modal-header" style="margin-bottom: 0.8rem;">
-        <div>
-          <h3 style="margin: 0 0 0.2rem 0;">Edit ${student.name || 'Student'} Profile</h3>
-          <p style="margin: 0; color: #999;">Update details and save directly to database.</p>
-        </div>
-      </div>
-      <div class="analytics-profile-edit-grid">
-        ${profileEditFieldEntries.map(([key, label]) => buildAnalyticsProfileEditField(student, key, label)).join('')}
-      </div>
-      <div class="analytics-profile-edit-actions">
-        <button type="button" id="analytics-profile-save" class="dashboard-filter-action-btn">Save</button>
-      </div>
-    `;
-
-    const saveBtn = document.getElementById('analytics-profile-save');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => saveAnalyticsProfileEdit(student.id));
-    }
-    return;
-  }
-
   if (modalEditBtn) {
-    modalEditBtn.textContent = 'Edit';
+    modalEditBtn.textContent = analyticsProfileEditMode ? 'Cancel Edit' : 'Edit';
   }
 
   profileContainer.innerHTML = buildProfileViewHtml(student, {
     leetcodeContainerId: 'analytics-profile-leetcode-stats',
     showLinkedInButton: false,
+    inlineProfileEdit: analyticsProfileEditMode,
   });
+
+  if (analyticsProfileEditMode) {
+    profileContainer.insertAdjacentHTML('beforeend', `
+      <div class="analytics-profile-edit-actions" style="margin-top: 0.5rem; justify-content: flex-end;">
+        <button type="button" id="analytics-profile-save" class="dashboard-filter-action-btn">Save</button>
+      </div>
+    `);
+
+    const saveBtn = document.getElementById('analytics-profile-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => saveAnalyticsProfileEdit(student.id));
+    }
+  }
 
   if (student.leetcodeUsername) {
     fetchAndDisplayLeetCodeStats(student.leetcodeUsername, 'analytics-profile-leetcode-stats');
