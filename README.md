@@ -59,6 +59,7 @@ http://localhost:5000
 For database integration setup, see:
 
 - [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+- [Program Flow/supabase_rls_lockdown.sql](Program%20Flow/supabase_rls_lockdown.sql) (run in Supabase SQL Editor to enforce RLS and restrict table access to `service_role`)
 
 ## Project Structure
 

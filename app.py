@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from datetime import datetime, timezone
+import base64
 import json
 import os
 import re
@@ -68,7 +69,30 @@ SUPABASE_FALLBACK_KEY = (
     or getattr(config, 'SUPABASE_KEY', '').strip()
 )
 
-SUPABASE_DB_KEY = SUPABASE_SERVICE_ROLE_KEY or SUPABASE_FALLBACK_KEY
+def _extract_supabase_jwt_role(jwt_token):
+    token = str(jwt_token or '').strip()
+    parts = token.split('.')
+    if len(parts) < 2:
+        return ''
+
+    payload_segment = parts[1]
+    padding = '=' * (-len(payload_segment) % 4)
+    try:
+        decoded_payload = base64.urlsafe_b64decode(f"{payload_segment}{padding}".encode('utf-8')).decode('utf-8')
+        payload = json.loads(decoded_payload)
+        return str(payload.get('role') or '').strip()
+    except Exception:
+        return ''
+
+
+SUPABASE_DB_KEY = SUPABASE_SERVICE_ROLE_KEY
+if not SUPABASE_DB_KEY and SUPABASE_FALLBACK_KEY:
+    fallback_role = _extract_supabase_jwt_role(SUPABASE_FALLBACK_KEY)
+    if fallback_role == 'service_role':
+        SUPABASE_DB_KEY = SUPABASE_FALLBACK_KEY
+    else:
+        print('Supabase fallback key is not service_role; database integration disabled for safety.')
+
 SUPABASE_ENABLED = bool(SUPABASE_AVAILABLE and create_client and SUPABASE_URL and SUPABASE_DB_KEY)
 
 supabase = None
