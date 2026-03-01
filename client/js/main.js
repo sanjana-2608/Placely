@@ -2971,8 +2971,49 @@ function renderProfile() {
   const profileContent = document.getElementById('profile-content');
 
   if ((isStaff || !isStaff) && currentUser) {
-    // Use a shared edit mode for both staff and student
-    if (studentProfileEditMode || (isStaff && analyticsProfileEditMode)) {
+    if (isStaff) {
+      profileContent.innerHTML = `
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.8rem;">
+          <button type="button" id="student-profile-edit-btn" class="analytics-profile-action-btn">${analyticsProfileEditMode ? 'Cancel Edit' : 'Edit Profile'}</button>
+        </div>
+        ${buildProfileViewHtml(currentUser, {
+          leetcodeContainerId: 'leetcode-stats-container',
+          showLinkedInButton: true,
+          inlineProfileEdit: analyticsProfileEditMode,
+        })}
+        ${analyticsProfileEditMode ? `
+          <div class="analytics-profile-edit-actions" style="justify-content: flex-end;">
+            <button type="button" id="analytics-profile-save" class="dashboard-filter-action-btn">Save</button>
+          </div>
+        ` : ''}
+      `;
+
+      const editBtn = document.getElementById('student-profile-edit-btn');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          analyticsProfileEditMode = !analyticsProfileEditMode;
+          renderProfile();
+        });
+      }
+
+      const saveBtn = document.getElementById('analytics-profile-save');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', () => saveAnalyticsProfileEdit(currentUser.id));
+      }
+
+      if (currentUser.leetcodeUsername) {
+        fetchAndDisplayLeetCodeStats(currentUser.leetcodeUsername);
+      } else {
+        const leetcodeContainer = document.getElementById('leetcode-stats-container');
+        if (leetcodeContainer) {
+          leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">LeetCode username not set.</p>';
+        }
+      }
+      return;
+    }
+
+    // Student mode keeps dedicated edit form
+    if (studentProfileEditMode) {
       renderStudentProfileEditForm(profileContent, currentUser);
       return;
     }
@@ -2990,11 +3031,7 @@ function renderProfile() {
     const editBtn = document.getElementById('student-profile-edit-btn');
     if (editBtn) {
       editBtn.addEventListener('click', () => {
-        if (isStaff) {
-          analyticsProfileEditMode = true;
-        } else {
-          studentProfileEditMode = true;
-        }
+        studentProfileEditMode = true;
         renderProfile();
       });
     }
