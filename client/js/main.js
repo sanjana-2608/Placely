@@ -2459,7 +2459,7 @@ function renderAnalyticsProfileContent(student) {
     if (lcContainer) {
       lcContainer.innerHTML = `
         <p style="margin: 0.5rem 0 0.45rem 0; color: #999;">Enter your LeetCode username.</p>
-        <img src="/static/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+        <img src="/client/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
       `;
     }
   }
@@ -3090,7 +3090,7 @@ function renderProfile() {
         if (leetcodeContainer) {
           leetcodeContainer.innerHTML = `
             <p style="margin: 0.5rem 0 0.45rem 0; color: #999;">Enter your LeetCode username.</p>
-            <img src="/static/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+            <img src="/client/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
           `;
         }
       }
@@ -3131,7 +3131,7 @@ function renderProfile() {
       if (leetcodeContainer) {
         leetcodeContainer.innerHTML = `
           <p style="margin: 0.5rem 0 0.45rem 0; color: #999;">Enter your LeetCode username.</p>
-          <img src="/static/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+          <img src="/client/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
         `;
       }
     }
