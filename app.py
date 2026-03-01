@@ -487,6 +487,13 @@ def get_student_by_email(email):
 
 def update_student_data(student_id, payload):
     allowed_payload = {key: value for key, value in payload.items() if key in STUDENT_ALLOWED_FIELDS}
+
+    if 'leetcodeUsername' in allowed_payload:
+        normalized_username = str(allowed_payload.get('leetcodeUsername') or '').strip()
+        if normalized_username.startswith('@'):
+            normalized_username = normalized_username[1:].strip()
+        allowed_payload['leetcodeUsername'] = normalized_username
+
     if not allowed_payload:
         return None
 

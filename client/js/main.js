@@ -2394,7 +2394,7 @@ function bindLeetCodeUsernameQuickSet(studentId, containerId = 'leetcode-stats-c
         Object.assign(currentUser, data.student);
       }
 
-      showToast('LeetCode username updated.', 'success');
+      showToast('LeetCode username saved to database.', 'success');
 
       if (containerId === 'analytics-profile-leetcode-stats') {
         updateAnalyticsProfileModal();
