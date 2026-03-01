@@ -2457,7 +2457,10 @@ function renderAnalyticsProfileContent(student) {
   } else {
     const lcContainer = document.getElementById('analytics-profile-leetcode-stats');
     if (lcContainer) {
-        lcContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">Enter your LeetCode username.</p>';
+      lcContainer.innerHTML = `
+        <p style="margin: 0.5rem 0 0.45rem 0; color: #999;">Enter your LeetCode username.</p>
+        <img src="/static/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+      `;
     }
   }
 
@@ -3085,7 +3088,10 @@ function renderProfile() {
       } else {
         const leetcodeContainer = document.getElementById('leetcode-stats-container');
         if (leetcodeContainer) {
-          leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">Enter your LeetCode username.</p>';
+          leetcodeContainer.innerHTML = `
+            <p style="margin: 0.5rem 0 0.45rem 0; color: #999;">Enter your LeetCode username.</p>
+            <img src="/static/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+          `;
         }
       }
 
@@ -3123,7 +3129,10 @@ function renderProfile() {
     } else {
       const leetcodeContainer = document.getElementById('leetcode-stats-container');
       if (leetcodeContainer) {
-        leetcodeContainer.innerHTML = '<p style="margin: 0.5rem 0 0 0; color: #999;">Enter your LeetCode username.</p>';
+        leetcodeContainer.innerHTML = `
+          <p style="margin: 0.5rem 0 0.45rem 0; color: #999;">Enter your LeetCode username.</p>
+          <img src="/static/leetcode-username-guide.png?v=20260301b" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+        `;
       }
     }
 
