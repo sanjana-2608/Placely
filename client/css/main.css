@@ -1190,6 +1190,7 @@ table tr:hover {
     border: 1px solid rgba(254, 197, 36, 0.15);
     border-radius: 8px;
     padding: 0.7rem;
+    position: relative;
 }
 
 .dashboard-filter-group h4 {
@@ -1201,9 +1202,10 @@ table tr:hover {
 .dashboard-filter-group-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 0.6rem;
     margin-bottom: 0.5rem;
+    padding-right: 1.5rem;
 }
 
 .dashboard-filter-group-header h4 {
@@ -1214,6 +1216,9 @@ table tr:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
 }
 
 .dashboard-select-all-check input[type="checkbox"] {
