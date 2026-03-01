@@ -1077,25 +1077,29 @@ table tr:hover {
     align-items: center;
     justify-content: flex-end;
     gap: 0.4rem;
+    margin-bottom: 0.2rem;
 }
 
 .leetcode-username-quick-input {
-    width: 180px;
-    min-width: 120px;
+    width: 132px;
+    min-width: 132px;
+    max-width: 132px;
     margin: 0;
+    padding: 0.2rem 0.38rem;
 }
 
 .leetcode-username-quick-save {
-    padding: 0.22rem 0.55rem;
+    padding: 0.18rem 0.5rem;
     font-size: 0.8rem;
 }
 
 .leetcode-username-guide-img {
     width: 100%;
-    max-width: 300px;
+    max-width: 260px;
     border-radius: 8px;
     border: 1px solid rgba(254, 197, 36, 0.28);
     display: block;
+    margin-top: 0.2rem;
 }
 
 .dashboard-toolbar-search:focus,

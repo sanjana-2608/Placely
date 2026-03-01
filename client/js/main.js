@@ -2299,7 +2299,6 @@ function buildProfileViewHtml(student, options = {}) {
                     type="text"
                     id="${usernameInputId}"
                     class="dashboard-inline-edit-control leetcode-username-quick-input"
-                    placeholder="Enter your LeetCode username"
                     value=""
                   >
                   <button type="button" id="${usernameSaveId}" class="analytics-profile-action-btn leetcode-username-quick-save">Save</button>
@@ -2460,7 +2459,7 @@ function renderAnalyticsProfileContent(student) {
     if (lcContainer) {
       lcContainer.innerHTML = `
         <p style="margin: 0.5rem 0 0.55rem 0; color: #999;">Enter your LeetCode username.</p>
-        <img src="/static/leetcode-username-guide.png" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+          <img src="/static/leetcode-username-guide.png?v=20260301" alt="LeetCode username guide" class="leetcode-username-guide-img">
       `;
     }
   }
@@ -3091,7 +3090,7 @@ function renderProfile() {
         if (leetcodeContainer) {
           leetcodeContainer.innerHTML = `
             <p style="margin: 0.5rem 0 0.55rem 0; color: #999;">Enter your LeetCode username.</p>
-            <img src="/static/leetcode-username-guide.png" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+            <img src="/static/leetcode-username-guide.png?v=20260301" alt="LeetCode username guide" class="leetcode-username-guide-img">
           `;
         }
       }
@@ -3132,7 +3131,7 @@ function renderProfile() {
       if (leetcodeContainer) {
         leetcodeContainer.innerHTML = `
           <p style="margin: 0.5rem 0 0.55rem 0; color: #999;">Enter your LeetCode username.</p>
-          <img src="/static/leetcode-username-guide.png" alt="LeetCode username guide" class="leetcode-username-guide-img" onerror="this.style.display='none';">
+          <img src="/static/leetcode-username-guide.png?v=20260301" alt="LeetCode username guide" class="leetcode-username-guide-img">
         `;
       }
     }
