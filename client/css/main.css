@@ -1064,6 +1064,14 @@ table tr:hover {
     box-sizing: border-box;
 }
 
+.profile-inline-edit-control {
+    width: min(220px, 100%);
+    min-width: 72px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+}
+
 .dashboard-toolbar-search:focus,
 .dashboard-toolbar-search:focus-visible {
     outline: 2px solid rgba(254, 197, 36, 0.35);
