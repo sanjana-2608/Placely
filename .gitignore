@@ -39,3 +39,6 @@ venv.bak/
 *.swp
 *.swo
 *~
+
+# Local planning decks
+PLACELY_30_60_90_PLAN.md
