@@ -156,7 +156,15 @@ const dashboardMetricLabels = {
   travelPriority: 'Travel Priority',
   achievements: 'Achievements'
 };
-let dashboardVisibleMetrics = new Set(dashboardMetricOrder);
+const defaultDashboardVisibleMetricKeys = [
+  'dept',
+  'year',
+  'gradePoints',
+  'leetcodeSolvedAll',
+  'interest',
+  'placementStatus'
+];
+let dashboardVisibleMetrics = new Set(defaultDashboardVisibleMetricKeys);
 
 const dashboardInterestOptions = ['Placements', 'Higher Studies', 'Entrepreneurship'];
 const dashboardEditableFieldOrder = ['name', ...dashboardMetricOrder];
@@ -1592,6 +1600,15 @@ function initializeDashboardFilters(staffView, highlightId = null) {
     </label>
   `).join('');
 
+  const makeFilterGroupHeader = (title, checkboxName) => `
+    <div class="dashboard-filter-group-header">
+      <h4>${title}</h4>
+      <label class="dashboard-select-all-check" title="Select all">
+        <input type="checkbox" class="dashboard-select-all-toggle" data-target-name="${checkboxName}">
+      </label>
+    </div>
+  `;
+
   const makeMetricCheckboxes = () => {
     const metricCheckboxes = dashboardMetricOrder.map((key) => `
       <label class="dashboard-filter-check">
@@ -1656,28 +1673,28 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         </div>
       <div class="dashboard-filter-grid">
         <div class="dashboard-filter-group dashboard-filter-group--year">
-          <h4>Year</h4>
+          ${makeFilterGroupHeader('Year', 'dashboard-year')}
           <div class="dashboard-filter-list">
             ${makeCheckboxes('dashboard-year', years, formatYearLabel)}
           </div>
         </div>
 
         <div class="dashboard-filter-group dashboard-filter-group--departments">
-          <h4>Departments</h4>
+          ${makeFilterGroupHeader('Departments', 'dashboard-dept')}
           <div class="dashboard-filter-list dashboard-filter-list--departments">
             ${makeCheckboxes('dashboard-dept', departments)}
           </div>
         </div>
 
         <div class="dashboard-filter-group dashboard-filter-group--interest">
-          <h4>Interest</h4>
+          ${makeFilterGroupHeader('Interest', 'dashboard-interest')}
           <div class="dashboard-filter-list dashboard-filter-list--interest">
             ${makeCheckboxes('dashboard-interest', interests)}
           </div>
         </div>
 
         <div class="dashboard-filter-group dashboard-filter-group--placement-status">
-          <h4>Placement Status</h4>
+          ${makeFilterGroupHeader('Placement Status', 'dashboard-placement-status')}
           <div class="dashboard-filter-list dashboard-filter-list--placement-status">
             ${makeCheckboxes('dashboard-placement-status', placementStatuses, (status) => status === 'Placed' ? 'Placed Students' : 'Yet to be Placed Students')}
           </div>
@@ -1742,7 +1759,7 @@ function initializeDashboardFilters(staffView, highlightId = null) {
         </div>
       </div>
       <div class="dashboard-filter-group dashboard-filter-group--metric-visibility">
-        <h4>Visible Metrics</h4>
+        ${makeFilterGroupHeader('Visible Metrics', 'dashboard-visible-metric')}
         <div class="dashboard-filter-list dashboard-filter-list--metric-visibility">
           ${makeMetricCheckboxes()}
         </div>
@@ -1765,6 +1782,46 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   const fetchLeetCodeBtn = document.getElementById('dashboard-fetch-leetcode');
   const exportCsvBtn = document.getElementById('dashboard-export-csv');
   const exportExcelBtn = document.getElementById('dashboard-export-excel');
+  const selectAllToggles = Array.from(container.querySelectorAll('.dashboard-select-all-toggle'));
+
+  const getGroupCheckboxes = (name) => Array.from(container.querySelectorAll(`input[type="checkbox"][name="${name}"]`));
+
+  const syncSelectAllToggle = (toggle) => {
+    const targetName = toggle.dataset.targetName;
+    const checkboxes = getGroupCheckboxes(targetName);
+    const checkedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
+    const total = checkboxes.length;
+
+    if (!total) {
+      toggle.checked = false;
+      toggle.indeterminate = false;
+      return;
+    }
+
+    toggle.checked = checkedCount === total;
+    toggle.indeterminate = checkedCount > 0 && checkedCount < total;
+  };
+
+  selectAllToggles.forEach((toggle) => {
+    const targetName = toggle.dataset.targetName;
+    const checkboxes = getGroupCheckboxes(targetName);
+
+    toggle.addEventListener('change', () => {
+      const shouldCheck = toggle.checked;
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = shouldCheck;
+      });
+      syncSelectAllToggle(toggle);
+    });
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        syncSelectAllToggle(toggle);
+      });
+    });
+
+    syncSelectAllToggle(toggle);
+  });
 
   const closePanel = () => {
     if (panel) {
@@ -1804,7 +1861,10 @@ function initializeDashboardFilters(staffView, highlightId = null) {
   }
 
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => initializeDashboardFilters(staffView, highlightId));
+    resetBtn.addEventListener('click', () => {
+      dashboardVisibleMetrics = new Set(defaultDashboardVisibleMetricKeys);
+      initializeDashboardFilters(staffView, highlightId);
+    });
   }
 
   if (searchInput) {
