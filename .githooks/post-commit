@@ -1,0 +1,10 @@
+#!/bin/sh
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+if [ -z "$branch" ]; then
+  exit 0
+fi
+
+echo "[post-commit] Auto pushing to origin/$branch ..."
+git push origin "$branch"
