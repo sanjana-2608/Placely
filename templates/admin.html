@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placely Admin — Placement Cell Dashboard</title>
+    <meta name="description" content="Campus Placement Cell Admin Portal — manage students, drives, offers, and analytics.">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='Placely.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css', v='20260314') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="admin-body">
+
+<!-- ════════════════════ SIDEBAR ════════════════════ -->
+<aside id="admin-sidebar" class="sidebar">
+    <div class="sidebar-brand">
+        <img src="{{ url_for('static', filename='Placely.png') }}" alt="Placely" class="brand-logo">
+        <div class="brand-text">
+            <span class="brand-name">Placely</span>
+            <span class="brand-sub">Admin Portal</span>
+        </div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Overview</div>
+        <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+            <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+        </a>
+
+        <div class="nav-section-label">Management</div>
+        <a href="#" class="nav-item" data-page="students" id="nav-students">
+            <span class="nav-icon">🎓</span><span class="nav-label">Students</span>
+        </a>
+        <a href="#" class="nav-item" data-page="drives" id="nav-drives">
+            <span class="nav-icon">💼</span><span class="nav-label">Job Drives</span>
+        </a>
+        <a href="#" class="nav-item" data-page="ats" id="nav-ats">
+            <span class="nav-icon">🔄</span><span class="nav-label">ATS Tracker</span>
+        </a>
+
+        <div class="nav-section-label">Post-Offer</div>
+        <a href="#" class="nav-item" data-page="offers" id="nav-offers">
+            <span class="nav-icon">📄</span><span class="nav-label">Offers & Joinee</span>
+        </a>
+
+        <div class="nav-section-label">Communication</div>
+        <a href="#" class="nav-item" data-page="notices" id="nav-notices">
+            <span class="nav-icon">📢</span><span class="nav-label">Notices & Events</span>
+        </a>
+
+        <div class="nav-section-label">System</div>
+        <a href="#" class="nav-item" data-page="settings" id="nav-settings">
+            <span class="nav-icon">⚙️</span><span class="nav-label">Policy Settings</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="admin-avatar">
+            <span>A</span>
+        </div>
+        <div class="admin-info">
+            <span class="admin-name">Placement Admin</span>
+            <span class="admin-role">Staff</span>
+        </div>
+        <a href="/" class="logout-btn" title="Back to student portal">↩</a>
+    </div>
+</aside>
+
+<!-- ════════════════════ TOPBAR ════════════════════ -->
+<header class="admin-topbar">
+    <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="breadcrumb" id="breadcrumb">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+        <div class="global-search-wrap">
+            <input type="text" id="globalSearch" class="global-search" placeholder="Search students, drives, companies…">
+            <span class="search-icon">🔍</span>
+        </div>
+        <button class="topbar-btn" id="notifBell" title="Notifications">
+            🔔 <span class="notif-badge" id="notifCount">3</span>
+        </button>
+        <div class="topbar-date" id="topbarDate"></div>
+    </div>
+</header>
+
+<!-- ════════════════════ MAIN CONTENT ════════════════════ -->
+<main class="admin-main" id="adminMain">
+
+    <!-- ────────── PAGE: DASHBOARD ────────── -->
+    <section class="admin-page active" id="page-dashboard">
+        <!-- KPI Row -->
+        <div class="kpi-grid" id="kpiGrid">
+            <div class="kpi-card kpi-blue">
+                <div class="kpi-icon">🎓</div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Total Registered</div>
+                    <div class="kpi-value" id="kpiTotal">—</div>
+                </div>
+                <div class="kpi-trend up" id="kpiTotalTrend">↑ 12%</div>
+            </div>
+            <div class="kpi-card kpi-green">
+                <div class="kpi-icon">✅</div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Placed</div>
+                    <div class="kpi-value" id="kpiPlaced">—</div>
+                </div>
+                <div class="kpi-trend up" id="kpiPlacedPct">—%</div>
+            </div>
+            <div class="kpi-card kpi-orange">
+                <div class="kpi-icon">⏳</div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Unplaced</div>
+                    <div class="kpi-value" id="kpiUnplaced">—</div>
+                </div>
+                <div class="kpi-trend down" id="kpiUnplacedPct">—%</div>
+            </div>
+            <div class="kpi-card kpi-purple">
+                <div class="kpi-icon">📅</div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Upcoming Drives</div>
+                    <div class="kpi-value" id="kpiDrives">8</div>
+                </div>
+                <div class="kpi-trend">This month</div>
+            </div>
+            <div class="kpi-card kpi-pink">
+                <div class="kpi-icon">🏢</div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Active Job Profiles</div>
+                    <div class="kpi-value" id="kpiJobs">12</div>
+                </div>
+                <div class="kpi-trend up">↑ 4 this week</div>
+            </div>
+            <div class="kpi-card kpi-red">
+                <div class="kpi-icon">📋</div>
+                <div class="kpi-body">
+                    <div class="kpi-label">Pending Approvals</div>
+                    <div class="kpi-value" id="kpiPending">5</div>
+                </div>
+                <div class="kpi-trend">Needs action</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-bar">
+            <button class="qa-btn qa-primary" onclick="adminNav('drives'); setTimeout(()=>openJobModal(), 200)">
+                ➕ Create Job Profile
+            </button>
+            <button class="qa-btn qa-secondary" onclick="adminNav('notices')">
+                📢 Post Notice
+            </button>
+            <button class="qa-btn qa-outline" onclick="exportPlacementReport()">
+                📥 Export Report
+            </button>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-grid">
+            <div class="chart-card chart-tall">
+                <div class="chart-header">
+                    <h3>Department-wise Placement Rate</h3>
+                    <select class="chart-filter" id="deptChartBatch">
+                        <option value="all">All Batches</option>
+                        <option value="2025">Batch 2025</option>
+                        <option value="2026">Batch 2026</option>
+                    </select>
+                </div>
+                <div class="chart-wrap"><canvas id="deptChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h3>Company-wise Hiring</h3></div>
+                <div class="chart-wrap"><canvas id="companyChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><h3>Placement Trend (Monthly)</h3></div>
+                <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="section-row">
+            <div class="panel">
+                <div class="panel-header"><h3>Recent Placements</h3><button class="panel-link" onclick="adminNav('students')">View All →</button></div>
+                <table class="admin-table compact" id="recentPlacedTable">
+                    <thead><tr><th>Student</th><th>Company</th><th>Role</th><th>CTC</th><th>Date</th></tr></thead>
+                    <tbody id="recentPlacedBody"></tbody>
+                </table>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h3>Upcoming Drives</h3><button class="panel-link" onclick="adminNav('drives')">Manage →</button></div>
+                <div id="upcomingDrivesList" class="drive-list"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ────────── PAGE: STUDENTS ────────── -->
+    <section class="admin-page" id="page-students">
+        <div class="page-header">
+            <h2>Student Data & Profile Management</h2>
+            <div class="page-actions">
+                <button class="qa-btn qa-primary" onclick="exportStudents()">📥 Export CSV</button>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar" id="studentFilterBar">
+            <input type="text" class="filter-input" id="stuSearch" placeholder="Search by name, roll no, email…">
+            <select class="filter-select" id="stuDept">
+                <option value="">All Departments</option>
+                <option value="CSE">CSE</option>
+                <option value="IT">IT</option>
+                <option value="ECE">ECE</option>
+                <option value="EEE">EEE</option>
+                <option value="ME">ME</option>
+                <option value="CE">CE</option>
+            </select>
+            <select class="filter-select" id="stuYear">
+                <option value="">All Years</option>
+                <option value="1">Year 1</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="4">Year 4</option>
+            </select>
+            <select class="filter-select" id="stuPlaced">
+                <option value="">Placed / Unplaced</option>
+                <option value="placed">Placed</option>
+                <option value="unplaced">Unplaced</option>
+            </select>
+            <div class="filter-range-wrap">
+                <label>CGPA ≥</label>
+                <input type="number" class="filter-input small" id="stuCgpaMin" min="0" max="10" step="0.1" placeholder="0">
+            </div>
+            <div class="filter-range-wrap">
+                <label>Backlogs ≤</label>
+                <input type="number" class="filter-input small" id="stuBacklogMax" min="0" placeholder="∞">
+            </div>
+            <button class="filter-apply-btn" onclick="applyStudentFilters()">Apply</button>
+            <button class="filter-reset-btn" onclick="resetStudentFilters()">Reset</button>
+        </div>
+
+        <!-- Tabs: List / Verification -->
+        <div class="sub-tabs">
+            <button class="sub-tab active" onclick="switchStudentTab('list', this)">📋 Student List</button>
+            <button class="sub-tab" onclick="switchStudentTab('verification', this)">✅ Verification Queue <span class="badge badge-red" id="verifBadge">5</span></button>
+        </div>
+
+        <!-- Student List -->
+        <div id="stuTabList" class="sub-tab-content active">
+            <table class="admin-table" id="studentTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllStu"></th>
+                        <th>Name / Roll No</th>
+                        <th>Dept / Year</th>
+                        <th>CGPA</th>
+                        <th>LeetCode</th>
+                        <th>Placement Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody">
+                    <tr><td colspan="7" class="loading-row">Loading students…</td></tr>
+                </tbody>
+            </table>
+            <div class="table-footer">
+                <span id="stuTableCount">0 students shown</span>
+                <div class="bulk-actions" id="bulkActions" style="display:none">
+                    <button class="danger-btn" onclick="bulkBlacklist()">🚫 Blacklist Selected</button>
+                    <button class="warn-btn" onclick="bulkNotify()">📩 Notify Selected</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verification Queue -->
+        <div id="stuTabVerification" class="sub-tab-content">
+            <div id="verificationQueue" class="verification-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ────────── PAGE: JOB DRIVES ────────── -->
+    <section class="admin-page" id="page-drives">
+        <div class="page-header">
+            <h2>Job Profile & Drive Management</h2>
+            <div class="page-actions">
+                <button class="qa-btn qa-primary" onclick="openJobModal()">➕ Create Job Profile</button>
+            </div>
+        </div>
+
+        <!-- Drives Grid -->
+        <div class="drives-grid" id="drivesGrid">
+            <!-- Populated by JS -->
+        </div>
+    </section>
+
+    <!-- ────────── PAGE: ATS TRACKER ────────── -->
+    <section class="admin-page" id="page-ats">
+        <div class="page-header">
+            <h2>Applicant Tracking System</h2>
+            <div class="page-actions">
+                <select class="filter-select" id="atsJobSelect">
+                    <option value="">Select Drive…</option>
+                </select>
+                <button class="qa-btn qa-secondary" onclick="bulkUploadShortlist()">📤 Upload Shortlist</button>
+                <button class="qa-btn qa-outline" onclick="sendBulkNotification()">📩 Notify Students</button>
+            </div>
+        </div>
+        <div class="kanban-board" id="kanbanBoard">
+            <!-- Populated by JS -->
+        </div>
+    </section>
+
+    <!-- ────────── PAGE: OFFERS & JOINEE ────────── -->
+    <section class="admin-page" id="page-offers">
+        <div class="page-header">
+            <h2>Offers & Joinee Tracking</h2>
+            <div class="page-actions">
+                <button class="qa-btn qa-secondary" onclick="exportJoineeReport()">📥 Export Joinee Report</button>
+            </div>
+        </div>
+
+        <div class="section-row">
+            <!-- Offer Repository -->
+            <div class="panel wide">
+                <div class="panel-header"><h3>Offer Repository</h3><span class="badge badge-yellow" id="ctcMismatchBadge">2 Mismatches</span></div>
+                <table class="admin-table" id="offerTable">
+                    <thead><tr>
+                        <th>Student</th><th>Company</th>
+                        <th>Offered CTC</th><th>Posted CTC</th>
+                        <th>Status</th><th>Offer Letter</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody id="offerTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Joinee Dashboard -->
+        <div class="panel" style="margin-top:1.5rem;">
+            <div class="panel-header"><h3>Joinee Tracking Dashboard</h3></div>
+            <div class="joinee-stats-row" id="joineeStats"></div>
+            <table class="admin-table" id="joineeTable">
+                <thead><tr>
+                    <th>Student</th><th>Company</th><th>Role</th>
+                    <th>Joining Date</th><th>Status</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="joineeTableBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ────────── PAGE: NOTICES & EVENTS ────────── -->
+    <section class="admin-page" id="page-notices">
+        <div class="page-header">
+            <h2>Communication & Scheduling</h2>
+            <div class="page-actions">
+                <button class="qa-btn qa-primary" onclick="openNoticeModal()">➕ Post Notice</button>
+                <button class="qa-btn qa-secondary" onclick="openEventModal()">📅 Add Event</button>
+            </div>
+        </div>
+
+        <div class="section-row">
+            <!-- Notice Board -->
+            <div class="panel">
+                <div class="panel-header"><h3>Notice Board</h3></div>
+                <div id="noticeBoard" class="notice-board"></div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="panel">
+                <div class="panel-header"><h3>Event Calendar</h3></div>
+                <div class="mini-calendar" id="miniCalendar"></div>
+                <div id="eventList" class="event-list"></div>
+            </div>
+        </div>
+
+        <!-- Attendance -->
+        <div class="panel" style="margin-top:1.5rem;">
+            <div class="panel-header"><h3>Attendance Tracker</h3>
+                <button class="qa-btn qa-secondary small" onclick="openQRModal()">📷 Scan QR</button>
+            </div>
+            <table class="admin-table" id="attendanceTable">
+                <thead><tr><th>Student</th><th>Event</th><th>Date</th><th>Status</th><th>Method</th></tr></thead>
+                <tbody id="attendanceBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ────────── PAGE: SETTINGS ────────── -->
+    <section class="admin-page" id="page-settings">
+        <div class="page-header"><h2>Policy & System Settings</h2></div>
+
+        <div class="settings-grid">
+            <!-- Placement Policy -->
+            <div class="settings-card">
+                <h3>📋 Placement Policy</h3>
+                <div class="setting-row">
+                    <label>Max Applications per Student</label>
+                    <input type="number" id="maxApps" class="setting-input" value="5" min="1">
+                </div>
+                <div class="setting-row">
+                    <label>Dream Offer CTC Multiplier (×)</label>
+                    <input type="number" id="dreamMultiplier" class="setting-input" value="1.5" step="0.1" min="1">
+                </div>
+                <div class="setting-row">
+                    <label>Allow Re-apply after placement</label>
+                    <select class="setting-input" id="reApplyPolicy">
+                        <option value="dream_only">Only for Dream CTC</option>
+                        <option value="all">All Drives</option>
+                        <option value="never">Never</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label>Active Placement Cycle</label>
+                    <select class="setting-input" id="activeCycle">
+                        <option value="final">Final Placements 2025–26</option>
+                        <option value="internship">Summer Internships 2026</option>
+                        <option value="both">Both (Parallel)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Eligibility Defaults -->
+            <div class="settings-card">
+                <h3>🎯 Default Eligibility Criteria</h3>
+                <div class="setting-row">
+                    <label>Minimum CGPA</label>
+                    <input type="number" id="defaultCgpa" class="setting-input" value="6.0" step="0.1" min="0" max="10">
+                </div>
+                <div class="setting-row">
+                    <label>Maximum Active Backlogs</label>
+                    <input type="number" id="defaultBacklogs" class="setting-input" value="0" min="0">
+                </div>
+                <div class="setting-row">
+                    <label>Eligible Degrees</label>
+                    <input type="text" id="defaultDegrees" class="setting-input" value="B.E., B.Tech, M.E., M.Tech" placeholder="Comma-separated">
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="settings-card">
+                <h3>📩 Notification Settings</h3>
+                <div class="setting-row toggle-row">
+                    <label>Email Notifications</label>
+                    <label class="toggle"><input type="checkbox" id="emailNotif" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label>SMS Notifications</label>
+                    <label class="toggle"><input type="checkbox" id="smsNotif"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row toggle-row">
+                    <label>In-portal Alerts</label>
+                    <label class="toggle"><input type="checkbox" id="portalNotif" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-row">
+                    <label>Reminder Days before Joining</label>
+                    <input type="number" id="reminderDays" class="setting-input" value="7" min="1">
+                </div>
+            </div>
+
+            <!-- Academic Year -->
+            <div class="settings-card">
+                <h3>🗓 Academic Configuration</h3>
+                <div class="setting-row">
+                    <label>Current Academic Year</label>
+                    <input type="text" id="acYr" class="setting-input" value="2025–26">
+                </div>
+                <div class="setting-row">
+                    <label>Placement Season Start</label>
+                    <input type="date" id="seasonStart" class="setting-input" value="2025-08-01">
+                </div>
+                <div class="setting-row">
+                    <label>Placement Season End</label>
+                    <input type="date" id="seasonEnd" class="setting-input" value="2026-04-30">
+                </div>
+                <div class="setting-row">
+                    <label>Institute Name</label>
+                    <input type="text" id="instituteName" class="setting-input" value="Placement Cell, Engineering College">
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-actions">
+            <button class="qa-btn qa-primary" onclick="saveSettings()">💾 Save All Settings</button>
+            <button class="qa-btn qa-outline" onclick="resetSettings()">↺ Reset to Defaults</button>
+        </div>
+    </section>
+
+</main><!-- /admin-main -->
+
+<!-- ════════════════════ MODALS ════════════════════ -->
+
+<!-- Job Profile Modal -->
+<div class="modal-overlay" id="jobModal">
+    <div class="modal-box large">
+        <div class="modal-header">
+            <h2>Create Job Profile</h2>
+            <button class="modal-close" onclick="closeModal('jobModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <h4>Basic Information</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Job Title *</label>
+                            <input type="text" id="jTitle" class="form-input" placeholder="e.g. Software Engineer">
+                        </div>
+                        <div class="form-group">
+                            <label>Company Name *</label>
+                            <input type="text" id="jCompany" class="form-input" placeholder="e.g. Google">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Total CTC (LPA) *</label>
+                            <input type="number" id="jCTC" class="form-input" step="0.1" placeholder="18.0">
+                        </div>
+                        <div class="form-group">
+                            <label>Fixed Component (LPA)</label>
+                            <input type="number" id="jFixed" class="form-input" step="0.1" placeholder="14.0">
+                        </div>
+                        <div class="form-group">
+                            <label>Variable Component (LPA)</label>
+                            <input type="number" id="jVariable" class="form-input" step="0.1" placeholder="4.0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="jLocation" class="form-input" placeholder="e.g. Bangalore / Remote">
+                        </div>
+                        <div class="form-group">
+                            <label>Drive Date</label>
+                            <input type="date" id="jDate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Offer Type</label>
+                            <select class="form-input" id="jOfferType">
+                                <option value="final">Final Placement</option>
+                                <option value="intern">Internship</option>
+                                <option value="intern_ppo">Internship + PPO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group full">
+                        <label>Job Description</label>
+                        <textarea class="form-input" id="jDesc" rows="4" placeholder="Roles and responsibilities, tech stack, bond details…"></textarea>
+                    </div>
+                </div>
+
+                <!-- Eligibility Criteria (Rules Engine) -->
+                <div class="form-section">
+                    <h4>Eligibility Criteria Engine</h4>
+                    <div class="rules-engine" id="rulesEngine">
+                        <div class="rule-row">
+                            <label>Minimum CGPA</label>
+                            <input type="number" id="rMinCgpa" class="form-input small" value="6.0" step="0.1" min="0" max="10">
+                        </div>
+                        <div class="rule-row">
+                            <label>Max Active Backlogs</label>
+                            <input type="number" id="rMaxBacklog" class="form-input small" value="0" min="0">
+                        </div>
+                        <div class="rule-row">
+                            <label>Eligible Departments</label>
+                            <div class="dept-checkboxes" id="deptCheckboxes">
+                                <label><input type="checkbox" value="CSE" checked> CSE</label>
+                                <label><input type="checkbox" value="IT" checked> IT</label>
+                                <label><input type="checkbox" value="ECE"> ECE</label>
+                                <label><input type="checkbox" value="EEE"> EEE</label>
+                                <label><input type="checkbox" value="ME"> ME</label>
+                                <label><input type="checkbox" value="CE"> CE</label>
+                            </div>
+                        </div>
+                        <div class="rule-row">
+                            <label>Placement Category</label>
+                            <select class="form-input" id="rCategory">
+                                <option value="core">Core Offer</option>
+                                <option value="dream">Dream Offer</option>
+                                <option value="any">Open to All</option>
+                            </select>
+                        </div>
+                        <div class="rule-row">
+                            <label>Allow Already Placed Students</label>
+                            <select class="form-input" id="rAllowPlaced">
+                                <option value="no">No</option>
+                                <option value="dream_only">Only if new CTC ≥ Dream Threshold</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                        <div class="rule-row">
+                            <label>Eligible Graduation Years</label>
+                            <div class="dept-checkboxes">
+                                <label><input type="checkbox" value="2025" checked> 2025</label>
+                                <label><input type="checkbox" value="2026" checked> 2026</label>
+                                <label><input type="checkbox" value="2027"> 2027</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hiring Workflow Stages -->
+                <div class="form-section full">
+                    <h4>Hiring Workflow Stages</h4>
+                    <div id="workflowStages" class="stages-list">
+                        <div class="stage-item" data-stage="0">
+                            <span class="stage-num">1</span>
+                            <input type="text" class="form-input stage-input" value="Aptitude Test" placeholder="Round name">
+                            <button class="remove-stage" onclick="removeStage(this)">✕</button>
+                        </div>
+                        <div class="stage-item" data-stage="1">
+                            <span class="stage-num">2</span>
+                            <input type="text" class="form-input stage-input" value="Technical Interview" placeholder="Round name">
+                            <button class="remove-stage" onclick="removeStage(this)">✕</button>
+                        </div>
+                        <div class="stage-item" data-stage="2">
+                            <span class="stage-num">3</span>
+                            <input type="text" class="form-input stage-input" value="HR Interview" placeholder="Round name">
+                            <button class="remove-stage" onclick="removeStage(this)">✕</button>
+                        </div>
+                    </div>
+                    <button class="add-stage-btn" onclick="addStage()">+ Add Stage</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="qa-btn qa-outline" onclick="closeModal('jobModal')">Cancel</button>
+            <button class="qa-btn qa-secondary" onclick="saveJobDraft()">💾 Save Draft</button>
+            <button class="qa-btn qa-primary" onclick="publishJobProfile()">🚀 Publish Drive</button>
+        </div>
+    </div>
+</div>
+
+<!-- Notice Modal -->
+<div class="modal-overlay" id="noticeModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h2>Post Notice / Announcement</h2>
+            <button class="modal-close" onclick="closeModal('noticeModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Title *</label>
+                <input type="text" id="noticeTitle" class="form-input" placeholder="Notice subject…">
+            </div>
+            <div class="form-group">
+                <label>Target Audience</label>
+                <select class="form-input" id="noticeAudience">
+                    <option value="all">All Students</option>
+                    <option value="CSE">CSE Only</option>
+                    <option value="placed">Placed Students</option>
+                    <option value="unplaced">Unplaced Students</option>
+                    <option value="year4">Final Year Only</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Message *</label>
+                <textarea class="form-input" id="noticeMsg" rows="5" placeholder="Write your announcement…"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Notify via</label>
+                <div class="dept-checkboxes">
+                    <label><input type="checkbox" id="notifEmail" checked> Email</label>
+                    <label><input type="checkbox" id="notifSMS"> SMS</label>
+                    <label><input type="checkbox" id="notifPortal" checked> In-portal</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="qa-btn qa-outline" onclick="closeModal('noticeModal')">Cancel</button>
+            <button class="qa-btn qa-primary" onclick="publishNotice()">📢 Publish</button>
+        </div>
+    </div>
+</div>
+
+<!-- Student Detail Side Panel -->
+<div class="side-panel-overlay" id="studentPanelOverlay" onclick="closeSidePanel()"></div>
+<div class="side-panel" id="studentDetailPanel">
+    <div class="side-panel-header">
+        <h3 id="spStudentName">Student Details</h3>
+        <button onclick="closeSidePanel()">✕</button>
+    </div>
+    <div class="side-panel-body" id="spBody"></div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="{{ url_for('static', filename='js/admin.js', v='20260314') }}"></script>
+</body>
+</html>
