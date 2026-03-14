@@ -982,6 +982,10 @@ def _was_leetcode_synced_today(student, now_utc):
 def index():
     return render_template('index.html')
 
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
 @app.route('/login', methods=['POST'])
 def login():
     data: dict[str, Any] = request.get_json(silent=True) or {}

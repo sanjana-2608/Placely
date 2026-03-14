@@ -423,6 +423,7 @@ function ensureDemoModeToggle() {
       <select id="demo-mode-toggle" class="demo-mode-toggle-select" aria-label="Select view mode">
         <option value="staff">Staff</option>
         <option value="student">Student</option>
+        <option value="admin">Admin</option>
       </select>
     `;
 
@@ -436,6 +437,10 @@ function ensureDemoModeToggle() {
     const modeSelect = document.getElementById('demo-mode-toggle');
     if (modeSelect) {
       modeSelect.addEventListener('change', () => {
+        if (modeSelect.value === 'admin') {
+          window.location.href = '/admin';
+          return;
+        }
         const selectedMode = applyDemoViewMode(modeSelect.value);
         localStorage.setItem('demoViewMode', selectedMode);
         updateRoleBasedNav();
