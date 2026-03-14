@@ -40,11 +40,10 @@ except ImportError:
 app = Flask(__name__, static_folder='client', template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'placely-secret-key-2026')
 
-# Configure Flask for HTTPS on Railway (behind reverse proxy)
+# Configure Flask for HTTPS on Vercel (behind reverse proxy)
 app.config['PREFERRED_URL_SCHEME'] = 'https'
-# Set secure cookies for hosted deployments (Railway/Vercel), allow HTTP on localhost
+# Set secure cookies for hosted deployments, allow HTTP on localhost
 _is_hosted_env = any([
-    'RAILWAY_PUBLIC_DOMAIN' in os.environ,
     bool(os.environ.get('VERCEL')),
     bool(os.environ.get('VERCEL_URL')),
     bool(os.environ.get('APP_BASE_URL'))
@@ -53,7 +52,7 @@ app.config['SESSION_COOKIE_SECURE'] = _is_hosted_env
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cookies on OAuth redirects
 
-# Trust X-Forwarded-* headers from Railway's reverse proxy
+# Trust X-Forwarded-* headers from reverse proxy
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
@@ -132,7 +131,6 @@ LINKEDIN_OAUTH_ENABLED = (
     LINKEDIN_CLIENT_SECRET != 'YOUR_LINKEDIN_CLIENT_SECRET_HERE'
 )
 
-RAILWAY_PUBLIC_DOMAIN = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '').strip()
 APP_BASE_URL = os.environ.get('APP_BASE_URL', '').strip()
 VERCEL_URL = os.environ.get('VERCEL_URL', '').strip()
 VERCEL_PROJECT_PRODUCTION_URL = os.environ.get('VERCEL_PROJECT_PRODUCTION_URL', '').strip()
@@ -143,12 +141,10 @@ def get_deployed_base_url():
     if APP_BASE_URL:
         return APP_BASE_URL if APP_BASE_URL.startswith('http') else f"https://{APP_BASE_URL}"
 
-    if not RAILWAY_PUBLIC_DOMAIN:
-        vercel_host = VERCEL_PROJECT_PRODUCTION_URL or VERCEL_URL or VERCEL_BRANCH_URL
-        if not vercel_host:
-            return ''
-        return vercel_host if vercel_host.startswith('http') else f"https://{vercel_host}"
-    return f"https://{RAILWAY_PUBLIC_DOMAIN}"
+    vercel_host = VERCEL_PROJECT_PRODUCTION_URL or VERCEL_URL or VERCEL_BRANCH_URL
+    if not vercel_host:
+        return ''
+    return vercel_host if vercel_host.startswith('http') else f"https://{vercel_host}"
 
 
 def get_google_redirect_uri():
@@ -171,7 +167,7 @@ def get_linkedin_redirect_uri():
     if base_url:
         return f"{base_url}/linkedin-callback"
 
-    raise ValueError('Set LINKEDIN_REDIRECT_URI or APP_BASE_URL (or hosted domain env like RAILWAY_PUBLIC_DOMAIN / VERCEL_URL) for LinkedIn OAuth')
+    raise ValueError('Set LINKEDIN_REDIRECT_URI or APP_BASE_URL (or VERCEL_URL) for LinkedIn OAuth')
 
 
 def build_linkedin_authorization_url(state):
@@ -1017,8 +1013,8 @@ def google_login():
     if not GOOGLE_OAUTH_ENABLED or not Flow:
         return jsonify({'success': False, 'message': 'Google OAuth not configured'}), 400
     if not REDIRECT_URI:
-        return jsonify({'success': False, 'message': 'RAILWAY_PUBLIC_DOMAIN is required for deployed Google OAuth'}), 400
-    
+        return jsonify({'success': False, 'message': 'APP_BASE_URL or VERCEL_URL is required for deployed Google OAuth'}), 400
+
     try:
         flow = Flow.from_client_config(
             client_secrets,
@@ -1178,8 +1174,8 @@ def callback():
     if not GOOGLE_OAUTH_ENABLED or not Flow or not id_token or not google_requests:
         return redirect('/?login=error&msg=Google OAuth not configured')
     if not REDIRECT_URI:
-        return redirect('/?login=error&msg=RAILWAY_PUBLIC_DOMAIN required for deployed Google OAuth')
-    
+        return redirect('/?login=error&msg=APP_BASE_URL or VERCEL_URL required for deployed Google OAuth')
+
     try:
         state = session.get('state')
         flow = Flow.from_client_config(
@@ -1631,7 +1627,7 @@ if os.environ.get('DISABLE_LEETCODE_SCHEDULER', '0') != '1':
 
 
 if __name__ == '__main__':
-    # Use Railway's PORT environment variable, default to 5000 for local dev
+    # Use PORT environment variable, default to 5000 for local dev
     port = int(os.environ.get('PORT', 5000))
-    # Bind to 0.0.0.0 to allow external connections (required for Railway)
+    # Bind to 0.0.0.0 to allow external connections (required for most deployments)
     app.run(host='0.0.0.0', port=port, debug=False)

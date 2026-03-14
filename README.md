@@ -63,7 +63,7 @@ For database integration setup, see:
 
 ## Vercel Environment Variables
 
-If migrated from Railway to Vercel and data is not visible, set these in Vercel Project Settings → Environment Variables:
+If deployed to Vercel and data is not visible, set these in Vercel Project Settings → Environment Variables:
 
 - `SECRET_KEY` = strong random string
 - `SUPABASE_URL` = your Supabase project URL

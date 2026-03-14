@@ -17,7 +17,7 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIEN
 # 1. Go to https://www.linkedin.com/developers/apps
 # 2. Create a new app (require LinkedIn Page)
 # 3. Go to Auth tab, copy Client ID and Client Secret
-# 4. Add Authorized redirect URIs: https://<your-railway-domain>/linkedin-callback
+# 4. Add Authorized redirect URIs: https://<your-vercel-domain>/linkedin-callback
 # 5. Request access to "Sign In with LinkedIn" product
 # 6. Copy Client ID and Client Secret below
 
